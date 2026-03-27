@@ -1,0 +1,21 @@
+{
+    "name": "Firing Agent",
+    "role": "attacker",
+    "personnel": 100,
+    "icon": "agent.svg",
+    "capabilities": {
+        "speed": 5,
+        "range": 5,
+        "attack": 25,
+        "defense": 20,
+        "stealth": 0
+    },
+    "inventory": {
+        "weapons": ["LMG"],
+        "resources": {
+            "NATO_762": 300,
+            "RATION": 10
+        }
+    },
+    "actions": ["FIRE", "MOVE", "HOLD / END TURN"]
+}

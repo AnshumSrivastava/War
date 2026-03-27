@@ -1,0 +1,10 @@
+{
+    "dimensions": {
+        "width": 20,
+        "height": 20
+    },
+    "grid": {
+        "default": "plain"
+    },
+    "layers": {}
+}

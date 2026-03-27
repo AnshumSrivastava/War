@@ -1,0 +1,8 @@
+{
+    "type": "forest",
+    "color": "#228B22",
+    "elevation": 600,
+    "cost": 2,
+    "stack_value": 3,
+    "visibility": 0.5
+}

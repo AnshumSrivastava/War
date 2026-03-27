@@ -1,0 +1,133 @@
+{
+    "width": 50,
+    "height": 50,
+    "terrain": {
+        "20,24": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "20,25": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "20,26": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "20,27": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "20,28": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "21,20": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "21,21": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "21,22": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "21,23": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "21,24": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "21,25": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "21,26": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "21,27": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "22,22": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "22,23": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "22,24": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "22,25": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "22,26": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "22,27": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "22,28": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "23,24": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "23,25": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "23,26": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "23,27": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        },
+        "23,28": {
+            "type": "plain",
+            "elevation": 0,
+            "cost": 1.0
+        }
+    },
+    "file_type": "terrain",
+    "hex_sides": {}
+}

@@ -1,0 +1,20 @@
+{
+    "name": "Invader Scout",
+    "components": ["Movement", "Combat", "Recon"],
+    "attributes": {
+        "side": "Attacker",
+        "speed_kmh": 60,
+        "health": 100,
+        "morale": 80,
+        "stealth": 0.8,
+        "detection_range_m": 2000,
+        "weapons": [
+            {
+                "name": "Light Machine Gun",
+                "range_m": 800,
+                "damage": 15,
+                "fire_rate": "High"
+            }
+        ]
+    }
+}

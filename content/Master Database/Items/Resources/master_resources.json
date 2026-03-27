@@ -1,0 +1,22 @@
+{
+    "NATO_556": {
+        "name": "NATO 5.56mm",
+        "category": "Ammo",
+        "description": "Standard rifle ammunition."
+    },
+    "NATO_762": {
+        "name": "NATO 7.62mm",
+        "category": "Ammo",
+        "description": "Standard machine gun and battle rifle ammunition."
+    },
+    "FUEL": {
+        "name": "Fuel",
+        "category": "Logistic",
+        "description": "Vehicle and generator fuel."
+    },
+    "RATION": {
+        "name": "Rations",
+        "category": "Logistic",
+        "description": "MREs for personnel sustainability."
+    }
+}

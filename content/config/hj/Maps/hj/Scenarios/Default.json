@@ -1,0 +1,134 @@
+{
+    "name": "Default",
+    "rules": {
+        "max_agents_per_hex": 3,
+        "max_turns": 30,
+        "attacker_max_force": 10,
+        "defender_max_force": 10
+    },
+    "zones": {
+        "bb4e04d3": {
+            "name": "Goal Area bb4e04d3",
+            "hexes": [
+                [
+                    20,
+                    13
+                ],
+                [
+                    20,
+                    14
+                ],
+                [
+                    21,
+                    12
+                ],
+                [
+                    21,
+                    13
+                ]
+            ],
+            "vertices": [
+                [
+                    20,
+                    2,
+                    -22
+                ],
+                [
+                    19,
+                    4,
+                    -23
+                ],
+                [
+                    21,
+                    4,
+                    -25
+                ],
+                [
+                    21,
+                    1,
+                    -22
+                ]
+            ],
+            "color": "#00FF00",
+            "type": "Goal Area",
+            "side": "Combined"
+        },
+        "0bd9087a": {
+            "name": "Re-inforcement Area 0bd9087a",
+            "hexes": [
+                [
+                    20,
+                    8
+                ],
+                [
+                    21,
+                    7
+                ],
+                [
+                    22,
+                    7
+                ],
+                [
+                    22,
+                    8
+                ],
+                [
+                    23,
+                    7
+                ],
+                [
+                    23,
+                    8
+                ],
+                [
+                    24,
+                    7
+                ],
+                [
+                    24,
+                    8
+                ],
+                [
+                    25,
+                    8
+                ]
+            ],
+            "vertices": [
+                [
+                    21,
+                    -4,
+                    -17
+                ],
+                [
+                    19,
+                    -1,
+                    -18
+                ],
+                [
+                    25,
+                    -4,
+                    -21
+                ],
+                [
+                    24,
+                    -5,
+                    -19
+                ]
+            ],
+            "color": "#FFFFFF",
+            "type": "Re-inforcement Area",
+            "side": "Combined"
+        }
+    },
+    "paths": {},
+    "entity_positions": {
+        "23b9b4ed-ce43-4e9b-84cf-573a3c5e6ed3": "19,26",
+        "94345df7-599d-43ea-8bb3-5d99d32ba266": "31,22",
+        "06d54d64-cf9f-48d6-9058-085029216660": "19,30",
+        "4bf42c3f-7ee6-4588-822f-b13889e6af84": "32,25",
+        "405a5ba1-9fec-42fa-be42-3f9835be50bc": "17,16",
+        "ad19bd49-a490-40d7-851f-0fb5a47dd045": "18,15",
+        "261af543-fbee-4d31-85fe-277d5590bd60": "18,18",
+        "6609673e-8ed2-40d3-9b14-a5c9bd64ecf5": "26,16"
+    }
+}

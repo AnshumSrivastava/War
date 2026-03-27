@@ -1,0 +1,23 @@
+{
+    "Attacker": {
+        "FA": {
+            "name": "FA",
+            "capabilities": {
+                "recovery_rate": 1.0,
+                "cover_bonus": 0
+            }
+        }
+    },
+    "Defender": {
+        "Base Area": {
+            "name": "Base Area",
+            "capabilities": {}
+        },
+        "Goal Area": {
+            "name": "Goal Area",
+            "capabilities": {
+                "priority": 100
+            }
+        }
+    }
+}

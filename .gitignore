@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.python-version
+.venv/
+venv/
+ENV/
+
+# VS Code
+.vscode/
+
+# Environment Variables
+.env
+.envrc
+
+# Os specific
+.DS_Store
+Thumbs.db

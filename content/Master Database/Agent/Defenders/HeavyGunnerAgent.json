@@ -1,0 +1,22 @@
+{
+    "name": "HeavyGunnerAgent",
+    "role": "defender",
+    "personnel": 100,
+    "icon": "heavy_weapon.svg",
+    "capabilities": {
+        "speed": 4,
+        "range": 1,
+        "attack": 100,
+        "defense": 60,
+        "stealth": 20
+    },
+    "inventory": {
+        "weapons": ["LMG", "INSAS"],
+        "resources": {
+            "NATO_762": 400,
+            "NATO_556": 120,
+            "RATION": 10
+        }
+    },
+    "actions": ["FIRE", "MOVE", "HOLD / END TURN"]
+}

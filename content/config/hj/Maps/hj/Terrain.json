@@ -1,0 +1,218 @@
+{
+    "width": 50,
+    "height": 50,
+    "terrain": {
+        "28,7": {
+            "type": "water"
+        },
+        "27,7": {
+            "type": "water"
+        },
+        "26,8": {
+            "type": "water"
+        },
+        "26,9": {
+            "type": "water"
+        },
+        "25,9": {
+            "type": "water"
+        },
+        "25,10": {
+            "type": "water"
+        },
+        "25,11": {
+            "type": "water"
+        },
+        "24,12": {
+            "type": "water"
+        },
+        "24,13": {
+            "type": "water"
+        },
+        "24,14": {
+            "type": "water"
+        },
+        "24,15": {
+            "type": "water"
+        },
+        "24,16": {
+            "type": "water"
+        },
+        "25,16": {
+            "type": "water"
+        },
+        "25,17": {
+            "type": "water"
+        },
+        "26,18": {
+            "type": "water"
+        },
+        "27,18": {
+            "type": "water"
+        },
+        "28,19": {
+            "type": "water"
+        },
+        "29,19": {
+            "type": "water"
+        },
+        "29,20": {
+            "type": "water"
+        },
+        "30,20": {
+            "type": "water"
+        },
+        "30,21": {
+            "type": "water"
+        },
+        "31,20": {
+            "type": "water"
+        },
+        "31,21": {
+            "type": "water"
+        },
+        "32,21": {
+            "type": "water"
+        },
+        "32,22": {
+            "type": "water"
+        },
+        "32,23": {
+            "type": "water"
+        },
+        "31,23": {
+            "type": "water"
+        },
+        "31,24": {
+            "type": "water"
+        },
+        "30,25": {
+            "type": "water"
+        },
+        "29,25": {
+            "type": "water"
+        },
+        "28,26": {
+            "type": "water"
+        },
+        "27,26": {
+            "type": "water"
+        },
+        "26,27": {
+            "type": "water"
+        },
+        "25,26": {
+            "type": "water"
+        },
+        "24,27": {
+            "type": "water"
+        },
+        "23,27": {
+            "type": "water"
+        },
+        "22,27": {
+            "type": "water"
+        },
+        "21,26": {
+            "type": "water"
+        },
+        "20,27": {
+            "type": "water"
+        },
+        "20,28": {
+            "type": "water"
+        },
+        "19,28": {
+            "type": "water"
+        },
+        "18,29": {
+            "type": "water"
+        },
+        "17,28": {
+            "type": "water"
+        },
+        "16,29": {
+            "type": "water"
+        },
+        "16,28": {
+            "type": "water"
+        },
+        "15,28": {
+            "type": "water"
+        },
+        "14,28": {
+            "type": "water"
+        },
+        "13,28": {
+            "type": "water"
+        },
+        "12,29": {
+            "type": "water"
+        },
+        "11,29": {
+            "type": "water"
+        },
+        "11,30": {
+            "type": "water"
+        },
+        "10,31": {
+            "type": "water"
+        },
+        "9,31": {
+            "type": "water"
+        },
+        "8,32": {
+            "type": "water"
+        },
+        "7,31": {
+            "type": "water"
+        },
+        "7,32": {
+            "type": "water"
+        },
+        "6,32": {
+            "type": "water"
+        },
+        "6,33": {
+            "type": "water"
+        },
+        "5,32": {
+            "type": "water"
+        },
+        "5,33": {
+            "type": "water"
+        },
+        "28,11": {
+            "type": "mountain"
+        },
+        "28,12": {
+            "type": "mountain"
+        },
+        "27,11": {
+            "type": "mountain"
+        },
+        "27,12": {
+            "type": "mountain"
+        },
+        "24,11": {
+            "type": "forest"
+        },
+        "23,11": {
+            "type": "forest"
+        },
+        "22,12": {
+            "type": "forest"
+        },
+        "22,13": {
+            "type": "forest"
+        },
+        "23,13": {
+            "type": "forest"
+        },
+        "23,12": {
+            "type": "forest"
+        }
+    },
+    "file_type": "terrain",
+    "hex_sides": {}
+}

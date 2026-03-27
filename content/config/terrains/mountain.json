@@ -1,0 +1,8 @@
+{
+    "type": "mountain",
+    "color": "#808080",
+    "elevation": 1000,
+    "cost": 10,
+    "stack_value": 0,
+    "visibility": 0.2
+}

@@ -1,0 +1,50 @@
+{
+    "INSAS": {
+        "name": "INSAS",
+        "category": "direct",
+        "max_range": 6.0,
+        "damage": 22,
+        "rate_of_fire": 3,
+        "accuracy": 0.65,
+        "ammo_capacity": 120,
+        "ammo_type": "NATO_556",
+        "lethality": 66,
+        "suppression": 66
+    },
+    "LMG": {
+        "name": "LMG",
+        "category": "direct",
+        "max_range": 8.0,
+        "damage": 18,
+        "rate_of_fire": 6,
+        "accuracy": 0.55,
+        "ammo_capacity": 400,
+        "ammo_type": "NATO_762",
+        "lethality": 108,
+        "suppression": 108
+    },
+    "MMG": {
+        "name": "MMG",
+        "category": "direct",
+        "max_range": 12.0,
+        "damage": 30,
+        "rate_of_fire": 5,
+        "accuracy": 0.70,
+        "ammo_capacity": 600,
+        "ammo_type": "NATO_762",
+        "lethality": 150,
+        "suppression": 150
+    },
+    "Sniper_Rifle": {
+        "name": "M24 Sniper",
+        "category": "direct",
+        "max_range": 15.0,
+        "damage": 80,
+        "rate_of_fire": 1,
+        "accuracy": 0.95,
+        "ammo_capacity": 20,
+        "ammo_type": "NATO_762",
+        "lethality": 80,
+        "suppression": 20
+    }
+}

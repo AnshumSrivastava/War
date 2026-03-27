@@ -1,0 +1,6 @@
+{
+    "name": "Tank Traps",
+    "description": "Impassable for vehicles.",
+    "color": "#555555",
+    "effect": "block"
+}

@@ -1,0 +1,17 @@
+{
+    "name": "Default",
+    "rules": {
+        "max_agents_per_hex": 3,
+        "max_turns": 30,
+        "attacker_max_force": 10,
+        "defender_max_force": 10
+    },
+    "zones": {},
+    "paths": {},
+    "entity_positions": {
+        "763a5afc-7200-44bf-a1da-fbb0ec229eda": "7,14",
+        "0e26e56a-2524-4c50-bfed-10c4d0ee9220": "10,27",
+        "811c9396-cd3b-4933-9d2c-08f0541266ee": "29,5",
+        "313f0f02-39f0-4041-8bfa-c4d3a42cfa87": "36,18"
+    }
+}

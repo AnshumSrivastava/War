@@ -1,0 +1,6 @@
+{
+    "name": "Minefield",
+    "description": "Area denied by hidden explosives.",
+    "color": "#FF0000",
+    "effect": "damage"
+}

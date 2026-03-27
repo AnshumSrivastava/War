@@ -1,0 +1,8 @@
+{
+    "type": "water",
+    "color": "#4682B4",
+    "elevation": 0,
+    "cost": 5,
+    "stack_value": 0,
+    "visibility": 1
+}

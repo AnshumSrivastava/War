@@ -1,0 +1,504 @@
+{
+    "name": "Default",
+    "rules": {
+        "max_agents_per_hex": 3,
+        "max_turns": 30,
+        "attacker_max_force": 10,
+        "defender_max_force": 10
+    },
+    "zones": {
+        "47f773d0": {
+            "type": "Designated Area",
+            "subtype": "Goal Area",
+            "side": "Combined",
+            "name": "Goal Area 1",
+            "color": "#FFD700",
+            "hexes": [
+                [
+                    19,
+                    23
+                ]
+            ],
+            "vertices": [
+                [
+                    19,
+                    14,
+                    -33
+                ]
+            ]
+        },
+        "31f15854": {
+            "type": "Designated Area",
+            "subtype": "Goal Area",
+            "side": "Combined",
+            "name": "Goal Area 2",
+            "color": "#FFD700",
+            "hexes": [
+                [
+                    29,
+                    23
+                ]
+            ],
+            "vertices": [
+                [
+                    29,
+                    9,
+                    -38
+                ]
+            ]
+        },
+        "cb381eb7": {
+            "type": "Designated Area",
+            "subtype": "Goal Area",
+            "side": "Combined",
+            "name": "Goal Area 3",
+            "color": "#FFD700",
+            "hexes": [
+                [
+                    23,
+                    17
+                ]
+            ],
+            "vertices": [
+                [
+                    23,
+                    6,
+                    -29
+                ]
+            ]
+        },
+        "01d0a8bd": {
+            "type": "Designated Area",
+            "subtype": "Goal Area",
+            "side": "Combined",
+            "name": "Goal Area 4",
+            "color": "#FFD700",
+            "hexes": [
+                [
+                    37,
+                    13
+                ]
+            ],
+            "vertices": [
+                [
+                    37,
+                    -5,
+                    -32
+                ]
+            ]
+        }
+    },
+    "paths": {},
+    "entity_positions": {
+        "0b0ad059-2b4f-4968-b880-0c3e0d6f44f1": "20,24",
+        "146801db-32ba-48b7-b46f-3131ad088181": "20,23",
+        "4b288dab-a760-4160-85c1-09dc836de353": "19,22",
+        "69ec072f-2e4f-4cc2-882d-1e8ddf00f151": "18,23",
+        "37f2e2d8-d85b-4912-b9bd-7e17b5665c0b": "30,24",
+        "02d3f54f-9113-45a2-86db-b90f0696f972": "30,23",
+        "2537cfa3-1160-4dc8-bdcd-f6554e302431": "29,22",
+        "0b24a622-8f25-465c-a2ec-cfaa0258e80b": "28,23",
+        "6b9cbac6-1822-4bfc-aacf-1e56c4b52558": "24,18",
+        "860cc28d-0147-42c8-bffa-b0c5d34295ba": "24,17",
+        "d8d8dd39-f51e-4836-bfad-11d70c8337e8": "23,16",
+        "3836e3b8-c2ff-41f0-9110-4647aadc9ffa": "22,17",
+        "a1a03eb7-5d33-446e-b032-1ff44a11642d": "38,14",
+        "89208cfc-377c-46b4-a224-0c77144c0499": "38,13",
+        "0a548561-ea8e-42f3-be86-de369b1321fd": "37,12",
+        "ce0276d0-eede-480e-91bd-d7cd76131b6d": "36,13",
+        "9d2449fb-ce4b-4fc1-bd7d-e41c63351703": "5,41",
+        "af0327bb-1004-419e-906e-00ae8c041506": "7,41",
+        "9529fb05-3846-450d-a94e-f42bbd0d54c4": "6,42",
+        "12c832ed-076d-4ff4-9a5b-f84132e59be4": "6,41"
+    },
+    "entities": {
+        "0b0ad059-2b4f-4968-b880-0c3e0d6f44f1": {
+            "id": "0b0ad059-2b4f-4968-b880-0c3e0d6f44f1",
+            "name": "Goal Guard 1",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    19,
+                    14,
+                    -33
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "146801db-32ba-48b7-b46f-3131ad088181": {
+            "id": "146801db-32ba-48b7-b46f-3131ad088181",
+            "name": "Goal Guard 2",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    19,
+                    14,
+                    -33
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "4b288dab-a760-4160-85c1-09dc836de353": {
+            "id": "4b288dab-a760-4160-85c1-09dc836de353",
+            "name": "Goal Guard 3",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    19,
+                    14,
+                    -33
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "69ec072f-2e4f-4cc2-882d-1e8ddf00f151": {
+            "id": "69ec072f-2e4f-4cc2-882d-1e8ddf00f151",
+            "name": "Goal Guard 4",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    19,
+                    14,
+                    -33
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "37f2e2d8-d85b-4912-b9bd-7e17b5665c0b": {
+            "id": "37f2e2d8-d85b-4912-b9bd-7e17b5665c0b",
+            "name": "Goal Guard 1",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    29,
+                    9,
+                    -38
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "02d3f54f-9113-45a2-86db-b90f0696f972": {
+            "id": "02d3f54f-9113-45a2-86db-b90f0696f972",
+            "name": "Goal Guard 2",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    29,
+                    9,
+                    -38
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "2537cfa3-1160-4dc8-bdcd-f6554e302431": {
+            "id": "2537cfa3-1160-4dc8-bdcd-f6554e302431",
+            "name": "Goal Guard 3",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    29,
+                    9,
+                    -38
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "0b24a622-8f25-465c-a2ec-cfaa0258e80b": {
+            "id": "0b24a622-8f25-465c-a2ec-cfaa0258e80b",
+            "name": "Goal Guard 4",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    29,
+                    9,
+                    -38
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "6b9cbac6-1822-4bfc-aacf-1e56c4b52558": {
+            "id": "6b9cbac6-1822-4bfc-aacf-1e56c4b52558",
+            "name": "Goal Guard 1",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    23,
+                    6,
+                    -29
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "860cc28d-0147-42c8-bffa-b0c5d34295ba": {
+            "id": "860cc28d-0147-42c8-bffa-b0c5d34295ba",
+            "name": "Goal Guard 2",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    23,
+                    6,
+                    -29
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "d8d8dd39-f51e-4836-bfad-11d70c8337e8": {
+            "id": "d8d8dd39-f51e-4836-bfad-11d70c8337e8",
+            "name": "Goal Guard 3",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    23,
+                    6,
+                    -29
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "3836e3b8-c2ff-41f0-9110-4647aadc9ffa": {
+            "id": "3836e3b8-c2ff-41f0-9110-4647aadc9ffa",
+            "name": "Goal Guard 4",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    23,
+                    6,
+                    -29
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "a1a03eb7-5d33-446e-b032-1ff44a11642d": {
+            "id": "a1a03eb7-5d33-446e-b032-1ff44a11642d",
+            "name": "Goal Guard 1",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    37,
+                    -5,
+                    -32
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "89208cfc-377c-46b4-a224-0c77144c0499": {
+            "id": "89208cfc-377c-46b4-a224-0c77144c0499",
+            "name": "Goal Guard 2",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    37,
+                    -5,
+                    -32
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "0a548561-ea8e-42f3-be86-de369b1321fd": {
+            "id": "0a548561-ea8e-42f3-be86-de369b1321fd",
+            "name": "Goal Guard 3",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    37,
+                    -5,
+                    -32
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "ce0276d0-eede-480e-91bd-d7cd76131b6d": {
+            "id": "ce0276d0-eede-480e-91bd-d7cd76131b6d",
+            "name": "Goal Guard 4",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    37,
+                    -5,
+                    -32
+                ],
+                "vulnerability_score": 0.0,
+                "type": "DefenderAgent",
+                "subtype": "Direct",
+                "side": "Defender"
+            }
+        },
+        "9d2449fb-ce4b-4fc1-bd7d-e41c63351703": {
+            "id": "9d2449fb-ce4b-4fc1-bd7d-e41c63351703",
+            "name": "B_Close_Combat_agent_1",
+            "components": [],
+            "attributes": {
+                "home_hex": null,
+                "vulnerability_score": 0.0,
+                "type": "Close_Combat_agent",
+                "subtype": "Standard",
+                "side": "Attacker",
+                "personnel": 100,
+                "movement": 5,
+                "attack_range": 1,
+                "combat_factor": 25,
+                "vision_range": 3
+            }
+        },
+        "af0327bb-1004-419e-906e-00ae8c041506": {
+            "id": "af0327bb-1004-419e-906e-00ae8c041506",
+            "name": "B_Close_Combat_agent_2",
+            "components": [],
+            "attributes": {
+                "home_hex": null,
+                "vulnerability_score": 0.0,
+                "type": "Close_Combat_agent",
+                "subtype": "Standard",
+                "side": "Attacker",
+                "personnel": 100,
+                "movement": 5,
+                "attack_range": 1,
+                "combat_factor": 25,
+                "vision_range": 3
+            }
+        },
+        "9529fb05-3846-450d-a94e-f42bbd0d54c4": {
+            "id": "9529fb05-3846-450d-a94e-f42bbd0d54c4",
+            "name": "B_Close_Combat_agent_3",
+            "components": [],
+            "attributes": {
+                "home_hex": null,
+                "vulnerability_score": 0.0,
+                "type": "Close_Combat_agent",
+                "subtype": "Standard",
+                "side": "Attacker",
+                "personnel": 100,
+                "movement": 5,
+                "attack_range": 1,
+                "combat_factor": 25,
+                "vision_range": 3
+            }
+        },
+        "12c832ed-076d-4ff4-9a5b-f84132e59be4": {
+            "id": "12c832ed-076d-4ff4-9a5b-f84132e59be4",
+            "name": "B_Close_Combat_agent_4",
+            "components": [],
+            "attributes": {
+                "home_hex": null,
+                "vulnerability_score": 0.0,
+                "type": "Close_Combat_agent",
+                "subtype": "Standard",
+                "side": "Attacker",
+                "personnel": 100,
+                "movement": 5,
+                "attack_range": 1,
+                "combat_factor": 25,
+                "vision_range": 3
+            }
+        }
+    }
+}
