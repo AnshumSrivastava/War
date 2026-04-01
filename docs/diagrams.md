@@ -34,8 +34,8 @@ graph TD
         GlobalState -.-> EntityManager[(Unit Registry Database)]:::state
         GlobalState -.-> DataCtrl[(JSON Master Data Cache)]:::state
         
-        ActModel --> Redis[(Redis Local Socket Connection)]:::ext
-        Commander --> Redis
+        ActModel --> QTable[(In-Memory Q-Tables)]:::ext
+        Commander --> QTable
     end
 ```
 
@@ -51,7 +51,7 @@ sequenceDiagram
     participant Model as ActionModel (Micro Engine)
     participant Unit as Tactical Agent (Physical Entity)
     participant Combat as DirectFireEngine (Math)
-    participant Redis as Redis Knowledge DB
+    participant QTable as In-Memory Q-Table Storage
 
     Main->>Cmdr: Prompt: Assign Core Missions (Pre-Tick)
     Cmdr-->>Unit: Issue Authoritative AgentCommand (Axis of Advance)
@@ -64,8 +64,8 @@ sequenceDiagram
         else Normal or Suppressed Status
             Model->>Model: SENSE: Raycast for hostile targets within Vision Hexes
             Model->>Model: FILTER: Restrict tactical options strictly to Commander's Axis OR Fire Actions
-            Model->>Redis: DECIDE: Query Local Q-Table for Optimal Action
-            Redis-->>Model: Return Chosen Action (e.g., MOVE, FIRE)
+            Model->>QTable: DECIDE: Query Local Q-Table for Optimal Action
+            QTable-->>Model: Return Chosen Action (e.g., MOVE, FIRE)
             
             alt Action == FIRE
                 Model->>Combat: Request probability & lethality calculation
@@ -74,7 +74,7 @@ sequenceDiagram
                 Model-->>Unit: Update Internal Hex Coordinates
             end
             
-            Model->>Redis: LEARN: Upload Reward modifier based on combat efficacy or mission progression
+            Model->>QTable: LEARN: Upload Reward modifier based on combat efficacy or mission progression
         end
     end
     Main->>Main: Conclude Tick & Update Global Episode Iterator

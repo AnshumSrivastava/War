@@ -32,11 +32,12 @@ class ShortcutRegistry(QObject):
     def setup_default_shortcuts(self):
         """Binds all standard application hotkeys."""
         # --- Mode Switching ---
-        self.register("Ctrl+1", "Switch to Maps Gallery", lambda: self.mw.mode_tabs.setCurrentIndex(0), "Navigation")
-        self.register("Ctrl+2", "Switch to Terrain Editor", lambda: self.mw.mode_tabs.setCurrentIndex(1), "Navigation")
-        self.register("Ctrl+3", "Switch to Scenario Editor", lambda: self.mw.mode_tabs.setCurrentIndex(2), "Navigation")
-        self.register("Ctrl+4", "Switch to Play Mode", lambda: self.mw.mode_tabs.setCurrentIndex(3), "Navigation")
-        self.register("Ctrl+5", "Switch to Database", lambda: self.mw.mode_tabs.setCurrentIndex(4), "Navigation")
+        self.register("Ctrl+1", "Switch to Maps Gallery", lambda: self.mw.switch_mode(0), "Navigation")
+        self.register("Ctrl+2", "Switch to Terrain Editor", lambda: self.mw.switch_mode(1), "Navigation")
+        self.register("Ctrl+3", "Switch to Area Definition", lambda: self.mw.switch_mode(2), "Navigation")
+        self.register("Ctrl+4", "Switch to Agent Placement", lambda: self.mw.switch_mode(3), "Navigation")
+        self.register("Ctrl+5", "Switch to Play Mode", lambda: self.mw.switch_mode(4), "Navigation")
+        self.register("Ctrl+6", "Switch to Database", lambda: self.mw.switch_mode(5), "Navigation")
         
         # --- Tool Selection ---
         self.register("V", "Select Tool", lambda: self.mw.set_tool("cursor"), "Tools")

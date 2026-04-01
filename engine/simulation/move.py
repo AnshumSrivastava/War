@@ -37,11 +37,11 @@ class MoveAction(BaseAction):
         """
         # 1. DIRECTION CHECK: Is the direction one of the 6 valid hexagonal directions?
         if not direction or direction not in DIRECTION_MAP:
-            return f"MOVE FAILED (Invalid Dir: {direction})", None, None
+            return f"failed to move (Unknown direction)", None, None
             
         current_pos = game_map.get_entity_position(entity.id)
         if not current_pos:
-            return "MOVE FAILED (Unit not on map)", None, None
+            return "failed to move (Unit not deployed)", None, None
             
         # 2. CALCULATION: Figure out the coordinates of the hexagon we want to enter.
         dq, dr, ds = DIRECTION_MAP[direction]
@@ -50,7 +50,7 @@ class MoveAction(BaseAction):
         # 3. TERRAIN CHECK: Does the destination actually exist? (No 'Void' or map edges).
         terrain = game_map.get_terrain(new_hex)
         if terrain is None:
-             return f"MOVE BLOCKED ({direction} -> edge of world)", None, None
+             return f"halted (Reached edge of operational area)", None, None
              
         # 4. STACKING CHECK (V3 WEIGHT SYSTEM): 
         # Instead of a simple count, we check how HEAVY the units are.
@@ -61,12 +61,12 @@ class MoveAction(BaseAction):
             agent_weight = float(entity.get_attribute("weight", 1))
             # Ask the map if there's enough room for this specific weight.
             if hasattr(game_map, 'can_place_agent') and not game_map.can_place_agent(new_hex, agent_weight, entity_manager):
-                return f"MOVE BLOCKED (Weight Limit Exceeded)", None, None
+                return f"blocked (Destination exceeds weight capacity)", None, None
         else:
             # Fallback for simple simulations: Maximum 3 units per hex.
             limit = game_map.active_scenario.rules.get("max_agents_per_hex", 3)
             if len(game_map.get_entities_at(new_hex)) >= limit:
-                return f"MOVE BLOCKED (Hex is crowded)", None, None
+                return f"blocked (Destination crowded)", None, None
             
         # 5. UNDO SYSTEM (V3 RESTORE): Log this move so we can 'Rewind' time.
         from engine.state.global_state import GlobalState
@@ -81,7 +81,7 @@ class MoveAction(BaseAction):
         game_map.place_entity(entity.id, new_hex)
         
         # Status message
-        status_msg = f"MOVE {direction.upper()}"
+        status_msg = f"advanced {direction}"
 
         # FEEDBACK: Create an event so the graphics window knows to slide the unit's icon.
         event = {
@@ -113,9 +113,9 @@ class MoveAction(BaseAction):
                             current_p = int(entity.get_attribute("personnel", 100))
                             new_p = max(0, current_p - casualties)
                             entity.set_attribute("personnel", new_p)
-                            status_msg += f" | <b>MINE STRIKE!</b> -{casualties} pers"
+                            status_msg += f" | <span style='color:#e74c3c;'><b>MINE STRIKE!</b> -{casualties} personnel</span>"
                             if new_p <= 0:
-                                status_msg += " [DETROYED]"
+                                status_msg += " <span style='color:#c0392b;'>[DESTROYED]</span>"
                         break # Only one mine strike per movement step
                 
         # Moving units are harder to hit, so we clear the 'under fire' status.

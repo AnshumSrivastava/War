@@ -46,7 +46,10 @@ class HexWidget(QWidget):
     hex_clicked = pyqtSignal(object)  # Signal sent when a user clicks a hexagon
 
     def __init__(self, parent=None, state=None):
-        """THE CONSTRUCTOR: Prepares the digital canvas."""
+        """
+        THE CONSTRUCTOR: Prepares the digital canvas.
+        Initializes cameras, tools, animations, and the rendering cache.
+        """
         super().__init__(parent)
         self.mw = parent
         if state is None:
@@ -55,78 +58,92 @@ class HexWidget(QWidget):
         else:
              self.state = state
         
-        # --- CAMERA & VIEW SETTINGS ---
-        self.hex_size = 50.0  # The current zoom level (pixel radius of a hexagon).
-        self.camera_x = 0.0   # Where the camera is looking (horizontal).
-        self.camera_y = 0.0   # Where the camera is looking (vertical).
+        # --- CAMERA & VIEWPORT SETTINGS ---
+        # The zoom level (higher number = bigger hexagons).
+        self.hex_size = 50.0  
+        # Camera Focus: Horizontal/Vertical world coordinates where the view is centered.
+        self.camera_x = 0.0   
+        self.camera_y = 0.0   
         
-        # --- THEME COLORS ---
-        # Default colors for the grid and background.
+        # --- THEME COLORS (DYNAMIC) ---
         self.background_color = QColor(30, 30, 35)
         self.grid_color = QColor(60, 60, 65)
         self.void_color = QColor(20, 20, 25) 
         
-        self.show_coords = getattr(state, "show_coords", False) # Show map coordinates
-        self.show_threat_map = getattr(state, "show_threat_map", False) # Show AI Danger Zones
+        # --- TOGGLEABLE OVERLAYS ---
+        self.show_coords = getattr(state, "show_coords", False) # Show map coordinates (0,0)
+        self.show_threat_map = getattr(state, "show_threat_map", False) # Show AI danger heatmap
+        self.show_rewards = False # Visualizer for RL agent rewards
 
-        # INTERACTION TRACKING: Keep track of mouse movement.
-        self.last_mouse_pos = None # Used for dragging the map.
-        self.panning = False        # True if the user is currently 'dragging' the view.
-        self.hovered_hex = None    # The hexagon currently under the mouse cursor.
+        # --- USER INTERACTION STATE ---
+        self.last_mouse_pos = None # Used for map panning (dragging)
+        self.panning = False        # True if the user is currently middle-clicking and dragging
+        self.hovered_hex = None    # The hexagon coordinate currently under the cursor
         
-        self.setMouseTracking(True) # Tell the window to listen to all mouse moves.
-        self.setFocusPolicy(Qt.StrongFocus) # Allow capturing keys like 'Esc' or 'Delete'.
+        # Enable tracking for hover effects without requiring a click
+        self.setMouseTracking(True) 
+        # Allow capturing keyboard focus for shortcuts like Delete or Esc
+        self.setFocusPolicy(Qt.StrongFocus) 
+        self.setAcceptDrops(True) # ENABLE DRAG & DROP FOR ROSTER
         
-        # ENABLE PINCH-TO-ZOOM: For users with trackpads or touchscreens.
+        # PINCH-TO-ZOOM: Gesture support for modern trackpads
         self.grabGesture(Qt.PinchGesture)
         
-        # --- TOOLBOX ---
-        # Each 'Tool' is a separate class that handles a specific way of interacting with the map.
+        # --- PLUGGABLE TOOL SYSTEM ---
+        # Each tool handles a specific interaction mode (Drawing, Moving, Deleting).
         self.tools = {
-            "cursor": SelectionTool(self),
-            "draw_path": DrawPathTool(self),
-            "draw_zone": DrawZoneTool(self),
-            "place_agent": PlaceAgentTool(self),
-            "paint_tool": PaintTool(self),
-            "assign_goal": AssignGoalTool(self),
-            "eraser": EraserTool(self),
-            "edit": EditTool(self)
+            "cursor": SelectionTool(self),        # Default select and drag
+            "draw_path": DrawPathTool(self),       # Map navigation/pathing
+            "draw_zone": DrawZoneTool(self),       # Terrain region assignment
+            "place_agent": PlaceAgentTool(self),   # Unit deployment
+            "paint_tool": PaintTool(self),         # Terrain brush
+            "assign_goal": AssignGoalTool(self),   # AI command assignment
+            "eraser": EraserTool(self),            # Precise deletion
+            "edit": EditTool(self)                 # Vertex/Shape editing
         }
 
+        # Set default tool and sync with skin/theme
         self.active_tool = self.tools["cursor"]
         self.update_theme() 
 
+        # Contextual identifiers for editing sub-elements
         self.editing_zone_id = None
         self.editing_path_id = None
         
-        # --- CACHING (Quick Win #9) ---
+        # --- PERFORMANCE CACHING ---
+        # Optimization: We draw the terrain once to a buffer (Pixmap) 
+        # and only redraw when the camera moves or zoom changes.
         self.terrain_cache = None
         self.cache_valid = False
         
-        # --- ANIMATIONS (Phase 6) ---
+        # --- ANIMATION & PHYSICS ENGINE ---
         from PyQt5.QtCore import QTimer
         self.animation_timer = QTimer(self)
         self.animation_timer.timeout.connect(self.update_animations)
-        self.animation_timer.start(33) # 30 FPS for smooth movement
+        self.animation_timer.start(33) # Targets ~30-60 FPS for smooth interpolations
         
-        self.agent_anim_state = {} # {agent_id: {"x": float, "y": float, "target_x": float, "target_y": float}}
+        # Temporary stores for visual-only movement states
+        self.agent_anim_state = {} 
         self.selection_pulse = 0.0
         self.pulse_dir = 1
-        self.agent_movement_queues = {} # {agent_id: [Hex1, Hex2, ...]}
-        
-        # --- OVERLAYS ---
-        self.show_rewards = False
-        self.recent_rewards = {} # {agent_id: (reward_val, time_added)}
+        self.agent_movement_queues = {} 
+        self.recent_rewards = {} 
         
     def clear_animations(self):
-        """Purge all simulation-time movement and visual caches."""
+        """
+        Hard Reset: Clears all visual movement queues. 
+        Usually called when a simulation phase ends or a map is loaded.
+        """
         self.agent_anim_state = {}
         self.agent_movement_queues = {}
         self.recent_rewards = {}
         self.update()
 
     def clear_selection(self):
-        """Clears active object selection when switching tools."""
+        """
+        State Cleanup: Deselects all active objects when switching tools 
+        to prevent 'ghost' edits on the wrong items.
+        """
         self.editing_zone_id = None
         self.editing_path_id = None
         if getattr(self.active_tool, 'dragging_vertex_idx', None) is not None:
@@ -134,21 +151,25 @@ class HexWidget(QWidget):
         self.update()
 
     def update_animations(self):
-        """Advances all unit animations by one frame."""
-        # 1. Pulse the selection highlight
+        """
+        THE HEARTBEAT: Advances every visual effect by one step.
+        Calculates unit positions between hexes and pulses highlights.
+        """
+        # 1. Update the 'Breathing' pulse of selected units
         self.selection_pulse += 0.05 * self.pulse_dir
         if self.selection_pulse >= 1.0: self.pulse_dir = -1
         elif self.selection_pulse <= 0.0: self.pulse_dir = 1
         
-        # 2. Smoothly move agents towards their actual hex positions
-        delta = 1.0 # Instant snap to prevent linear floating over void space
+        # 2. SMOOTH AGENT MOVEMENT:
+        # Instead of units 'teleporting' to the next hex, they slide towards it.
+        delta = 1.0 # Current implementation is near-instant for tactical clarity
         changed = False
         
         for aid, state in list(self.agent_anim_state.items()):
-            # A. Sequential Queue Advance
+            # PATH QUEUE: If a unit has a sequence of destinations, move towards the next one
             queue = self.agent_movement_queues.get(aid, [])
             if queue:
-                # If we are very close to current target, pop next hex from queue
+                # Close enough to target? Pop next destination
                 if abs(state["target_x"] - state["x"]) < 2.0 and abs(state["target_y"] - state["y"]) < 2.0:
                     next_hex = queue.pop(0)
                     from engine.core.hex_math import HexMath
@@ -157,7 +178,7 @@ class HexWidget(QWidget):
                     state["target_y"] = wy_next
                     changed = True
 
-            # B. Move towards target
+            # INTERPOLATION: Move X towards its target world position
             diff_x = state["target_x"] - state["x"]
             if abs(diff_x) > 0.1:
                 state["x"] += diff_x * delta
@@ -165,7 +186,7 @@ class HexWidget(QWidget):
             else:
                 state["x"] = state["target_x"]
                 
-            # Move Y
+            # INTERPOLATION: Move Y towards its target world position
             diff_y = state["target_y"] - state["y"]
             if abs(diff_y) > 0.1:
                 state["y"] += diff_y * delta
@@ -173,46 +194,50 @@ class HexWidget(QWidget):
             else:
                 state["y"] = state["target_y"]
         
-        # 3. Request a redraw if something is moving or pulsing
+        # 3. TRIGGER REPAINT: If anything moved or is pulsing, ask Qt to redraw the widget
         if changed or self.pulse_dir != 0: 
             self.update()
 
     def enqueue_agent_move(self, agent_id, to_hex):
-        """Adds a new destination to the agent's movement pipeline."""
+        """Adds a new destination hex to an agent's animation queue."""
         if agent_id not in self.agent_movement_queues:
             self.agent_movement_queues[agent_id] = []
         self.agent_movement_queues[agent_id].append(to_hex)
 
     def refresh_map(self):
-        """Forces a full re-render of the terrain layer."""
+        """
+        Full Invalidate: Forces the terrain cache to be rebuilt.
+        Use this when changing terrain types (like painting water).
+        """
         self.cache_valid = False
         self.update()
 
     def event(self, event):
-        """Standard Qt event handler, used here to catch touch gestures."""
+        """Low-level event routing: intercepts Touch Gestures."""
         if event.type() == QEvent.Gesture:
             return self.gesture_event(event)
         return super().event(event)
 
     def gesture_event(self, event):
-        """Handles Pinch-to-Zoom gestures on laptops or tablets."""
+        """Handles Tablet/Trackpad pinch-to-zoom logic."""
         pinch = event.gesture(Qt.PinchGesture)
         if pinch:
             scale = pinch.scaleFactor()
             self.hex_size *= scale
-            self.hex_size = max(10, min(200, self.hex_size)) # Clamp zoom range
-            self.cache_valid = False # Invalidate cache on zoom change
-            self.update() # Redraw the screen
+            # CLAMP: Prevent zooming in/out to infinity
+            self.hex_size = max(10, min(200, self.hex_size)) 
+            self.cache_valid = False 
+            self.update()
             return True
         return False
 
     def showEvent(self, event):
-        """Automatically centers the map when it first appears on screen."""
+        """Centers the camera on the map data when the window is first opened."""
         super().showEvent(event)
         self.recenter_view()
 
     def recenter_view(self):
-        """Calculates the center of the map and moves the camera there."""
+        """Mathematical helper: centers the camera on the midpoint of the world."""
         if hasattr(self.state, 'map'):
              mid_col = self.state.map.width // 2
              mid_row = self.state.map.height // 2
@@ -222,16 +247,19 @@ class HexWidget(QWidget):
              
              self.camera_x = cx
              self.camera_y = cy
-             self.cache_valid = False # New camera pos
+             self.cache_valid = False 
              self.update()
     
     @property
     def current_tool(self):
-        """Returns the tool currently being used by the user."""
+        """Read-only access to the currently active map interaction tool."""
         return self.active_tool
 
     def set_tool(self, tool_id):
-        """Switches the cursor to a new tool (e.g. from Pointer to Eraser)."""
+        """
+        DISPATCHER: Switches the map interaction mode.
+        If you select 'eraser' from the UI, this function sets up the state here.
+        """
         new_tool = self.tools.get(tool_id)
         if not new_tool:
             new_tool = self.tools["cursor"]
@@ -242,24 +270,58 @@ class HexWidget(QWidget):
             self.active_tool = new_tool
             self.active_tool.activate()
             self.state.selected_tool = tool_id 
+            # Sync the visual cursor (e.g., Crosshairs for painting, Arrow for selection)
             self.setCursor(self.active_tool.get_cursor())
-            
-            # If switching to paint tool, we might want to clear cache eventually, 
-            # but for now, we'll invalidate on each terrain change.
             self.update()
             
     def keyPressEvent(self, event):
-        """Handles keyboard shortcuts (like ESC to reset the tool)."""
+        """GLOBAL KEYBOARD SHORTCUTS: ESC to reset tool, Delete to remove objects, etc."""
         if event.key() == Qt.Key_Escape:
              self.set_tool("cursor")
              mw = self.window()
              if hasattr(mw, 'update_tools_visibility'):
                  mw.update_tools_visibility()
+        elif event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+             # Try to delete the currently selected entity/zone if using the cursor tool
+             if self.active_tool == self.tools.get("cursor"):
+                 eid = getattr(self.active_tool, 'selected_entity_id', None)
+                 zid = getattr(self.active_tool, 'selected_zone_id', None)
+                 
+                 if eid:
+                     # Delete Entity
+                     if hasattr(self.state, 'undo_stack'):
+                         from engine.core.undo_system import DeleteEntityCommand
+                         cmd = DeleteEntityCommand(self.state.map, self.state.entity_manager, eid)
+                         self.state.undo_stack.push(cmd)
+                     self.state.map.remove_entity(eid)
+                     self.state.entity_manager.unregister_entity(eid)
+                     self.active_tool.selected_entity_id = None
+                     self.clear_selection()
+                     self.update()
+                     mw = self.window()
+                     if hasattr(mw, 'layer_manager'): mw.layer_manager.refresh_tree()
+                 elif zid:
+                     # Delete Zone
+                     zones = self.state.map.get_zones()
+                     if zid in zones:
+                         zdata = zones[zid]
+                         if hasattr(self.state, 'undo_stack'):
+                             from engine.core.undo_system import RemoveZoneCommand
+                             import copy
+                             cmd = RemoveZoneCommand(self.state.map, zid, copy.deepcopy(zdata))
+                             self.state.undo_stack.push(cmd)
+                         del zones[zid]
+                         self.active_tool.selected_zone_id = None
+                         self.active_tool.invalidate_zone_index()
+                         self.clear_selection()
+                         self.update()
+                         mw = self.window()
+                         if hasattr(mw, 'layer_manager'): mw.layer_manager.refresh_tree()
         else:
              super().keyPressEvent(event)
 
     def update_theme(self):
-        """Changes colors when switching between Dark Mode and Light Mode."""
+        """Syncs the map background and grid colors with the current UI Theme (Dark/Light)."""
         mode = getattr(self.state, "theme_mode", "dark")
         if mode == "light":
             self.background_color = QColor(240, 240, 240)
@@ -274,33 +336,31 @@ class HexWidget(QWidget):
 
     def paintEvent(self, event):
         """
-        THE MASTER PAINTING FUNCTION: 
-        This is the "Engine Room" for graphics. It is called every time a pixel 
-        on the map needs to change (e.g., when you move the camera or a unit steps).
-        
-        It draws the world in organized LAYERS, like a digital oil painting:
+        THE RENDER PIPELINE:
+        This is called whenever a single pixel on the map needs to change.
+        Organizes rendering into a STACKED LAYER SYSTEM.
         """
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing) # Makes lines and circles look smooth.
+        painter.setRenderHint(QPainter.Antialiasing) 
         
-        # --- LAYER 0: THE VOID (Background) ---
-        # Fill the entire window with a dark color so there are no "empty" white spots.
+        # --- LAYER 0: THE VOID (Base background color) ---
         painter.fillRect(self.rect(), self.void_color)
         
-        # Calculate the mathematical center of your screen.
+        # Viewport logic: cx/cy are the visual center of your monitor window
         viewport_width = self.width()
         viewport_height = self.height()
         cx = viewport_width / 2
         cy = viewport_height / 2
         
-        # --- LAYER 1: THE TERRAIN (The Foundation) ---
-        # 1. Check if we need to update the cache
+        # --- LAYER 1: TERRAIN CACHE (Performance Optimization) ---
+        # Instead of drawing 10,000 hexagons every frame, we draw them 
+        # once to a static buffer and simply draw that image here.
         if not self.cache_valid or not self.terrain_cache or self.terrain_cache.size() != self.size():
             self.render_terrain_cache(cx, cy, viewport_width, viewport_height)
             self.cache_valid = True
             
-        # 2. Draw the cached terrain
         painter.drawPixmap(0, 0, self.terrain_cache)
+
         
         # --- LAYER 1.5: HOVER HIGHLIGHT (Live Overlay) ---
         if self.hovered_hex:
@@ -382,9 +442,12 @@ class HexWidget(QWidget):
              brush_color = QColor(color_code)
              
              # 3. ELEVATION (Depth/Height) & SHADING:
-             alpha_val = 40 + (abs(elevation) * 0.1)
-             alpha_val = max(30, min(180, int(alpha_val)))
-             brush_color.setAlpha(alpha_val)
+             if elevation > 0:
+                 brush_color = brush_color.lighter(100 + int(elevation * 10))
+             elif elevation < 0:
+                 brush_color = brush_color.darker(100 + int(abs(elevation) * 10))
+             
+             brush_color.setAlpha(255) # Ensure terrain is completely solid
              
              painter.setBrush(QBrush(brush_color))
              
@@ -408,24 +471,21 @@ class HexWidget(QWidget):
              painter.setOpacity(0.6)
              
              if "forest" in t_type or "wood" in t_type:
-                 # Draw small "tree" silhouettes
-                 tree_color = QColor(Theme.BG_DEEP).darker(150)
-                 painter.setPen(QPen(tree_color, 1))
-                 painter.setBrush(QBrush(tree_color))
-                 for i in range(3):
-                     tx = sx + (i-1) * (self.hex_size * 0.3)
-                     ty = sy + (i%2) * (self.hex_size * 0.1)
-                     r = self.hex_size * 0.15
-                     painter.drawEllipse(QPointF(tx, ty-r), r, r)
-                     painter.drawLine(QPointF(tx, ty-r), QPointF(tx, ty+r))
-                     
+                  icon_rect = QRectF(sx - self.hex_size*0.4, sy - self.hex_size*0.4, self.hex_size*0.8, self.hex_size*0.8)
+                  VectorIconPainter.draw_vector_icon(painter, icon_rect, "terrain_forest", color=Theme.BORDER_SUBTLE)
+                      
              elif "water" in t_type or "sea" in t_type:
-                 # Draw "ripple" lines
-                 painter.setPen(QPen(QColor(255, 255, 255, 60), 1))
-                 for i in range(2):
-                     ry = sy + (i-0.5) * (self.hex_size * 0.4)
-                     rw = self.hex_size * 0.4
-                     painter.drawLine(QPointF(sx - rw, ry), QPointF(sx + rw, ry))
+                  icon_rect = QRectF(sx - self.hex_size*0.4, sy - self.hex_size*0.4, self.hex_size*0.8, self.hex_size*0.8)
+                  VectorIconPainter.draw_vector_icon(painter, icon_rect, "terrain_water", color=Theme.BLUE_HIGHLIGHT if hasattr(Theme, 'BLUE_HIGHLIGHT') else "#3daee9")
+                      
+             elif "mountain" in t_type:
+                  icon_rect = QRectF(sx - self.hex_size*0.4, sy - self.hex_size*0.4, self.hex_size*0.8, self.hex_size*0.8)
+                  VectorIconPainter.draw_vector_icon(painter, icon_rect, "terrain_mountain", color=Theme.BORDER_SUBTLE)
+
+             elif "hill" in t_type:
+                  icon_rect = QRectF(sx - self.hex_size*0.4, sy - self.hex_size*0.4, self.hex_size*0.8, self.hex_size*0.8)
+                  VectorIconPainter.draw_vector_icon(painter, icon_rect, "terrain_hill", color=Theme.BORDER_SUBTLE)
+
                      
              elif "urban" in t_type or "city" in t_type or "town" in t_type:
                  # Draw small "building" boxes
@@ -454,30 +514,18 @@ class HexWidget(QWidget):
              if getattr(self.state, 'show_sections', True) and hasattr(self.state.map, 'hex_sides'):
                  side = self.state.map.hex_sides.get(tuple(hex_obj))
                  
-                 # Logic for filtering which territories are shown based on the current tab.
-                 app_mode = getattr(self.state, "app_mode", "scenario")
-                 active_scen_side = getattr(self.state, "active_scenario_side", "Attacker")
-                 
-                 show_side = True
-                 if app_mode == "scenario" and active_scen_side != "Combined":
-                     # Hide the "Other Side" if you are currently setting up just one team.
-                     role_map = getattr(self.state, "role_allocation", {"Red": "Defender", "Blue": "Attacker"})
-                     if side and role_map.get(side) != active_scen_side:
-                         show_side = False
-                 
-                 if show_side:
-                     if side == "Red":
-                         painter.setBrush(QBrush(QColor(Theme.ACCENT_ENEMY))) 
-                         painter.setOpacity(0.15)
-                         painter.setPen(Qt.NoPen)
-                         painter.drawPolygon(poly)
-                         painter.setOpacity(1.0)
-                     elif side == "Blue":
-                         painter.setBrush(QBrush(QColor(Theme.ACCENT_ALLY))) 
-                         painter.setOpacity(0.15)
-                         painter.setPen(Qt.NoPen)
-                         painter.drawPolygon(poly)
-                         painter.setOpacity(1.0)
+                 if side == "Red":
+                     painter.setBrush(QBrush(QColor(Theme.ACCENT_ENEMY))) 
+                     painter.setOpacity(0.15)
+                     painter.setPen(Qt.NoPen)
+                     painter.drawPolygon(poly)
+                     painter.setOpacity(1.0)
+                 elif side == "Blue":
+                     painter.setBrush(QBrush(QColor(Theme.ACCENT_ALLY))) 
+                     painter.setOpacity(0.15)
+                     painter.setPen(Qt.NoPen)
+                     painter.drawPolygon(poly)
+                     painter.setOpacity(1.0)
  
         # --- VIEWPORT NAVIGATION ---
         center_hex = HexMath.pixel_to_hex(self.camera_x, self.camera_y, self.hex_size)
@@ -539,29 +587,21 @@ class HexWidget(QWidget):
         
         zones = self.state.map.get_zones()
         for zid, zdata in zones.items():
-            # Filter zones so you only see the ones relevant to your current side.
-            if app_mode == "scenario":
-                z_side = zdata.get("side", "Neutral")
-                role_map = getattr(self.state, "role_allocation", {"Red": "Defender", "Blue": "Attacker"})
-                resolved_active_side = active_side
-                mapped_z_side = role_map.get(z_side, z_side)
-                
-                if mapped_z_side != "Neutral" and active_side not in ["All", "Combined"] and mapped_z_side != resolved_active_side:
-                    continue
-                
-                # Neutral obstacles are always visible
-                zone_type = zdata.get("type", "")
-                if "Obstacle" in zone_type:
-                    if z_side != "Neutral" and active_side not in ["All", "Combined"] and mapped_z_side != resolved_active_side:
-                        continue
+            # All zones are now unconditionally visible across all phases.
+
             
             hexes = zdata.get('hexes', [])
             if not hexes: continue
             
-            color = QColor(zdata.get('color', '#FFFFFF'))
-            color.setAlpha(80) # Semi-Transparent
-            painter.setBrush(QBrush(color))
-            painter.setPen(Qt.NoPen)
+            color_fill = QColor(zdata.get('color', '#FFFFFF'))
+            color_fill.setAlpha(90) # Semi-Transparent solid fill
+            painter.setBrush(QBrush(color_fill))
+            
+            # Holographic Border (Dashed)
+            color_border = QColor(zdata.get('color', '#FFFFFF'))
+            color_border.setAlpha(220)
+            pen = QPen(color_border, 2, Qt.DashLine)
+            painter.setPen(pen)
             
             for h in hexes:
                 wx, wy = HexMath.hex_to_pixel(h, self.hex_size)
@@ -570,6 +610,18 @@ class HexWidget(QWidget):
                 corners = HexMath.get_corners(sx, sy, self.hex_size - 1)
                 poly = QPolygonF([QPointF(x, y) for x, y in corners])
                 painter.drawPolygon(poly)
+                
+                # OPTIONAL: Draw NATO Obstacle Icon if zone is an obstacle
+                z_type = zdata.get('type', '').lower()
+                if 'obstacle' in z_type:
+                     icon_type = "nato_minefield" # Default
+                     z_name = zdata.get('name', '').lower()
+                     if 'ditch' in z_name: icon_type = "nato_tank_ditch"
+                     elif 'wire' in z_name: icon_type = "nato_wire"
+                     elif 'fort' in z_name or 'wall' in z_name: icon_type = "nato_fortification"
+                     
+                     icon_rect = QRectF(sx - self.hex_size*0.3, sy - self.hex_size*0.3, self.hex_size*0.6, self.hex_size*0.6)
+                     VectorIconPainter.draw_vector_icon(painter, icon_rect, icon_type, color=zdata.get('color', 'white'))
 
     def draw_entity_layer(self, painter, cx, cy, vw, vh):
         """THE UNIT LAYER: Draws all units (agents) with smooth movement and grounding."""
@@ -578,12 +630,8 @@ class HexWidget(QWidget):
         selected_id = getattr(self.active_tool, 'selected_entity_id', None)
         
         for eid, ent in self.state.entity_manager._entities.items():
+             # All units strictly visible regardless of current workflow mode.
              side = ent.get_attribute("side", "Neutral")
-             
-             # --- SIDE FILTERING ---
-             if app_mode == "scenario" and active_side not in ["All", "Combined"]:
-                 if side == "Attacker" and active_side != "Attacker": continue
-                 if side == "Defender" and active_side != "Defender": continue
              
              hex_obj = self.state.map.get_entity_position(eid)
              if not hex_obj: continue
@@ -652,9 +700,17 @@ class HexWidget(QWidget):
              painter.drawEllipse(QPointF(sx, sy), radius, radius)
              
              atype = ent.get_attribute("type", "").lower()
+             wep   = ent.get_attribute("weapon", "").lower()
+             
              icon_type = "nato_infantry"
-             if "mg" in atype or "machine" in atype: icon_type = "nato_mg"
-             elif "recon" in atype or "cavalry" in atype: icon_type = "nato_recon"
+             if "mg" in atype or "machine" in atype or "mg" in wep: icon_type = "nato_mg"
+             elif "recon" in wep or "scout" in wep or "recon" in atype: icon_type = "nato_recon"
+             elif "tank" in wep or "armor" in wep: icon_type = "nato_armor"
+             elif "arty" in wep or "artillery" in wep: icon_type = "nato_artillery"
+             elif "mortar" in wep: icon_type = "nato_mortar"
+             elif "hq" in atype or "headquarters" in atype: icon_type = "nato_hq"
+             elif "engineer" in atype or "sapper" in atype: icon_type = "nato_engineer"
+             elif "motor" in atype or "truck" in atype: icon_type = "nato_motorized"
 
              icon_rect = QRectF(sx - radius*0.7, sy - radius*0.7, radius * 1.4, radius * 1.4)
              VectorIconPainter.draw_vector_icon(painter, icon_rect, icon_type, color="white")
@@ -806,7 +862,7 @@ class HexWidget(QWidget):
         paths = self.state.map.get_paths()
         for pid, pdata in paths.items():
             # Filter: Don't show enemy territory lines unless in 'Combined' view.
-            if app_mode == "scenario":
+            if app_mode in ("area", "agents"):
                 p_side = pdata.get("side", "Neutral")
                 if pdata.get("type") != "Border":
                     if p_side != "Neutral" and active_side not in ["All", "Combined"] and p_side != active_side:
@@ -1353,6 +1409,86 @@ class HexWidget(QWidget):
             self.hovered_hex = hex_obj
             self._update_hover_tooltip(event.globalPos(), hex_obj)
             self.update() # Redraw to show the highlight on the new hex
+
+    # ===================================================================
+    # DRAG & DROP DEPLOYMENT SYSTEM (ROSTER)
+    # ===================================================================
+    
+    def dragEnterEvent(self, event):
+        """Called when a dragged item crosses into the map's airspace."""
+        if event.mimeData().hasFormat("application/x-war-agent"):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        """Tracks the dragged item over the map (required to accept drops)."""
+        if event.mimeData().hasFormat("application/x-war-agent"):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        """Handles the actual release of the dragged unit onto a Hex."""
+        self.unsetCursor()
+        if not event.mimeData().hasFormat("application/x-war-agent"):
+            event.ignore()
+            return
+            
+        import json
+        payload_str = event.mimeData().data("application/x-war-agent").data().decode('utf-8')
+        try:
+            payload = json.loads(payload_str)
+        except json.JSONDecodeError:
+            event.ignore()
+            return
+            
+        # Calculate which hex was targeted
+        hex_obj = self.screen_to_hex(event.pos().x(), event.pos().y())
+        if not hex_obj:
+            event.ignore()
+            return
+            
+        q, r = hex_obj.q, hex_obj.r
+        
+        # Terrain Validation: Must be walkable
+        terrain_type = self.state.map.get_hex(q, r)
+        if not self.state.map.is_walkable(q, r):
+             from PyQt5.QtWidgets import QMessageBox
+             QMessageBox.warning(self, "Deployment Failed", "Cannot drop units on impassable terrain.")
+             event.ignore()
+             return
+             
+        # Create Entity using exact Roster specifications
+        from engine.core.entity_manager import Agent
+        new_agent = Agent(name=payload.get("name", "Unknown"))
+        new_agent.set_attribute("type", "Standard")
+        new_agent.set_attribute("health", 100)
+        new_agent.set_attribute("side", payload.get("side", "Neutral"))
+        new_agent.set_attribute("weapon", payload.get("weapon_id", "None"))
+        new_agent.set_attribute("personnel", payload.get("personnel", 10))
+        new_agent.set_attribute("unit_type", payload.get("type_display", "Section (10)"))
+        
+        # Register with Entity Manager (Staff Registry)
+        # Using the correct method name 'register_entity' from engine/core/entity_manager.py
+        self.state.entity_manager.register_entity(new_agent)
+        self.state.map.place_entity(new_agent.id, hex_obj)
+        self.update()
+        
+        # Log to UI
+        if hasattr(self.mw, 'log_info'):
+            self.mw.log_info(f"Deployed <b>{new_agent.name}</b> to ({q}, {r})")
+        
+        # Mark as placed in the active scenario's true roster
+        side = payload.get("side")
+        idx = payload.get("roster_index")
+        try:
+             roster_list = self.state.map.active_scenario.rules["roster"][side]
+             roster_list[idx]["placed"] = True
+        except (KeyError, IndexError):
+             pass
+             
+        event.acceptProposedAction()
 
     def _update_hover_tooltip(self, screen_pos, hex_obj):
         """Builds and shows a rich tooltip for the hexagon under the cursor."""

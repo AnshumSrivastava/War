@@ -153,7 +153,7 @@ class DrawZoneTool(MapTool):
                                    "subtype": z_type,
                                    "side": target_side 
                                }, 
-                               auto_spawn_defenders=is_goal)
+                               auto_spawn_defenders=False)
                 
                 if res.ok:
                     self.log(f"Zone committed: <b>{res.data['name']}</b> ({target_side})")
@@ -247,45 +247,6 @@ class DrawZoneTool(MapTool):
 
     def spawn_goal_defenders(self, zone_hexes):
         """Spawns 4 defender agents around the goal area."""
-        if not zone_hexes:
-            return
-            
-        print(f"Goal Area detected. Spawning 4 defenders...")
-        
-        # Pick the center or first hex of the zone
-        center_hex = zone_hexes[0]
-        
-        # Get neighbors
-        from engine.core.hex_math import HexMath
-        neighbors = []
-        for i in range(6):
-            neighbors.append(HexMath.neighbor(center_hex, i))
-            
-        # Filter neighbors that are on the map and empty
-        valid_hexes = [h for h in neighbors if self.state.map.get_terrain(h)]
-        
-        # Spawn up to 4 agents
-        from engine.core.entity_manager import Agent
-        spawn_count = 0
-        for h in valid_hexes:
-            if spawn_count >= 4:
-                break
-                
-            # Check if hex is already occupied
-            if self.state.map.get_entities_at(h):
-                continue
-                
-            agent_name = f"Goal Guard {spawn_count + 1}"
-            new_agent = Agent(name=agent_name)
-            new_agent.set_attribute("side", "Defender")
-            new_agent.set_attribute("type", "DefenderAgent")
-            new_agent.set_attribute("home_hex", center_hex)
-            
-            self.state.entity_manager.register_entity(new_agent)
-            self.state.map.place_entity(new_agent.id, h)
-            
-            self.log(f"Spawned <b>{agent_name}</b> at {h.q}, {h.r}")
-            spawn_count += 1
-            
-        if spawn_count < 4:
-            self.log(f"Warning: Only spawned {spawn_count} defenders due to space limits.")
+        # Automatic goal guard spawning removed as per user request.
+        # Deployment is manual via Roster Palette.
+        pass

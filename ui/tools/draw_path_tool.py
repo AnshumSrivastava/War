@@ -87,7 +87,7 @@ class DrawPathTool(MapTool):
                 "mode": p_mode,
                 "type": p_type,
                 "app_mode": app_mode,
-                "side": getattr(self.state, "active_scenario_side", "Neutral") if app_mode == "scenario" else "Neutral"
+                "side": getattr(self.state, "active_scenario_side", "Neutral") if app_mode == "area" else "Neutral"
             }
             
             # Save this action in the 'Undo' history so the user can delete it if they messed up.

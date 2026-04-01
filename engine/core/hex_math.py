@@ -16,6 +16,18 @@ We use 'Cube Coordinates' (q, r, s) internally because they make hex math
 behave almost exactly like 3D math, which is much simpler than 2D hex math.
 """
 
+"""
+FILE: engine/core/hex_math.py
+ROLE: The "Mathematician" (Coordinate System).
+
+DESCRIPTION:
+    This file handles all things Hexagonal. It uses the "Cube Coordinate" 
+    system (q, r, s) which makes calculations for distance, rotation, 
+    and lines extremely simple.
+    
+    If you're wondering how the grid 'works', this is the file.
+"""
+
 import math
 from collections import namedtuple
 

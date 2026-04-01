@@ -65,12 +65,22 @@ class MainWindow(QMainWindow):
     """
 
     def __init__(self):
+        """
+        THE HEART OF THE ENGINE: Initializes the application window.
+        Bridges the Gap between the mathematical Engine and the visual UI.
+        
+        This constructor:
+        1. Loads the Global State (source of truth).
+        2. Injects state into the Service Layer (Logic handlers).
+        3. Prepares the Hex map canvas and Simulation managers.
+        4. Triggers the UI assembly process.
+        """
         super().__init__()
-        # GlobalState is the 'Source of Truth'
+        # GlobalState is the 'Source of Truth' - all data resides here.
         self.state = GlobalState()
         
-        # --- INITIALIZE SERVICES ---
-        # Inject state into the service layer
+        # --- SERVICE LAYER INITIALIZATION ---
+        # We pass the state to our logic services so they can modify the world.
         map_svc.init(self.state)
         entity_svc.init(self.state)
         sim_svc.init(self.state)
@@ -80,32 +90,31 @@ class MainWindow(QMainWindow):
         zone_svc.init(self.state)
         path_svc.init(self.state)
         
-        # Legacy pointers (can be refactored further)
-        # We keep them for now to avoid breaking existing UI components that expect they exist,
-        # but we mark them as internal.
+        # --- DATA & MODELS ---
         from engine.data.loaders.data_manager import DataManager
         self.data_loader = DataManager()
         
-        # ActionModel is still needed for HexWidget's immediate feedback logic for now
+        # ActionModel provides the tactical logic for AI agents.
         from engine.simulation.act_model import ActionModel
         self._internal_action_model = ActionModel(self.state)
         self.action_model = self._internal_action_model
         
-        # --- WINDOW SETTINGS ---
+        # --- WINDOW GEOMETRY ---
         self.setMinimumSize(1280, 800)
         self.theme = Theme
         
-        # The Map Widget
+        # The Map Canvas: Where the actual hexagons are rendered.
         self.hex_widget = HexWidget(self, state=self.state)
         self.hex_widget.action_model = self.action_model
+        # Visualizer: Draws transient effects like fire or explosions.
         self.visualizer = Visualizer(self.hex_widget)
         
-        # --- SIMULATION STATE ---
-        # SimulationController is now a Qt wrapper in ui/core pointing to sim_svc
+        # --- SIMULATION & MODE CONTROL ---
         from ui.core.simulation_controller import SimulationController
         self.sim_controller = SimulationController(self.state, self.action_model)
         self.sim_manager = SimulationManager(self)
         
+        # Controllers for specific UI sections (Toolbars, Transitions, Teams)
         self.toolbar_controller = ToolbarController(self)
         self.mode_machine = ModeStateMachine(self)
         self.scenario_side_manager = ScenarioSideManager(self)
@@ -116,24 +125,28 @@ class MainWindow(QMainWindow):
         self.core_tool_controller = ToolController()
         self.core_tool_controller.register_handler("eraser", EraserHandler())
         
+        # --- PROJECT STATE ---
         self.current_project_path = None
         
-        # --- Auto-Save Timer ---
+        # --- AUTO-SAVE ENGINE ---
         self.autosave_timer = QTimer(self)
-        self.autosave_timer.setInterval(60000) # 60 seconds
+        self.autosave_timer.setInterval(60000) # Safeguard: Saves progress every minute.
         self.autosave_timer.timeout.connect(lambda: self.action_save_project(silent=True))
         self.autosave_timer.start()
         
-        # --- PROJECT PERSISTENCE ---
-        self._load_last_project()
-        
-        # --- UI CONSTRUCTION ---
+        # --- ASSEMBLY: Build the physical widgets and buttons ---
         self._init_ui()
         
-        # Status Bar
-        self.statusBar().showMessage("Ready")
+        # --- SESSION RECOVERY (Load Last Project) ---
+        self._load_last_project()
         
-        # --- DIGITAL CLOCK ---
+        # --- FALLBACK: If no project loaded, open Default ---
+        if not self.current_project_path:
+            self._load_default_project()
+        
+        # --- STATUS & TIME ---
+        self.statusBar().showMessage("System Ready")
+        
         self.clock_label = QLabel()
         self.clock_label.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-family: 'Consolas', monospace; font-size: 13px; padding-right: 10px;")
         self.statusBar().addPermanentWidget(self.clock_label)
@@ -144,89 +157,103 @@ class MainWindow(QMainWindow):
         self.update_clock()
         
     def _init_ui(self):
-        """Restore the original Tab-based Master Navigation with Native Components."""
+        """
+        THE ARCHITECT: Defines the layout and appearance of the application.
+        Uses a Stacked approach to switch between the Map and the Gallery.
+        """
+        # Apply the CSS skin (zinc-dark or slate-light)
         self.setStyleSheet(Theme.get_main_qss())
         
-        # --- THE CENTRAL CONTAINER (Global Layout) ---
+        # Main vertical container for the whole window
         self.central_container = QWidget()
         self.central_layout = QVBoxLayout(self.central_container)
         self.central_layout.setContentsMargins(0, 0, 0, 0)
         self.central_layout.setSpacing(0)
         self.setCentralWidget(self.central_container)
         
-        # --- THE CONTENT STACK (Mode Views) ---
+        # --- NAVIGATION STACK ---
+        # This allows us to flip between different main screens (Map vs Catalog).
         self.content_stack = QStackedWidget()
-        self.central_layout.addWidget(self.content_stack, 1) # Full stretch
+        self.central_layout.addWidget(self.content_stack, 1) 
         
-        # 1. THE GALLERY (Maps)
+        # PAGE 1: THE GALLERY (Map Picker)
         self.maps_widget = MapsWidget(self, state=self.state)
         self.maps_widget.deep_link_requested.connect(self.handle_deep_link)
         self.content_stack.addWidget(self.maps_widget)
         
-        # --- COMMAND CENTER (Workflow Bar) ---
         from ui.components.workflow_bar import WorkflowBar
         self.workflow_bar = WorkflowBar(self)
         self.workflow_bar.action_clicked.connect(self._on_done_clicked)
         self.workflow_bar.back_clicked.connect(self._on_back_clicked)
         self.central_layout.addWidget(self.workflow_bar)
         
-        # 2. THE THEATER (Map Canvas + Main Splitter)
+        # --- TOOL PALETTE controller ---
+        from ui.core.toolbar_controller import ToolbarController
+        self.toolbar_controller = ToolbarController(self)
+        self.toolbar_controller.setup_left_toolbar()
+        
+        # PAGE 2: THE THEATER (The Interactive Map)
         self.main_splitter = QSplitter(Qt.Horizontal)
         
-        # New Theater Container to hold the Map + the Top Sub-Tabs
         self.theater_container = QWidget()
         theater_layout = QVBoxLayout(self.theater_container)
         theater_layout.setContentsMargins(0, 0, 0, 0)
         theater_layout.setSpacing(0)
         
-        from PyQt5.QtWidgets import QTabBar
-        self.map_header_tabs = QTabBar()
-        self.map_header_tabs.setObjectName("SubTabs")
-        self.map_header_tabs.addTab("ATTACKER")
-        self.map_header_tabs.addTab("DEFENDER")
-        self.map_header_tabs.addTab("COMBINED")
-        self.map_header_tabs.addTab("RULES")
-        self.map_header_tabs.setExpanding(True)
-        self.map_header_tabs.currentChanged.connect(self.scenario_side_manager.on_scenario_side_tab_changed)
-        
-        theater_layout.addWidget(self.map_header_tabs)
-        theater_layout.addWidget(self.hex_widget, 1) # Hex widget takes all space
+        # Layout no longer includes map_header_tabs (Tabs were visually stripped for linear phase view)
+        theater_layout.addWidget(self.hex_widget, 1)
         
         self.main_splitter.addWidget(self.theater_container)
         self.content_stack.addWidget(self.main_splitter)
         
-        # --- DATA HUB WIDGETS ---
+        # PAGE 3: THE RULES (Strategic Constraints)
+        from ui.components.rules_widget import RulesWidget
+        self.rules_widget = RulesWidget(self, state=self.state)
+        self.content_stack.addWidget(self.rules_widget)
+        
+        # PAGE 4: THE DATA HUB (Configuration)
         from ui.components.master_data_widget import MasterDataWidget
-        self.master_data_widget = MasterDataWidget()
+        self.master_data_widget = MasterDataWidget(self, state=self.state)
         self.content_stack.addWidget(self.master_data_widget)
         
-        # --- UI MODULES (Standard Setup) ---
-        self.setup_menu_bar()
-        self.toolbar_controller.setup_left_toolbar()
-        
-        # Restore side panels as Docks (user preference for sections)
+        # --- TACTICAL OPERATIONS CENTER (TOC) ---
+        # Initialize legacy stubs for background property compatibility (tool_opts_layout, etc)
         self.setup_object_inspector()
-        self.setup_right_panel() 
+        self.setup_right_panel()
+        
+        from ui.components.tactical_side_panel import TacticalSidePanel
+        self.toc_dock = QDockWidget("MISSION CONTROL", self)
+        self.tac_panel = TacticalSidePanel(self, self.state)
+        self.toc_dock.setWidget(self.tac_panel)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.toc_dock)
+        
+        # Timeline & Terminal panels (initialized but hidden by default)
         self.setup_timeline_panel()
         
+        # Input/Shortcut registry
         self.shortcuts = ShortcutRegistry(self)
         self.shortcuts.setup_default_shortcuts()
         
-        # Initial State
+        # Connect map clicks to inspector logic
         self.hex_widget.hex_clicked.connect(self.on_hex_clicked)
         self.final_episode_events = []
 
-        # --- PERSISTENCE: Restore Window Layout ---
+        # --- PERSISTENCE RESTORATION ---
+        # Restore sidebars and window size to exactly where they were last time.
         UISettingsPersistence.restore(self)
         self.apply_theme(self.state.theme_mode)
 
         self.statusBar().showMessage("Ready")
+        self.setup_menu_bar()
         
 
     # Shortcuts are now managed by ShortcutRegistry
 
     def setup_menu_bar(self):
-        """Standard Menu Bar setup."""
+        """
+        Builds the standard top-level menu (File, Edit, View, Simulation).
+        Each action is linked to a specific logic callback.
+        """
         menubar = self.menuBar()
         menubar.clear()
         
@@ -333,14 +360,6 @@ class MainWindow(QMainWindow):
         self.a_coords.setChecked(False)
         self.a_coords.triggered.connect(lambda: self.toggle_coords_menu(self.a_coords.isChecked()))
         
-        self.a_zoom_in = view_menu.addAction("Zoom In")
-        self.a_zoom_in.setShortcut("Ctrl++")
-        self.a_zoom_in.triggered.connect(self.action_zoom_in)
-        
-        self.a_zoom_out = view_menu.addAction("Zoom Out")
-        self.a_zoom_out.setShortcut("Ctrl+-")
-        self.a_zoom_out.triggered.connect(self.action_zoom_out)
-        
         view_menu.addSeparator()
         
         self.a_threat_map = view_menu.addAction("Show Threat Map")
@@ -405,7 +424,7 @@ class MainWindow(QMainWindow):
         if not self.state.project_path: return
         
         # Don't overwrite scenario file while simulation is modifying state!
-        if self.is_running:
+        if self.sim_controller.is_running:
             return
         
         try:
@@ -469,9 +488,22 @@ class MainWindow(QMainWindow):
 
 
     def restart_app(self):
-        log.info("Restarting Application...")
-        python = sys.executable
-        os.execl(python, python, *sys.argv)
+        """
+        SYSTEM-SAFE RESTART: Spawns a new instance and exits the current one.
+        Avoids 'os.execl' which can trigger session-level side effects (like Hyprland restarts) on Linux.
+        """
+        log.info("Initiating Application Restart...")
+        
+        from PyQt5.QtCore import QProcess
+        import sys
+        
+        # 1. Spawn the new process before we die.
+        #    startDetached ensures the new process lives independently.
+        QProcess.startDetached(sys.executable, sys.argv)
+        
+        # 2. Trigger a clean shutdown.
+        #    Calling self.close() ensures closeEvent runs, saving current projects.
+        self.close()
 
     def open_map(self, map_name):
         """Load a selected map project directly via the service layer."""
@@ -492,7 +524,7 @@ class MainWindow(QMainWindow):
             if hasattr(self, 'scenario_manager_group'):
                 self.scenario_manager_group.refresh_list()
             
-            self.mode_tabs.setCurrentIndex(1) # Terrain Mode
+            self.switch_mode(1) # Terrain Mode
             
             # Critical: UI Reset and Visual Update
             self.hex_widget.recenter_view()
@@ -504,8 +536,20 @@ class MainWindow(QMainWindow):
             ThemedMessageBox.critical(self, "Load Error", result.error)
 
     def switch_mode(self, index):
+        """Unified mode switcher that synchronizes State Machine, Stacked Widgets, and Command Bar."""
         self.mode_machine.switch_mode(index)
         
+        # Visually swap the main content
+        if index == 0:
+            self.content_stack.setCurrentWidget(self.maps_widget)
+        elif index == 2:
+            self.content_stack.setCurrentWidget(self.rules_widget)
+        elif index == 8:
+            self.content_stack.setCurrentWidget(self.master_data_widget)
+        else:
+            # All other tactical phases (1, 3-7) use the Theater view (Map + Side Panel)
+            self.content_stack.setCurrentWidget(self.main_splitter)
+            
         # Update Command Center Bar
         if hasattr(self, 'workflow_bar'):
             self.workflow_bar.set_state(
@@ -620,7 +664,7 @@ class MainWindow(QMainWindow):
             "color": "#FF0000", # The classic Red border.
             "mode": "Center-to-Center",
             "type": "Border",
-            "app_mode": "scenario"
+            "app_mode": "area"
         }
         self.state.map.add_path(path_id, path_data)
         
@@ -637,15 +681,16 @@ class MainWindow(QMainWindow):
         # Define allowed tools per mode
         allowed = []
         if mode == "terrain":
-            # Added draw_zone and draw_path for Terrain editing (River, Vegetation, etc.)
-            allowed = ["cursor", "edit", "eraser", "paint_tool", "draw_zone", "draw_path"] 
-        elif mode == "scenario":
+            allowed = ["cursor", "edit", "eraser", "paint_tool"]
+        elif mode == "area":
+            allowed = ["cursor", "edit", "eraser", "draw_zone", "draw_path"]
+        elif mode == "agents":
             side = getattr(self.state, "active_scenario_side", "Attacker")
             side = side.lower() if side else "attacker"
             if side == "defender":
-                allowed = ["cursor", "edit", "eraser", "place_agent", "draw_zone", "draw_path"] #assign goal is not relevant for defender in scenario editing, only for play mode
+                allowed = ["cursor", "eraser", "place_agent"]
             else:
-                allowed = ["cursor", "edit", "eraser", "place_agent", "draw_zone", "draw_path", "assign_goal"]
+                allowed = ["cursor", "eraser", "place_agent", "assign_goal"]
         elif mode == "play":
             side = getattr(self.state, "active_scenario_side", "Defender")
             if side.lower() == "defender":  # Blue
@@ -914,9 +959,7 @@ class MainWindow(QMainWindow):
             self.state.map.active_scenario._zones = {} # Clear all mission zones from the active scenario.
             self.hex_widget.update() # Request a redraw of the hex widget.
 
-    def set_theme(self, mode):
-        self.state.theme_mode = mode # Set the theme mode in the application state.
-        self.apply_theme(mode) # Apply the selected theme.
+    # set_theme defined above at line 475 — removed duplicate here
         
     def toggle_infinite_menu(self, checked):
         self.state.grid_mode = "infinite" if checked else "bounded" # Set grid mode based on checkbox state.
@@ -936,6 +979,12 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'hex_widget'):
             self.hex_widget.show_threat_map = checked
             self.hex_widget.update()
+
+    def toggle_reward_viz(self, checked):
+        self.state.show_reward_viz = checked
+        if hasattr(self, 'hex_widget'):
+            self.hex_widget.show_rewards = checked
+            self.hex_widget.update()
         
 
     def action_reset_camera(self):
@@ -947,23 +996,16 @@ class MainWindow(QMainWindow):
         self.log_info("Camera Reset")
 
     def action_add_border(self):
-        self.scenario_side_manager.action_add_border()
+        self.auto_split_map()
 
-    def toggle_inspector_panel(self, checked):
-        if hasattr(self, 'inspector_dock'): # Check if the inspector dock exists.
-             self.inspector_dock.setVisible(checked) # Set its visibility based on the 'checked' state.
-        else: # Fallback if inspector_dock is not directly an attribute.
-             for d in self.findChildren(QDockWidget): # Iterate through all QDockWidget children.
-                 if d.windowTitle() == "Inspector": # Find the dock widget with title "Inspector".
-                     d.setVisible(checked) # Set its visibility.
-    
+    def toggle_tactical_panel(self, checked):
+        self.toc_dock.setVisible(checked)
+
     def toggle_timeline_panel(self, checked):
-        self.timeline_dock.setVisible(checked) # Set the timeline dock's visibility.
-        
-
-    # Toolbar logic delegated to ToolbarController
-        for tool_id, action in self.tool_actions.items(): # Iterate through all tool actions.
-            self.action_group.addAction(action) # Add each action to the action group.
+        if hasattr(self, 'timeline_dock'):
+            self.timeline_dock.setVisible(checked)
+        if hasattr(self, 'terminal_dock'):
+            self.terminal_dock.setVisible(checked)
 
     def set_tool(self, tool_id):
         """
@@ -999,41 +1041,14 @@ class MainWindow(QMainWindow):
         self.update_tool_options() # Update the tool options panel to reflect the new tool.
 
     def update_tool_options(self):
-        """THE DYNAMIC OPTIONS: Shows settings for the currently selected tool."""
-        # Clear previous options securely
-        while self.tool_opts_layout.count(): # Loop while there are items in the tool options layout.
-            item = self.tool_opts_layout.takeAt(0) # Take the first item from the layout.
-            if item.widget(): # If the item is a widget.
-                item.widget().deleteLater() # Delete the widget safely.
-            elif item.layout(): # If the item is a sub-layout.
-                # Recursively clear sub-layouts
-                sub_layout = item.layout() # Get the sub-layout.
-                while sub_layout.count(): # Loop while there are items in the sub-layout.
-                    sub_item = sub_layout.takeAt(0) # Take the first item from the sub-layout.
-                    if sub_item.widget(): # If the sub-item is a widget.
-                        sub_item.widget().deleteLater() # Delete the widget safely.
-                pass # Continue to the next item.
+        """THE DYNAMIC OPTIONS: Delegates settings display to the Tactical Sidebar."""
+        if hasattr(self, 'tac_panel'):
+            self.tac_panel.sync_to_tool(self.state.selected_tool)
             
         if hasattr(self, 'object_properties_widget'):
             self.object_properties_widget.show_properties(None, None)
-            
-        tool = self.state.selected_tool # Get the currently selected tool ID.
-        
-        # Check if the active tool provides a custom options widget
-        if hasattr(self, 'hex_widget') and self.hex_widget.current_tool: # Check if hex_widget and its current_tool exist.
-            try:
-                tool_inst = self.hex_widget.current_tool # Get the current tool instance from hex_widget.
-                # If the tool ID matches (sanity check), and it has the method
-                if hasattr(tool_inst, 'get_options_widget'): # Check if the tool instance has a 'get_options_widget' method.
-                     w = tool_inst.get_options_widget() # Call the method to get the custom options widget.
-                     if w: # If a widget was returned.
-                         # QFormLayout uses addRow usually, addWidget might fail or behave oddly
-                         self.tool_opts_layout.addRow(w) # Add the custom widget to the tool options layout.
-                         self.tool_opts_group.show() # Show the tool options group.
-                         return # Exit the function as custom options are handled.
-            except Exception as e: # Catch any exceptions during loading custom tool options.
-                print(f"Error loading tool options: {e}") # Print an error message.
 
+        return # Unified UI Fix
         app_mode = getattr(self.state, "app_mode", "terrain") # Get the current application mode.
         if tool == "draw_zone":
             self.tool_opts_group.show()
@@ -1066,7 +1081,7 @@ class MainWindow(QMainWindow):
             type_combo = QComboBox()
             if app_mode == "terrain":
                 type_combo.addItems(["Terrain"])
-            elif app_mode == "scenario":
+            elif app_mode in ("area", "agents"):
                 active_side = getattr(self.state, "active_scenario_side", "Attacker")
                 if active_side == "Attacker":
                     type_combo.addItems(["Attacker Area", "Obstacle"])
@@ -1240,7 +1255,7 @@ class MainWindow(QMainWindow):
             side_layout.addWidget(radio_attacker)
             side_layout.addWidget(radio_defender)
             
-            if app_mode == "scenario": # If in scenario mode.
+            if app_mode in ("area", "agents"): # If in area or agents mode.
                 active_side = getattr(self.state, "active_scenario_side", "Attacker") # Get active scenario side.
                 if active_side == "Combined": # If active side is "Combined".
                     side_widget.setEnabled(True)
@@ -1309,94 +1324,26 @@ class MainWindow(QMainWindow):
             self.tool_opts_group.hide() # Hide the tool options group.
 
     def setup_right_panel(self):
-        """Restore side panels as floatable Docks for the Command Deck experience."""
-        # 1. Scenario Manager Dock
-        from ui.components.scenario_manager_widget import ScenarioManagerWidget
-        from ui.components.rules_widget import RulesWidget
-        
-        self.scenario_dock = QDockWidget("Scenario Manager", self)
-        self.scenario_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-        
-        # We use a Stack to switch between unit lists and rules within the same dock
-        self.scenario_stack = QStackedWidget()
-        self.scenario_manager_group = ScenarioManagerWidget(self, state=self.state)
-        self.scenario_stack.addWidget(self.scenario_manager_group)
-        
-        self.rules_widget = RulesWidget(self, state=self.state)
-        self.scenario_stack.addWidget(self.rules_widget)
-        
-        self.scenario_dock.setWidget(self.scenario_stack)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.scenario_dock)
-        
-        # We no longer tabify Scenario with Inspector/Hierarchy to improve discovery
-        # It will be moved to the left in DEPLOY mode via ModeStateMachine
-        self.scenario_dock.hide() 
-
+        """LEGACY: Replaced by TacticalSidePanel (TOC)."""
+        pass
     def setup_object_inspector(self):
-        # 2. Inspector Dock (Object Properties)
-        self.inspector_dock = QDockWidget("Inspector", self)
-        self.inspector_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-        
-        # Internal container for the inspector.
-        inspector_container = QWidget()
-        inspector_layout = QVBoxLayout(inspector_container)
-        inspector_layout.setContentsMargins(0, 0, 0, 0)
-        inspector_layout.setAlignment(Qt.AlignTop)
-        
-        # --- Tool Options Panel (Dynamic Integration) ---
+        """LEGACY: Replaced by TacticalSidePanel (TOC)."""
+        # We still need tool_opts_layout references for some tool logic compatibility
+        from PyQt5.QtWidgets import QGroupBox, QFormLayout
         self.tool_opts_group = QGroupBox("Tool Options")
-        self.tool_opts_group.setObjectName("InspectorGroup")
         self.tool_opts_layout = QFormLayout()
         self.tool_opts_group.setLayout(self.tool_opts_layout)
-        inspector_layout.addWidget(self.tool_opts_group)
-        self.tool_opts_group.hide()
-        
-        # --- Object Properties ---
-        from ui.components.object_properties_widget import ObjectPropertiesWidget
-        self.inspector_widget = ObjectPropertiesWidget(self, state=self.state)
-        inspector_layout.addWidget(self.inspector_widget)
-        
-        inspector_container.setLayout(inspector_layout)
-        # Use the standard panel style from our theme
-        inspector_container.setStyleSheet(f"background-color: {Theme.BG_SURFACE}; border: 1px solid {Theme.BORDER_STRONG};")
-        self.inspector_dock.setWidget(inspector_container)
-        # --- Scene Hierarchy Dock ---
-        self.hierarchy_dock = QDockWidget("Scene Hierarchy", self)
-        from ui.components.scene_hierarchy_widget import SceneHierarchyWidget
-        self.scene_hierarchy_widget = SceneHierarchyWidget(self, state=self.state)
-        self.hierarchy_dock.setWidget(self.scene_hierarchy_widget)
-        
-        # Connect Signals
-        self.scene_hierarchy_widget.item_selected.connect(self.inspector_widget.show_properties)
-        self.inspector_widget.property_changed.connect(self.scene_hierarchy_widget.refresh_tree)
-        
-        self.addDockWidget(Qt.RightDockWidgetArea, self.inspector_dock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.hierarchy_dock)
 
     def on_scenario_side_tab_changed(self, index):
-        if not hasattr(self, 'map_header_tabs'): return
-        text = self.map_header_tabs.tabText(index)
-        
-        if text == "RULES":
-            # Show the Rules form in the sidebar
-            if hasattr(self, 'scenario_stack'):
-                self.scenario_stack.setCurrentIndex(1)
-                self.rules_widget.refresh()
-            side = "Combined"
-        else:
-            # Show the Unit Lists/Profiles in the sidebar
-            if hasattr(self, 'scenario_stack'):
-                self.scenario_stack.setCurrentIndex(0)
-            side = text.capitalize()
-            if hasattr(self, 'scenario_manager_group'):
-                self.scenario_manager_group.refresh_intel(side)
+        """LEGACY: Side switching is now handles by linear phases in TOC."""
+        pass
                   
-        self.state.active_scenario_side = side
-        self.log_info(f"Scenario Filtering: <b>{side.upper()}</b>")
-        if hasattr(self, 'hex_widget'):
-            self.hex_widget.update()
+    def _final_state_sync(self):
+        """Internal cleanup for side assignment and tool refreshing."""
         self.update_tool_options()
         self.update_tools_visibility()
+        if hasattr(self, 'hex_widget'):
+            self.hex_widget.update()
 
     def on_hex_clicked(self, hex_obj):
         # Triggered when a hex is clicked
@@ -1568,47 +1515,54 @@ class MainWindow(QMainWindow):
     # Scenario Side Management delegated to ScenarioSideManager
 
     def setup_timeline_panel(self):
-        """THE CONTROL CENTER: Setup the Simulation Timeline panel."""
+        """THE CONTROL CENTER: Setup the Simulation Timeline panel and Terminal."""
         from ui.views.timeline_panel import TimelinePanel
+        from ui.components.event_log_widget import EventLogWidget
+        
+        # 1. Mission Control Dock (Right)
         self.timeline_dock = QDockWidget("Mission Control", self)
-        self.timeline_dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.BottomDockWidgetArea)
-        
+        self.timeline_dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
         self.timeline_panel = TimelinePanel(self, self.state)
-        # Map the log widget for global log_info calls
-        self.event_log_widget = self.timeline_panel.event_log_widget
-        self.event_log_widget.popout_requested.connect(self.popout_log)
-        
         self.timeline_dock.setWidget(self.timeline_panel)
         self.addDockWidget(Qt.RightDockWidgetArea, self.timeline_dock)
         self.timeline_dock.hide() # Hidden by default
         
-        # Tabify with Inspector for a clean layout
-        if hasattr(self, 'inspector_dock'):
-            if hasattr(self, 'scenario_dock'):
-                self.tabifyDockWidget(self.inspector_dock, self.scenario_dock)
-                self.tabifyDockWidget(self.scenario_dock, self.timeline_dock)
-            else:
-                self.tabifyDockWidget(self.inspector_dock, self.timeline_dock)
-            self.inspector_dock.raise_()
+        # 2. Tactical Log Console (Bottom)
+        self.terminal_dock = QDockWidget("MISSION LOG", self)
+        self.terminal_dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
+        self.event_log_widget = EventLogWidget()
+        self.event_log_widget.popout_requested.connect(self.popout_log)
+        self.terminal_dock.setWidget(self.event_log_widget)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.terminal_dock)
+        self.terminal_dock.hide() # Hidden by default
+        
+        # Tabify Mission Control with TOC for a clean layout
+        if hasattr(self, 'toc_dock'):
+             self.tabifyDockWidget(self.toc_dock, self.timeline_dock)
+             self.toc_dock.raise_()
 
     def popout_log(self):
-        """Detaches or Re-attaches the Timeline/Event Log dock."""
-        self.timeline_dock.setFloating(not self.timeline_dock.isFloating())
+        """Detaches or Re-attaches the Tactical Terminal dock."""
+        self.terminal_dock.setFloating(not self.terminal_dock.isFloating())
         if hasattr(self, 'event_log_widget'):
-            if self.timeline_dock.isFloating():
+            if self.terminal_dock.isFloating():
                 self.event_log_widget.set_popout_text("Pop In")
             else:
                 self.event_log_widget.set_popout_text("Pop Out")
             
     def log_info(self, message):
-        """Append a message to the Info Log panel."""
+        """Append a message to the Info Log panel and sync with Tactical Sidebar."""
+        # 1. Update the Unified Side Panel (TOC) with the latest operational news
+        if hasattr(self, 'tac_panel'):
+            self.tac_panel.update_stats(message)
+
+        # 2. Add to the Permanent Event Console (Terminal)
         if hasattr(self, 'event_log_widget'):
             self.event_log_widget.log_info(message)
         elif hasattr(self, 'info_log'):
+            import datetime
             timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-            # Use semi-bold for timestamp
             self.info_log.append(f"<span style='color: #888888;'>[{timestamp}]</span> {message}")
-            # Auto-scroll to bottom
             self.info_log.verticalScrollBar().setValue(self.info_log.verticalScrollBar().maximum())
 
     def sanitize_agents(self):
@@ -1794,6 +1748,9 @@ class MainWindow(QMainWindow):
                             self.state.current_map = result.data['map_name']
                             self.setWindowTitle(f"Wargame Engine - {result.data['map_name']}")
                             self.action_model.reinit_models()
+                            
+                            # Standard Auto-Entry: Switch directly to Landing Page (Gallery)
+                            self.switch_mode(0)
                             return
             except Exception as e:
                 print(f"Error loading user settings: {e}")
@@ -1826,6 +1783,15 @@ class MainWindow(QMainWindow):
         
         self.log_info(f"Navigating to {kind}: <b>{proj}/{map_name}</b>")
         
+        # 1. TACTICAL REGISTRIES: Bypass map loading for data-only links
+        if kind == "data":
+            sub_type = data.get("scenario_name") or data.get("model_name") or data.get("extra")
+            self.switch_mode(8) # Phase 8: Master Data (Registry)
+            if hasattr(self, 'master_data_widget'):
+                self.master_data_widget.select_tab_by_key(sub_type)
+            self.log_info(f"Opening Tactical Registry: <b>{sub_type.upper()}</b>")
+            return
+        
         # 1. Resolve Map Path
         map_path = os.path.join(root, "Projects", proj, "Maps", map_name)
         if not os.path.exists(map_path):
@@ -1836,7 +1802,7 @@ class MainWindow(QMainWindow):
         import services.map_service as map_svc
         result = map_svc.load_project_folder(map_path)
         if not result.ok:
-            self.log_info(f"<font color='red'>Load Failed: {result.message}</font>")
+            self.log_info(f"<font color='red'>Load Failed: {result.error}</font>")
             return
             
         self.current_project_path = map_path
@@ -1845,6 +1811,29 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"Wargame Engine - {proj} / {map_name}")
         self._save_last_project(map_path)
         self.action_model.reinit_models()
+        self.switch_mode(1) # Start in Tactical Theater
+
+    def action_delete_project(self, project_name):
+        """DELETION COMMAND: Removes a project folder from the disk."""
+        import shutil
+        from ui.dialogs.themed_dialogs import ThemedMessageBox
+        res = ThemedMessageBox.warning(self, "Delete Project", f"Are you sure you want to delete '{project_name}'?\nThis action is irreversible.", QMessageBox.Yes | QMessageBox.No)
+        if res == QMessageBox.Yes:
+            proj_path = os.path.join(self.data_loader.content_root, "Projects", project_name)
+            if os.path.exists(proj_path):
+                try:
+                    shutil.rmtree(proj_path)
+                    self.log_info(f"Project '{project_name}' deleted.")
+                    # Refresh the dashboard
+                    if hasattr(self, 'maps_widget'):
+                        self.maps_widget.refresh_list()
+                    # If it was the current project, reset to maps dashboard
+                    if self.state.current_project == project_name:
+                        self.switch_mode(0)
+                        self.current_project_path = None
+                        self.state.current_project = None
+                except Exception as e:
+                    self.log_info(f"<font color='red'>Delete Failed: {e}</font>")
         self.hex_widget.update()
 
         # 2. Refine based on Kind
@@ -1859,7 +1848,7 @@ class MainWindow(QMainWindow):
                 # Snapshot the design state immediately upon entry
                 if self.state.map.active_scenario:
                     self.state.map.active_scenario.capture_state(self.state.entity_manager)
-                self.switch_mode(2) # Scenario Generation
+                self.switch_mode(3) # Phase 3: Defensive Perimeters (def_areas)
             else:
                 self.log_info(f"<font color='red'>Scenario Load Failed: {load_res.error}</font>")
         elif kind == "simulation" and model_name:
@@ -1872,7 +1861,7 @@ class MainWindow(QMainWindow):
             if self.state.map.active_scenario:
                 self.state.map.active_scenario.capture_state(self.state.entity_manager)
                 
-            self.switch_mode(3) # Play / Simulation
+            self.switch_mode(7) # Phase 7: Tactical Execution (play)
             self.log_info(f"Model <b>{model_name}</b> injected for simulation.")
 
     def get_simulation_model_path(self, model_name="default_model"):
@@ -1905,6 +1894,28 @@ class MainWindow(QMainWindow):
                 }
                 with open(os.path.join(map_path, "Terrain.json"), 'w') as f:
                     json.dump(terrain_data, f, indent=4)
+                
+                # Seed a Default Scenario with a Roster
+                scen_data = {
+                    "name": "Default",
+                    "rules": {
+                        "roster": {
+                            "Attacker": [
+                                {"name": "Alpha HQ", "weapon_id": "None", "type_display": "Headquarters", "personnel": 10, "side": "Attacker", "placed": False},
+                                {"name": "Vanguard 1", "weapon_id": "LMG", "type_display": "Company", "personnel": 110, "side": "Attacker", "placed": False},
+                                {"name": "Ironclad 1", "weapon_id": "Main Battle Tank", "type_display": "Platoon", "personnel": 30, "side": "Attacker", "placed": False}
+                            ],
+                            "Defender": [
+                                {"name": "Static HQ", "weapon_id": "None", "type_display": "Headquarters", "personnel": 10, "side": "Defender", "placed": False},
+                                {"name": "Garrison A", "weapon_id": "Rifle", "type_display": "Section", "personnel": 10, "side": "Defender", "placed": False},
+                                {"name": "Garrison B", "weapon_id": "Rifle", "type_display": "Section", "personnel": 10, "side": "Defender", "placed": False}
+                            ]
+                        }
+                    }
+                }
+                with open(os.path.join(map_path, "Scenarios", "Default.json"), 'w') as f:
+                    json.dump(scen_data, f, indent=4)
+
             except Exception as e:
                 print(f"Error creating default project: {e}")
                 return
@@ -1913,6 +1924,10 @@ class MainWindow(QMainWindow):
         if result.ok:
             self.current_project_path = map_path
             self.state.current_project = proj_name
+            self.switch_mode(1) # Go directly to Tactical Theater
+            self.state.current_map = proj_name
+            self.setWindowTitle(f"Wargame Engine - {proj_name} / {proj_name}")
+            self.action_model.reinit_models()
             self.state.current_map = proj_name
             self.setWindowTitle(f"Wargame Engine - {proj_name} / {proj_name}")
             self.action_model.reinit_models()
@@ -1930,20 +1945,41 @@ class MainWindow(QMainWindow):
     def _on_done_clicked(self):
         """Handles the 'Done' click, moving to the next logical phase."""
         mode = self.state.app_mode
+        
         if mode == "terrain":
-            # 1. Ask for Map Name
+            # Terrain → Rules
             from PyQt5.QtWidgets import QInputDialog
             if self.state.current_map == "Default":
                 name, ok = QInputDialog.getText(self, "Finalize Map", "Enter Map Name:")
                 if ok and name:
                     self.action_save_project()
-                    self.switch_mode(2) # Switch to Scenario Generation
+                    self.switch_mode(2)  # → Rules
             else:
                 self.action_save_project(silent=True)
-                self.switch_mode(2)
+                self.switch_mode(2)  # → Rules
                 
-        elif mode == "scenario":
-            # 2. Finalize Scenario
+        elif mode == "rules":
+            # Rules → Defender Areas
+            self.switch_mode(3)
+            self.log_info("Scenario constraints finalized.")
+            
+        elif mode == "def_areas":
+            # Def Areas → Def Agents
+            self.switch_mode(4)
+            self.log_info("Defender perimeters established.")
+            
+        elif mode == "def_agents":
+            # Def Agents → Atk Areas
+            self.switch_mode(5)
+            self.log_info("Defender garrison deployed.")
+            
+        elif mode == "atk_areas":
+            # Atk Areas → Atk Agents
+            self.switch_mode(6)
+            self.log_info("Attacker perimeters established.")
+                
+        elif mode == "atk_agents":
+            # Atk Agents → Play: Finalize scenario, capture golden state, start simulation
             from PyQt5.QtWidgets import QInputDialog
             import services.scenario_service as scenario_svc
             from ui.dialogs.themed_dialogs import ThemedMessageBox
@@ -1958,7 +1994,6 @@ class MainWindow(QMainWindow):
                     self.state.map.active_scenario.name = name
                     
                     # Ensure the scenario is registered in the map's dictionary
-                    # (This is critical for save_all_scenarios to iterate over it)
                     if old_name in self.state.map.scenarios:
                         target_scen = self.state.map.scenarios.pop(old_name)
                         self.state.map.scenarios[name] = target_scen
@@ -1968,42 +2003,33 @@ class MainWindow(QMainWindow):
                 self.state.current_scenario_name = name
                 
                 # Save all scenarios in this map's folder
-                print(f"DEBUG: _on_done_clicked state.map ID: {id(self.state.map)}")
                 result = scenario_svc.save_all_scenarios(self.current_project_path)
                 
                 if result.ok:
                     # Capture the 'Golden State' before simulation begins
                     self.state.map.active_scenario.capture_state(self.state.entity_manager)
                     
-                    self.switch_mode(3) # Switch to Play/Simulation
+                    self.switch_mode(7)  # → Play/Simulation
                     self.log_info(f"Scenario <b>'{name}'</b> Finalized and Saved.")
                 else:
                     from ui.dialogs.themed_dialogs import ThemedMessageBox
                     ThemedMessageBox.critical(self, "Save Error", f"Failed to save scenario: {result.error}")
 
     def _on_back_clicked(self):
-        """Navigate backward through the tactical workflow."""
+        """Navigate backward through the 8-phase tactical workflow."""
         current_mode = self.mode_machine.current_mode_index
         
-        # Navigation logic:
-        # Simulation (3) -> Scenario (2)
-        # Scenario (2) -> Terrain (1)
-        # Terrain (1) -> Dashboard (0)
-        
-        if current_mode == 3:
-            # Revert to the original design state when moving back from Simulation
+        if current_mode == 7:  # Play → Atk Agents
+            self.pause_simulation()
             if self.state.map.active_scenario:
                 self.state.map.active_scenario.restore_state(self.state.entity_manager)
-            
-            # Clear any visual simulation artifacts (movement queues, etc.)
             self.hex_widget.clear_animations()
-            
-            self.switch_mode(2)
-        elif current_mode == 2:
-            self.switch_mode(1)
-        elif current_mode == 1:
+            self.switch_mode(6)
+        elif current_mode > 1 and current_mode <= 6:
+            self.switch_mode(current_mode - 1)
+        elif current_mode == 1:  # Terrain → Dashboard
             self.switch_mode(0)
-        elif current_mode == 4: # Master Data
+        elif current_mode == 8:  # Master Data → Dashboard
             self.switch_mode(0)
 
     def undo_action(self):

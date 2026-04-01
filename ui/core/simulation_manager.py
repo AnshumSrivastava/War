@@ -31,7 +31,7 @@ class SimulationManager(QObject):
 
     def start_simulation_loop(self):
         """Starts the main tactical simulation."""
-        self.mw.switch_mode(3) # Play Mode
+        self.mw.switch_mode(7) # Tactical Execution Phase (Play)
 
         if not self.sim_controller.is_running:
             # Inject map-specific brain
@@ -40,15 +40,29 @@ class SimulationManager(QObject):
             commander.set_commander_model(model_path)
             
             self.mw.sanitize_agents()
-            if hasattr(self.mw, 'timeline_panel'):
-                self.mw.timeline_panel.event_log_widget.clear()
+            if hasattr(self.mw, 'event_log_widget'):
+                self.mw.event_log_widget.clear()
                 
-            self.mw.log_info(f"Starting Simulation: <i>Loading model from {os.path.basename(model_path)}</i>")
+            # --- CRITICAL: RE-INITIALIZE SIMULATION SERVICE ---
+            # Ensure the service is looking at the LATEST WorldState
+            import services.simulation_service as sim_svc
+            sim_svc.init(self.state)
+            
+            self.mw.log_info(f"<b>Priming Systems...</b>")
+            
+            # Save the current tactical layout as the 'Start State'
+            if self.state.map.active_scenario:
+                self.state.map.active_scenario.capture_state(self.state.entity_manager)
+            
             import services.scenario_service as scenario_svc
             scenario_svc.save_scenario("active_scenario.json")
             
+            # Re-init models to match map size/content
+            sim_svc.reinit_models()
+            
+            # Start the simulation wrapper
             self.sim_controller.start()
-            self.mw.log_info(f"--- Simulation Started ---")
+            self.mw.log_info(f"--- Simulation <b>LIVE</b> ---")
 
     def pause_simulation(self):
         """Pauses the simulation."""

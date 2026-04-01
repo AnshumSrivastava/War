@@ -77,9 +77,9 @@ class AgentCreationDialog(QDialog):
 
 class MasterDataWidget(QWidget):
     """SPREADSHEET VIEW: Shows the raw data behind the icons and hexes."""
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, state=None):
         super().__init__(parent)
-        self.state = GlobalState()
+        self.state = state if state else GlobalState()
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(10, 10, 10, 10)
         
@@ -123,6 +123,19 @@ class MasterDataWidget(QWidget):
             }}
         """)
         
+    def select_tab_by_key(self, key):
+        """Programmatically switches to a specific tab based on a key."""
+        if not key: return
+        mapping = {
+            "agents": 0, "units": 0,
+            "weapons": 1, "arsenal": 1,
+            "resources": 2, "logistics": 2,
+            "obstacles": 3,
+            "terrain": 4, "intel": 4
+        }
+        idx = mapping.get(key.lower(), 0)
+        self.main_tabs.setCurrentIndex(idx)
+
     def create_table(self, columns):
         """Standardized Tactical Table for Database Browsing."""
         table = TacticalTable(columns)

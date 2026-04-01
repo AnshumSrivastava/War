@@ -109,10 +109,13 @@ class HexRenderer:
                 elevation = attrs.get("elevation", 0)
                 
                 brush_color = QColor(color_code)
-                # Simple elevation alpha logic
-                alpha_val = 50 + (abs(elevation) * 20)
-                alpha_val = max(50, min(255, int(alpha_val)))
-                brush_color.setAlpha(alpha_val)
+                # Simple elevation alpha logic removed for solid colors
+                if elevation > 0:
+                    brush_color = brush_color.lighter(100 + int(elevation * 10))
+                elif elevation < 0:
+                    brush_color = brush_color.darker(100 + int(abs(elevation) * 10))
+                
+                brush_color.setAlpha(255)
                 
                 painter.setBrush(QBrush(brush_color))
                 painter.setPen(pen)

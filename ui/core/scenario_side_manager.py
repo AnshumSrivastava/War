@@ -111,8 +111,13 @@ class ScenarioSideManager(QObject):
                     self.state.map.hex_sides[h_t] = side
             
             self.state.assign_sides_mode = False
-            self.mw.set_tool("place_agent")
-            ThemedMessageBox.information(self.mw, "Done", "Scenario Sides Configured.\nReady to place units.")
+            # Only switch to place_agent if we're in agents mode
+            app_mode = getattr(self.state, 'app_mode', 'area')
+            if app_mode == "agents":
+                self.mw.set_tool("place_agent")
+            else:
+                self.mw.set_tool("cursor")
+            ThemedMessageBox.information(self.mw, "Done", "Scenario Sides Configured.")
 
     def on_scenario_side_tab_changed(self, index):
         """Handles sub-tab switching (Attacker/Defender/Combined/Rules)."""

@@ -8,14 +8,13 @@ This guide is designed for both non-technical stakeholders looking to run a simu
 
 ## 1. Initial Setup & Launch
 
-The engine requires a specific environment to run its Reinforcement Learning memory (Redis) and UI (PyQt5) smoothly. We have provided automated scripts to handle this.
+The engine requires a specific environment to run its Reinforcement Learning memory (in-memory Q-tables) and UI (PyQt5) smoothly. We have provided automated scripts to handle this.
 
 ### Windows Users
 1. **Prerequisites**: Ensure **Python 3.10+** is installed on your machine.
 2. In the project's root folder, run `python setup_windows.py`.
-3. The script will automatically create an isolated Python environment (`venv`), install all required dependencies without cluttering your system, and verify if Redis is running.
-4. If Redis is not detected, the script will pause and provide detailed instructions on installing local Redis via WSL2 (Ubuntu for Windows), Docker, or Memurai. 
-5. Once complete, activate the environment and launch:
+3. The script will automatically create an isolated Python environment (`venv`), install all required dependencies without cluttering your system, and verify the environment.
+4. Once complete, activate the environment and launch:
    ```cmd
    .\venv\Scripts\activate
    python main.py
@@ -23,8 +22,7 @@ The engine requires a specific environment to run its Reinforcement Learning mem
 
 ### Linux (NixOS) Users
 The application utilizes Nix to guarantee a perfectly reproducible environment.
-1. Start the local Redis memory cluster: `./scripts/start_redis.sh`
-2. Launch the application via the Nix shell wrapper: `./scripts/run_nix.sh`
+1. Launch the application via the Nix shell wrapper: `./scripts/run_nix.sh`
 
 ---
 
@@ -88,4 +86,4 @@ The units in the engine are autonomous. You do not micro-manage their movement.
 
 If a unit's profile in the Master Database is set to `learned: false`, it is currently an "Explorer." In the first few episodes (resets) of a simulation, Exporers will behave irrationally, wander aimlessly, or fire randomly.
 
-However, behind the scenes, their actions (and subsequent rewards or deaths) are continuously updating the Redis memory clusters. Over the course of dozens of episodes, you will witness the units naturally discarding suicidal tactics in favor of cover-utilization, focused firing, and objective capture—demonstrating the core capability of the Reinforcement Learning engine.
+However, behind the scenes, their actions (and subsequent rewards or deaths) are continuously updating the in-memory Q-tables. Over the course of dozens of episodes, you will witness the units naturally discarding suicidal tactics in favor of cover-utilization, focused firing, and objective capture—demonstrating the core capability of the Reinforcement Learning engine.

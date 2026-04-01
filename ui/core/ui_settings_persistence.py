@@ -32,33 +32,57 @@ class UISettingsPersistence:
 
     @classmethod
     def save(cls, main_window) -> None:
-        """Persist current window geometry and dock/toolbar state."""
+        """
+        PERSISTENCE: Saves the current window layout, position, and user 
+        preferences (like Theme) to the operating system's settings store.
+        
+        On Windows: This goes into the Registry.
+        On Linux: This goes into a .conf file in ~/.config/
+        On macOS: This goes into a .plist file.
+        """
         try:
+            # Initialize settings with unique Organization and App identifiers
             settings = QSettings(cls._ORG, cls._APP)
+            
+            # Save the raw binary state of the window (Geometry + Dock Layout)
             settings.setValue("geometry",    main_window.saveGeometry())
             settings.setValue("windowState", main_window.saveState())
-            # Save theme preference
+            
+            # Save visual preferences (Dark vs Light theme)
             theme_mode = getattr(main_window.state, "theme_mode", "dark")
             settings.setValue("themeMode", theme_mode)
+            
         except Exception as exc:
             import logging
-            logging.getLogger(__name__).warning("Could not save window state: %s", exc)
+            logging.getLogger(__name__).warning("Layout persistence failed: %s", exc)
 
     @classmethod
     def restore(cls, main_window) -> None:
-        """Restore previously saved geometry and dock/toolbar state."""
+        """
+        RECOVERY: Re-applies the window layout and preferences from the 
+        last time the application was closed.
+        
+        This ensures buttons, sidebars, and theme stay where the user left them.
+        """
         try:
             settings = QSettings(cls._ORG, cls._APP)
+            
+            # Fetch the saved binary blobs
             geometry = settings.value("geometry")
             state    = settings.value("windowState")
+            
+            # Apply them only if they exist (prevents errors on first run)
             if geometry:
                 main_window.restoreGeometry(geometry)
             if state:
                 main_window.restoreState(state)
-            # Restore theme preference
+                
+            # Restore the user's preferred theme color
             theme_mode = settings.value("themeMode", "dark")
             if hasattr(main_window.state, "theme_mode"):
                 main_window.state.theme_mode = theme_mode
+                
         except Exception as exc:
             import logging
-            logging.getLogger(__name__).warning("Could not restore window state: %s", exc)
+            logging.getLogger(__name__).warning("Layout recovery failed: %s", exc)
+

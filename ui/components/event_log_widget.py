@@ -44,13 +44,16 @@ class EventLogWidget(QWidget):
         
         self.info_log = QTextEdit()
         self.info_log.setReadOnly(True)
+        # Apply a sleek, authentic dark terminal aesthetic
         self.info_log.setStyleSheet("""
             QTextEdit {
-                background-color: #1a1a1a;
-                color: #dcdcdc;
-                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-                border: 1px solid #333;
-                border-radius: 4px;
+                background-color: #0d1117;
+                color: #c9d1d9;
+                font-family: 'Consolas', 'Courier New', monospace;
+                font-size: 13px;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+                padding: 8px;
             }
         """)
         layout.addWidget(self.info_log)
@@ -69,7 +72,7 @@ class EventLogWidget(QWidget):
 
     def log_info(self, message):
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        self.info_log.append(f"<span style='color: #888888;'>[{timestamp}]</span> {message}")
+        self.info_log.append(f"<span style='color: #8b949e;'>[{timestamp}]</span> {message}")
         self.info_log.verticalScrollBar().setValue(self.info_log.verticalScrollBar().maximum())
         
     def clear(self):

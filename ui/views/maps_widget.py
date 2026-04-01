@@ -1,16 +1,19 @@
 import os
 import json
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
-                             QLabel, QScrollArea, QGridLayout, QFrame)
+                             QLabel, QScrollArea, QGridLayout, QFrame, QComboBox)
 from PyQt5.QtGui import QPixmap, QColor, QFont, QIcon
-from PyQt5.QtCore import Qt, pyqtSignal, QSize
+from PyQt5.QtCore import Qt, pyqtSignal, QSize, QTimer
+import shutil
 from ui.styles.theme import Theme
+from engine.state.global_state import GlobalState
 import services.map_service as map_service
 
 class ProjectCard(QFrame):
-    """A visual card representing a Map or Scenario."""
-    clicked = pyqtSignal(dict) # Data payload
+    """A visual card representing a Map or Scenario with a premium tactical aesthetic."""
+    clicked = pyqtSignal(dict) 
     double_clicked = pyqtSignal(dict)
+    delete_requested = pyqtSignal(dict)
     
     def __init__(self, kind, proj, map_name, root_path, extra="", info=""):
         super().__init__()
@@ -20,55 +23,57 @@ class ProjectCard(QFrame):
         self.extra = extra
         
         self.setObjectName("ProjectCard")
-        self.setFixedSize(220, 160)
+        self.setFixedSize(200, 180)
         self.setCursor(Qt.PointingHandCursor)
         
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(0)
         
-        # Thumbnail / Icon Area
+        # Thumbnail / Visual Indicator
         self.thumb = QLabel()
         self.thumb.setAlignment(Qt.AlignCenter)
-        self.thumb.setFixedSize(220, 100)
-        self.thumb.setScaledContents(True) # Ensure pixmap fits
+        self.thumb.setFixedSize(190, 110)
+        self.thumb.setScaledContents(True)
         
         icon_color = Theme.ACCENT_ALLY if kind == "map" else Theme.ACCENT_WARN
-        bg_color = Theme.BG_INPUT
+        if kind == "simulation": icon_color = Theme.ACCENT_GOOD
+        
+        bg_color = Theme.BG_DEEP
         
         # --- LOOK FOR REAL THUMBNAIL ---
         thumb_path = os.path.join(root_path, "Projects", proj, "Maps", map_name, "thumbnail.png")
         
         if os.path.exists(thumb_path):
             pix = QPixmap(thumb_path)
-            self.thumb.setPixmap(pix.scaled(220, 100, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation))
-            self.thumb.setStyleSheet(f"background-color: {bg_color}; border-bottom: 1px solid {Theme.BORDER_STRONG};")
+            self.thumb.setPixmap(pix.scaled(190, 110, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation))
         else:
-            self.thumb.setStyleSheet(f"background-color: {bg_color}; border-bottom: 1px solid {Theme.BORDER_STRONG}; color: {icon_color};")
-            self.thumb.setFont(Theme.get_font(Theme.FONT_HEADER, 12, bold=True))
-            self.thumb.setText(kind.upper())
-        
+            self.thumb.setStyleSheet(f"background-color: {bg_color}; color: {icon_color}; border-radius: 8px;")
+            self.thumb.setFont(Theme.get_font(Theme.FONT_HEADER, 14, bold=True))
+            self.thumb.setText(kind[0].upper()) # Type Letter (M, S, V)
+            
         layout.addWidget(self.thumb)
         
-        # Details Footer
-        footer = QWidget()
-        footer.setObjectName("CardFooter")
-        footer.setStyleSheet(f"background-color: {Theme.BG_SURFACE};")
-        footer_layout = QVBoxLayout(footer)
-        footer_layout.setContentsMargins(10, 5, 10, 5)
-        footer_layout.setSpacing(2)
+        # Details Area (Tactical Info)
+        info_area = QWidget()
+        info_layout = QVBoxLayout(info_area)
+        info_layout.setContentsMargins(5, 8, 5, 5)
+        info_layout.setSpacing(2)
         
         name_lbl = QLabel((extra if extra else map_name).upper())
-        name_lbl.setFont(Theme.get_font(Theme.FONT_HEADER, 9, bold=True))
+        name_lbl.setFont(Theme.get_font(Theme.FONT_HEADER, 8, bold=True))
         name_lbl.setStyleSheet(f"color: {Theme.TEXT_PRIMARY};")
         
-        type_lbl = QLabel(f"{kind} | {info}" if info else kind)
-        type_lbl.setFont(Theme.get_font(Theme.FONT_BODY, 8))
-        type_lbl.setStyleSheet(f"color: {Theme.TEXT_DIM};")
+        # Metadata Badge
+        meta_layout = QHBoxLayout()
+        kind_lbl = QLabel(kind.upper())
+        kind_lbl.setStyleSheet(f"color: {icon_color}; font-size: 7px; font-weight: bold; padding: 2px; border: 1px solid {icon_color}; border-radius: 3px;")
+        meta_layout.addWidget(kind_lbl)
+        meta_layout.addStretch()
         
-        footer_layout.addWidget(name_lbl)
-        footer_layout.addWidget(type_lbl)
-        layout.addWidget(footer)
+        info_layout.addWidget(name_lbl)
+        info_layout.addLayout(meta_layout)
+        layout.addWidget(info_area)
         
         self._setup_style()
         
@@ -78,252 +83,341 @@ class ProjectCard(QFrame):
             "proj": proj,
             "map_name": map_name,
             "root_path": root_path,
-            "extra": extra
+            "extra": extra,
+            "info": info
         }
+        
+        # --- DELETE BUTTON (X) ---
+        # Data registries are protected from direct deletion here for safety
+        if kind != "data":
+            self.btn_del = QPushButton("×", self)
+            self.btn_del.setFixedSize(24, 24)
+            self.btn_del.move(170, 5)
+            self.btn_del.setCursor(Qt.PointingHandCursor)
+            self.btn_del.clicked.connect(lambda: self.delete_requested.emit(self.payload))
+            self.btn_del.setStyleSheet(f"""
+                QPushButton {{
+                    background: transparent;
+                    color: {Theme.TEXT_DIM};
+                    font-size: 18px;
+                    font-weight: bold;
+                    border-radius: 12px;
+                }}
+                QPushButton:hover {{
+                    background: {Theme.ACCENT_ENEMY};
+                    color: white;
+                }}
+            """)
+            self.btn_del.show()
 
     def _setup_style(self):
         self.setProperty("selected", "false")
         self.setStyleSheet(f"""
             QFrame#ProjectCard {{
                 background-color: {Theme.BG_SURFACE};
-                border-radius: 12px;
+                border-radius: 10px;
                 border: 1px solid {Theme.BORDER_STRONG};
             }}
             QFrame#ProjectCard[selected="true"] {{
-                border: 2px solid {Theme.ACCENT_ALLY if self.kind == "map" else Theme.ACCENT_WARN};
+                background-color: {Theme.BG_INPUT};
+                border: 2px solid {Theme.ACCENT_ALLY};
             }}
             QFrame#ProjectCard:hover {{
                 background-color: {Theme.BG_INPUT};
-                border: 1px solid {Theme.ACCENT_ALLY if self.kind == "map" else Theme.ACCENT_WARN};
+                border: 1px solid {Theme.TEXT_DIM};
             }}
         """)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            # print(f"DEBUG: ProjectCard '{self.map_name}' clicked.")
             self.clicked.emit(self.payload)
             
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
-            print(f"DEBUG: ProjectCard '{self.map_name}' DOUBLE-CLICKED (kind={self.kind}).")
             self.double_clicked.emit(self.payload)
 
 class MapsWidget(QWidget):
     """
-    Project Dashboard: Visual thumbnail-based interface for the current project.
+    Project Dashboard: Tactical interface for the current project.
     """
-    deep_link_requested = pyqtSignal(dict) # Changed to dict
+    deep_link_requested = pyqtSignal(dict) 
     
     def __init__(self, parent=None, state=None):
         super().__init__(parent)
         self.mw = parent
-        self.maps = {} # Name -> Card
-        self.scenarios = {} # Name -> Card
-        self.models = {} # Name -> Card
+        self.maps = {} 
+        self.scenarios = {} 
+        self.models = {} 
+        self.registries = {} 
         
         self.active_map = None
         self.active_scen = None
+        self.active_model = None
+        self.active_reg = None
         
         self.state = state if state else GlobalState()
         
+        # --- MAIN LAYOUT (Full Width) ---
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(30, 30, 30, 30)
-        self.layout.setSpacing(20)
+        self.layout.setSpacing(25)
         
-        # --- HEADER ---
-        header_container = QWidget()
-        header_layout = QHBoxLayout(header_container)
-        header_layout.setContentsMargins(0, 0, 0, 0)
+        # --- HEADER (Project Selection) ---
+        header = QWidget()
+        h_layout = QHBoxLayout(header)
+        h_layout.setContentsMargins(0, 0, 0, 0)
         
-        self.title_label = QLabel("PROJECT: UNKNOWN")
-        self.title_label.setFont(Theme.get_font(Theme.FONT_HEADER, 18, bold=True))
-        self.title_label.setStyleSheet(f"color: {Theme.ACCENT_ALLY};")
-        header_layout.addWidget(self.title_label)
+        from PyQt5.QtWidgets import QComboBox
+        self.project_combo = QComboBox()
+        self.project_combo.setFixedSize(250, 45)
+        self.project_combo.setFont(Theme.get_font(Theme.FONT_HEADER, 14, bold=True))
+        self.project_combo.setStyleSheet(f"""
+            QComboBox {{
+                background-color: {Theme.BG_SURFACE};
+                color: {Theme.ACCENT_ALLY};
+                border: 1px solid {Theme.BORDER_STRONG};
+                border-radius: 6px;
+                padding-left: 10px;
+            }}
+            QComboBox::drop-down {{ border: none; }}
+        """)
+        self.project_combo.currentTextChanged.connect(self._on_project_changed)
+        h_layout.addWidget(self.project_combo)
         
-        header_layout.addStretch()
+        btn_delete = QPushButton("DELETE")
+        btn_delete.setFixedSize(80, 45)
+        btn_delete.setStyleSheet(f"background-color: {Theme.BG_DEEP}; border: 1px solid {Theme.ACCENT_ENEMY}; color: {Theme.ACCENT_ENEMY}; font-weight: bold; font-size: 10px;")
+        btn_delete.clicked.connect(lambda: self.mw.action_delete_project(self.project_combo.currentText()) if self.mw else None)
+        h_layout.addWidget(btn_delete)
         
-        # Actions
-        self.btn_new_map = QPushButton("NEW MAP")
-        self.btn_new_map.setFixedSize(120, 40)
-        self.btn_new_map.clicked.connect(self.mw.action_create_new_map if self.mw else lambda: None)
-        header_layout.addWidget(self.btn_new_map)
+        h_layout.addStretch()
         
-        self.btn_new_scen = QPushButton("NEW SCENARIO")
-        self.btn_new_scen.setFixedSize(140, 40)
-        self.btn_new_scen.clicked.connect(self.mw.action_save_scenario if self.mw else lambda: None)
-        header_layout.addWidget(self.btn_new_scen)
+        btn_create = QPushButton("+ NEW MISSION")
+        btn_create.setFixedSize(140, 40)
+        btn_create.setStyleSheet(f"background-color: {Theme.BG_DEEP}; border: 1px solid {Theme.ACCENT_ALLY}; color: {Theme.ACCENT_ALLY}; font-weight: bold;")
+        btn_create.clicked.connect(self.mw.action_save_scenario if self.mw else lambda: None)
+        h_layout.addWidget(btn_create)
         
-        self.layout.addWidget(header_container)
+        self.layout.addWidget(header)
         
-        # --- SCROLL AREA FOR CARDS ---
+        # --- GRIDS (Scrollable) ---
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
         self.scroll.setStyleSheet("background: transparent; border: none;")
         
-        self.container = QWidget()
-        self.content_layout = QVBoxLayout(self.container)
-        self.content_layout.setContentsMargins(0, 0, 0, 0)
-        self.content_layout.setSpacing(30)
+        self.grid_container = QWidget()
+        self.grid_layout = QVBoxLayout(self.grid_container)
+        self.grid_layout.setContentsMargins(0, 0, 0, 0)
+        self.grid_layout.setSpacing(40)
         
-        # 1. MAPS SECTION
-        self.maps_section = self._create_section("MAPS (TERRAIN)")
-        self.maps_grid = QGridLayout()
-        self.maps_grid.setSpacing(20)
-        self.maps_grid.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        self.maps_section.layout().addLayout(self.maps_grid)
-        self.content_layout.addWidget(self.maps_section)
+        # Sections
+        self.data_grid = self._setup_section("TACTICAL REGISTRIES", color=Theme.ACCENT_ALLY)
+        self.maps_grid = self._setup_section("MAPS & TERRAIN")
+        self.scen_grid = self._setup_section("OPERATIONAL MISSIONS", color=Theme.ACCENT_WARN)
+        self.model_grid = self._setup_section("INTELLIGENCE VARIANTS", color=Theme.ACCENT_GOOD)
         
-        # 2. SCENARIOS SECTION
-        self.scen_section = self._create_section("TACTICAL MISSIONS", Theme.ACCENT_WARN)
-        self.scen_grid = QGridLayout()
-        self.scen_grid.setSpacing(20)
-        self.scen_grid.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        self.scen_section.layout().addLayout(self.scen_grid)
-        self.content_layout.addWidget(self.scen_section)
-        
-        # 3. MODELS SECTION
-        self.model_section = self._create_section("LEARNED VARIANTS (MODELS)", Theme.ACCENT_GOOD)
-        self.model_grid = QGridLayout()
-        self.model_grid.setSpacing(20)
-        self.model_grid.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        self.model_section.layout().addLayout(self.model_grid)
-        self.content_layout.addWidget(self.model_section)
-        
-        self.content_layout.addStretch()
-        
-        self.scroll.setWidget(self.container)
-        self.layout.addWidget(self.scroll)
+        self.scroll.setWidget(self.grid_container)
+        self.layout.addWidget(self.scroll, 1)
         
         self.refresh_list()
 
-    def _create_section(self, title, color=Theme.TEXT_DIM):
-        frame = QFrame()
-        layout = QVBoxLayout(frame)
-        layout.setContentsMargins(0, 0, 0, 0)
+    def _setup_section(self, title, color=Theme.TEXT_DIM):
+        group = QFrame()
+        l = QVBoxLayout(group)
+        l.setContentsMargins(0, 0, 0, 0)
         
         lbl = QLabel(title)
-        lbl.setFont(Theme.get_font(Theme.FONT_HEADER, 11, bold=True))
-        lbl.setStyleSheet(f"color: {color}; border-bottom: 2px solid {color if color != Theme.TEXT_DIM else Theme.BORDER_STRONG}; padding-bottom: 5px; margin-bottom: 10px;")
-        layout.addWidget(lbl)
-        return frame
-
-    def refresh_list(self, map_changed=True, scen_changed=True):
-        """Populates the dashboard with Maps, Missions, and Learned Models."""
-        proj_name = self.state.current_project or "Default"
-        self.title_label.setText(f"PROJECT: {proj_name.upper()}")
+        lbl.setStyleSheet(f"color: {color}; border-bottom: 2px solid {color if color != Theme.TEXT_DIM else Theme.BORDER_STRONG}; padding-bottom: 8px; margin-bottom: 15px; font-weight: bold; font-size: 11px; letter-spacing: 1px;")
+        l.addWidget(lbl)
         
+        grid = QGridLayout()
+        grid.setSpacing(20)
+        grid.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        l.addLayout(grid)
+        self.grid_layout.addWidget(group)
+        return grid
+
+    def _on_project_changed(self, text):
+        if text and text != self.state.current_project:
+            self.state.current_project = text
+            self.active_map = None
+            self.active_scen = None
+            self.refresh_list()
+
+    def refresh_list(self, map_changed=True):
+        """Populates the HQ with Projects, Maps, and Missions."""
+        if self.mw and hasattr(self.mw, 'data_loader'):
+            proj_folder = os.path.join(self.mw.data_loader.content_root, "Projects")
+            projects = sorted([d for d in os.listdir(proj_folder) if os.path.isdir(os.path.join(proj_folder, d))]) if os.path.exists(proj_folder) else ["Default"]
+            
+            self.project_combo.blockSignals(True)
+            if self.project_combo.count() == 0 or sorted([self.project_combo.itemText(i) for i in range(self.project_combo.count())]) != projects:
+                self.project_combo.clear()
+                self.project_combo.addItems(projects)
+            self.project_combo.setCurrentText(self.state.current_project or "Default")
+            self.project_combo.blockSignals(False)
+
+        proj_name = self.state.current_project or "Default"
         result = map_service.get_project_manifest(proj_name)
-        if not result.ok:
-            self.title_label.setText(f"PROJECT: {proj_name.upper()} (ERROR: {result.message})")
-            return
+        if not result.ok: return
             
         manifest = result.data
         root_path = manifest["root_path"]
         maps_dict = manifest["maps"]
         
-        # 1. RENDER MAPS (Global)
-        if map_changed:
-            self._clear_grid(self.maps_grid, self.maps)
-            m_row, m_col = 0, 0
-            for m_name, m_info in sorted(maps_dict.items()):
-                m_card = ProjectCard("map", proj_name, m_name, root_path, info="Terrain")
-                m_card.clicked.connect(self._on_map_selected)
-                m_card.double_clicked.connect(self._on_map_load_requested)
-                self.maps[m_name] = m_card
-                self.maps_grid.addWidget(m_card, m_row, m_col)
-                m_col += 1
-                if m_col > 3: m_col = 0; m_row += 1
+        # 0. RENDER REGISTRIES (Static)
+        self._clear_grid(self.data_grid, self.registries)
+        registries = [
+            ("UNIT CATALOG", "agents"),
+            ("WEAPON ARSENAL", "weapons"),
+            ("RESOURCE LOGISTICS", "resources"),
+            ("OBSTACLE DATABASE", "obstacles"),
+            ("TERRAIN INTEL", "terrain")
+        ]
+        for i, (name, key) in enumerate(registries):
+            card = ProjectCard("data", proj_name, name, root_path, extra=key)
+            card.clicked.connect(self._on_item_clicked)
+            card.double_clicked.connect(self._on_item_double_clicked)
+            self.registries[key] = card
+            self.data_grid.addWidget(card, 0, i)
 
-        # 2. RENDER MISSIONS (Filtered by Active Map)
-        if scen_changed:
-            self._clear_grid(self.scen_grid, self.scenarios)
-            if self.active_map and self.active_map in maps_dict:
-                s_row, s_col = 0, 0
-                for s_name in maps_dict[self.active_map].get("scenarios", []):
-                    s_card = ProjectCard("scenario", proj_name, self.active_map, root_path, extra=s_name, info=f"Map: {self.active_map}")
-                    s_card.clicked.connect(self._on_scenario_selected)
-                    s_card.double_clicked.connect(self._on_scenario_load_requested)
-                    self.scenarios[s_name] = s_card
-                    self.scen_grid.addWidget(s_card, s_row, s_col)
-                    s_col += 1
-                    if s_col > 4: s_col = 0; s_row += 1
+        # 1. RENDER MAPS
+        self._clear_grid(self.maps_grid, self.maps)
+        col, row = 0, 0
+        for m_name, m_info in sorted(maps_dict.items()):
+            card = ProjectCard("map", proj_name, m_name, root_path)
+            card.clicked.connect(self._on_item_clicked)
+            card.double_clicked.connect(self._on_item_double_clicked)
+            card.delete_requested.connect(self._on_item_delete_requested)
+            self.maps[m_name] = card
+            self.maps_grid.addWidget(card, row, col)
+            col += 1
+            if col > 4: col = 0; row += 1 # Increased columns for wider view
 
-        # 3. RENDER MODELS (Filtered by Map and Scenario)
+        # 2. RENDER MISSIONS (Scenarios)
+        self._clear_grid(self.scen_grid, self.scenarios)
+        col, row = 0, 0
+        target_map = self.active_map if self.active_map else list(maps_dict.keys())[0] if maps_dict else None
+        if target_map and target_map in maps_dict:
+            for s_name in maps_dict[target_map].get("scenarios", []):
+                card = ProjectCard("scenario", proj_name, target_map, root_path, extra=s_name, info=f"Map: {target_map}")
+                card.clicked.connect(self._on_item_clicked)
+                card.double_clicked.connect(self._on_item_double_clicked)
+                card.delete_requested.connect(self._on_item_delete_requested)
+                self.scenarios[s_name] = card
+                self.scen_grid.addWidget(card, row, col)
+                col += 1
+                if col > 4: col = 0; row += 1
+
+        # 3. RENDER VARIANTS (Models)
         self._clear_grid(self.model_grid, self.models)
-        if self.active_map and self.active_map in maps_dict:
-            mo_row, mo_col = 0, 0
-            for mo_name in maps_dict[self.active_map].get("simulations", []):
-                # Filter models to containing scenario name if selected
-                if not self.active_scen or self.active_scen in mo_name:
-                    mo_card = ProjectCard("simulation", proj_name, self.active_map, root_path, extra=mo_name, info=f"Model: {mo_name}")
-                    mo_card.double_clicked.connect(self._on_simulation_load_requested)
-                    self.models[mo_name] = mo_card
-                    self.model_grid.addWidget(mo_card, mo_row, mo_col)
-                    mo_col += 1
-                    if mo_col > 4: mo_col = 0; mo_row += 1
+        col, row = 0, 0
+        if target_map and target_map in maps_dict:
+            for mo_name in maps_dict[target_map].get("simulations", []):
+                card = ProjectCard("simulation", proj_name, target_map, root_path, extra=mo_name, info=f"Model: {mo_name}")
+                card.double_clicked.connect(self._on_item_double_clicked)
+                card.delete_requested.connect(self._on_item_delete_requested)
+                self.models[mo_name] = card
+                self.model_grid.addWidget(card, row, col)
+                col += 1
+                if col > 4: col = 0; row += 1
         
         self._update_selection_borders()
 
     def _update_selection_borders(self):
-        """Visually marks selected items using dynamic properties."""
-        from PyQt5.QtWidgets import QStyle
-        # Maps
-        for name, card in self.maps.items():
-            val = "true" if name == self.active_map else "false"
-            card.setProperty("selected", val)
+        for name, card in {**self.maps, **self.scenarios, **self.models, **self.registries}.items():
+            is_sel = (name == self.active_map or name == self.active_scen or name == self.active_model or name == self.active_reg)
+            card.setProperty("selected", "true" if is_sel else "false")
             card.style().unpolish(card)
             card.style().polish(card)
+
+    def _on_item_clicked(self, payload):
+        if payload["kind"] == "map":
+            self.active_map = payload["map_name"]
+            self.active_scen = None
+            self.active_reg = None
+            self.refresh_list(map_changed=False)
+        elif payload["kind"] == "data":
+            self.active_reg = payload["extra"]
+        else:
+            self.active_scen = payload["extra"]
+            self.active_reg = None
         
-        # Scenarios
-        for name, card in self.scenarios.items():
-            val = "true" if name == self.active_scen else "false"
-            card.setProperty("selected", val)
-            card.style().unpolish(card)
-            card.style().polish(card)
+        self._update_selection_borders()
 
-    def _on_map_selected(self, payload):
-        if self.active_map == payload["map_name"]: return
-        self.active_map = payload["map_name"]
-        self.active_scen = None
-        self.refresh_list(map_changed=False, scen_changed=True)
+    def _on_item_double_clicked(self, payload):
+        self._launch_active(payload)
 
-    def _on_scenario_selected(self, payload):
-        if self.active_scen == payload["extra"]: return
-        self.active_scen = payload["extra"]
-        self.refresh_list(map_changed=False, scen_changed=False) # Models only
+    def _on_item_delete_requested(self, payload):
+        """Removes the target Map, Scenario, or Simulation from disk."""
+        kind = payload["kind"]
+        proj = payload["proj"]
+        map_name = payload["map_name"]
+        extra = payload.get("extra", "")
+        
+        # 1. CONFIRMATION
+        from ui.components.themed_widgets import ThemedMessageBox
+        confirm = ThemedMessageBox.question(self, "TACTICAL DELETION", 
+                                            f"Permanently remove this {kind.upper()} ({extra if extra else map_name})?")
+        if not confirm:
+            return
+            
+        # 2. RESOLVE PATH
+        target_path = ""
+        root = payload["root_path"]
+        
+        if kind == "map":
+             # Entire map folder
+             target_path = os.path.join(root, "Projects", proj, "Maps", map_name)
+        elif kind == "scenario":
+             # Specific Scenario JSON
+             target_path = os.path.join(root, "Projects", proj, "Maps", map_name, "Scenarios", f"{extra}.json")
+        elif kind == "simulation":
+             # Specific Simulation JSON
+             target_path = os.path.join(root, "Projects", proj, "Maps", map_name, "Simulations", f"{extra}.json")
+             
+        # 3. EXECUTE
+        try:
+            if os.path.exists(target_path):
+                if os.path.isdir(target_path):
+                    shutil.rmtree(target_path)
+                else:
+                    os.remove(target_path)
+                    
+                self.mw.log_info(f"<b>DELETED</b> {kind.upper()}: {extra or map_name}")
+                
+                # Update current state if we deleted the active item
+                if self.active_map == map_name and kind == "map":
+                     self.active_map = None
+                if self.active_scen == extra and kind == "scenario":
+                     self.active_scen = None
+                
+                self.refresh_list()
+            else:
+                self.mw.log_error(f"Deletion failed: Path not found {target_path}")
+        except Exception as e:
+            self.mw.log_error(f"Error during deletion: {str(e)}")
 
-    def _on_map_load_requested(self, payload):
-        print(f"DEBUG: MapsWidget: Map load requested for '{payload['map_name']}'")
-        self.deep_link_requested.emit({
-            "type": "map",
+    def _launch_active(self, payload):
+        load_type = payload["kind"]
+        print(f"DEBUG: Initiating HQ launch for {load_type}: {payload.get('extra', payload['map_name'])}")
+        
+        data = {
+            "type": load_type,
             "project": payload["proj"],
             "map_name": payload["map_name"],
-            "root": payload["root_path"]
-        })
-
-    def _on_scenario_load_requested(self, payload):
-        print(f"DEBUG: MapsWidget: Scenario load requested for '{payload['extra']}'")
-        self.deep_link_requested.emit({
-            "type": "scenario",
-            "project": payload["proj"],
-            "map_name": payload["map_name"],
-            "scenario_name": payload["extra"],
-            "root": payload["root_path"]
-        })
-
-    def _on_simulation_load_requested(self, payload):
-        print(f"DEBUG: MapsWidget: Simulation load requested for '{payload['extra']}'")
-        self.deep_link_requested.emit({
-            "type": "simulation",
-            "project": payload["proj"],
-            "map_name": payload["map_name"],
-            "model_name": payload["extra"],
-            "root": payload["root_path"]
-        })
+            "root": payload["root_path"],
+            "extra": payload.get("extra", "")
+        }
+        if load_type == "scenario": data["scenario_name"] = payload["extra"]
+        if load_type == "simulation": data["model_name"] = payload["extra"]
+        
+        self.deep_link_requested.emit(data)
 
     def _clear_grid(self, grid, cache):
-        if not grid: return
-        while grid.count():
+        while grid and grid.count():
             item = grid.takeAt(0)
             if item.widget(): item.widget().deleteLater()
         cache.clear()
+
+

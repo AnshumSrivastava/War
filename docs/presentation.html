@@ -69,7 +69,7 @@
 					<div class="glass">
 						<p>Strict <span class="highlight">Separation of Concerns</span> (SoC) following V3 standards:</p>
 						<ul>
-							<li><strong>State Layer</strong>: Immutable world snapshot & Redis data.</li>
+							<li><strong>State Layer</strong>: Immutable world snapshot & in-memory data.</li>
 							<li><strong>Simulation Layer</strong>: Deterministic math & AI loops.</li>
 							<li><strong>Presentation Layer</strong>: Reactive PyQt5/Web frontends.</li>
 						</ul>
@@ -96,7 +96,7 @@
 								SC[SimulationController] --> AM[ActionModel]
 								AM --> AGENT[Agents]
 								AGENT --> AI[Q-Learning Brain]
-								AI --> REDIS[(Redis DB)]
+								AI --> QTable[(In-Memory Q-Tables)]
 							end
 
 							subgraph State Layer
@@ -137,7 +137,7 @@
 				</section>
 
 				<!-- Slide 5: Real-World UI (Screenshot) -->
-				<section data-background-image="/home/anshum/.gemini/antigravity/brain/a8e22963-3751-4988-a21f-337e0a06bfd1/wargame_ui_mockup_1774526371237.png" data-background-size="contain" data-background-opacity="0.3">
+				<section data-background-opacity="0.3">
 					<h3>Integrated Frontend</h3>
 					<div class="glass" style="margin-top: 200px;">
 						<p>Real-time visualization of the simulation engine:</p>
@@ -150,18 +150,18 @@
 				</section>
 
 				<!-- Slide 6: The Engine (Code Snapshot) -->
-				<section data-background-image="/home/anshum/.gemini/antigravity/brain/a8e22963-3751-4988-a21f-337e0a06bfd1/wargame_code_snapshot_1774526394241.png" data-background-size="contain" data-background-opacity="0.2">
+				<section data-background-opacity="0.2">
 					<h3>Code Integrity</h3>
 					<pre><code class="python" data-trim data-noescape>
-# engine/core/hex_math.py
-def cube_distance(a, b):
-    return (abs(a.q - b.q) + abs(a.r - b.r) + abs(a.s - b.s)) / 2
+# engine/ai/reward.py
+def _get_goal_reward(entity, zone_hexes, step, max_steps):
+    """Reward for reaching the objective zone, decaying over time."""
+    multiplier = max(0.1, 1.0 - (step / max_steps))
+    return REWARD_GOAL_REACHED * multiplier
 
-# engine/ai/q_table.py
-def compute_reward(state, action):
-    if state.is_objective(action.pos):
-        return +100
-    return -1 # Step penalty
+# engine/ai/q_table.py  
+def update(s, a, r, s_next):
+    Q[s][a] += alpha * (r + gamma * max(Q[s_next]) - Q[s][a])
 					</code></pre>
 					<p style="font-size: 0.6em; color: #aaa;">High-performance algorithms decoupled from visual dependencies.</p>
 				</section>
@@ -174,7 +174,7 @@ def compute_reward(state, action):
 						<pre><code class="bash">python main.py</code></pre>
 						<p>To run the web-based API & interface:</p>
 						<pre><code class="bash">python web_ui/app.py</code></pre>
-						<p style="font-size: 0.8em; color: #888;">Ensure Redis is running for AI persistence.</p>
+						<p style="font-size: 0.8em; color: #888;">Q-tables are stored in-memory during training and saved to disk as .npy files.</p>
 					</div>
 				</section>
 

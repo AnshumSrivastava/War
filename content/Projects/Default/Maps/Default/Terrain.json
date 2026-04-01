@@ -1,10 +1,10 @@
 {
-    "dimensions": {
-        "width": 30,
-        "height": 20
-    },
-    "grid": {
-        "default": "plain"
-    },
-    "layers": {}
+  "dimensions": {
+    "width": 30,
+    "height": 20
+  },
+  "grid": {
+    "default": "plain"
+  },
+  "layers": {}
 }

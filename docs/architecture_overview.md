@@ -21,7 +21,7 @@ This decoupling ensures that the simulation can be run "headlessly" (without a U
 The codebase is organized by architectural layer to ensure predictability and maintainability.
 
 ### 2.1 The Roots (Entry Points)
-*   **`main.py`**: The application launcher. It initializes the PyQt5 application, boots the central `MainWindow`, and establishes connections to the Redis memory store.
+*   **`main.py`**: The application launcher. It initializes the PyQt5 application, boots the central `MainWindow`, and prepares the in-memory Q-table storage for AI learning.
 *   **`setup_windows.py`**: An automated dependency manager and environment configuration script built to seamlessly onboard Windows developers without requiring manual virtual environment setup.
 
 ### 2.2 Mathematical Engine & Logic (`/engine/`)
@@ -41,11 +41,11 @@ This directory contains the core simulation systems. No UI dependencies (like Py
 
 #### `/engine/data/` - Static Configuration
 *   **`data_controller.py`**: The singular entry point for reading JSON-based configuration files. It acts as a cache, ensuring disk reads are minimized during active simulations.
-*   **`api/redis_db.py`**: The low-level socket connector to the external Redis server, providing rapid read/write access for the AI's memory systems.
+*   **`api/memory_db.py`**: The in-memory key-value store providing rapid read/write access for the AI's Q-table memory systems (MemoryDatabase, a lightweight mock replacing Redis).
 
 #### `/engine/simulation/` - The Active Loop
-*   **`act_model.py`**: The primary simulation heartbeat. The `ActionModel` iterates over all units, evaluates their action economy (Tokens/Suppression), queries their tactical brains (Redis), and enforces compliance with Commander-issued strategies.
-*   **`simulation_controller.py`**: The timekeeper. It manages play/pause states, controls the simulation speed, and tracks episode iteration counters during RL training.
+*   **`act_model.py`**: The primary simulation heartbeat. The `ActionModel` iterates over all units, evaluates their action economy (Tokens/Suppression), queries their tactical brains (in-memory Q-tables), and enforces compliance with Commander-issued strategies.
+*   **`simulation_controller.py`**: Note: Located at `ui/core/simulation_controller.py`. The Qt-based timekeeper wrapper managing play/pause states, simulation speed, and episode iteration counters.
 *   **`command.py`**: Defines data structures (e.g., `AgentCommand`) representing specific orders moving through the pipeline.
 *   **`combat/direct_fire.py`**: The attrition calculator. It evaluates hit probabilities, calculates personnel casualties utilizing Poisson distributions, and processes suppression damage based on weapon fire rates and cover bonuses.
 
@@ -59,7 +59,7 @@ This directory contains all PyQt5 graphical components. It is responsible for tr
 
 #### `/ui/core/` - Visual Utilities
 *   **`visualizer.py`**: An animation decoupling system. It purposefully delays the UI rendering of instant simulation results (like weapons fire) to create readable, sequential animations for the human observer.
-*   **`theme.py`**: Centralized style definitions enforcing a unified, high-contrast dark mode aesthetic across all Qt widgets.
+*   **`theme.py`**: Note: Located at `ui/styles/theme.py`. Centralized style definitions enforcing a unified, high-contrast dark mode aesthetic across all Qt widgets.
 
 #### `/ui/tools/` - Interactive Brushes
 *   **`paint_tool.py`, `place_agent_tool.py`, `edit_tool.py`, etc.**: Object-oriented implementations of map editor tools. They intercept mouse clicks on the canvas and translate them into modifications of the `GlobalState`.

@@ -1,0 +1,17 @@
+{
+  "name": "Default",
+  "rules": {
+    "roster": {
+      "Attacker": [
+        {"name": "Alpha HQ", "weapon_id": "None", "type_display": "Headquarters", "personnel": 10, "side": "Attacker", "placed": false},
+        {"name": "Vanguard 1", "weapon_id": "LMG", "type_display": "Company", "personnel": 110, "side": "Attacker", "placed": false},
+        {"name": "Ironclad 1", "weapon_id": "Main Battle Tank", "type_display": "Platoon", "personnel": 30, "side": "Attacker", "placed": false}
+      ],
+      "Defender": [
+        {"name": "Static HQ", "weapon_id": "None", "type_display": "Headquarters", "personnel": 10, "side": "Defender", "placed": false},
+        {"name": "Garrison A", "weapon_id": "Rifle", "type_display": "Section", "personnel": 10, "side": "Defender", "placed": false},
+        {"name": "Garrison B", "weapon_id": "Rifle", "type_display": "Section", "personnel": 10, "side": "Defender", "placed": false}
+      ]
+    }
+  }
+}

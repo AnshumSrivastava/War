@@ -10,9 +10,10 @@ The main purpose of the V3 refactoring was to enforce **strict modularity** and 
 
 The application is structured around a central abstraction:
 
-1. **Engine Layer** (`/engine`): Houses the pure simulation logic logic, Q-Learning modules, discrete event handlers, hex math, and pathfinding. The engine operates entirely independent of any visual display.
-2. **Data Layer** (`/data`): Manages the loading and saving of definitions, including terrain templates, agent catalogs, zone descriptions, and static project files.
-3. **UI Layer** (`/ui`): A pure presentation layer that queries the `engine` and `data` states and renders the map to a PyQt5 window, including interactive map tools, analytics, dashboards, and live agent feeds.
+1. **Engine Layer** (`/engine`): Houses the pure simulation logic, Q-Learning modules, discrete event handlers, hex math, and pathfinding. The engine operates entirely independent of any visual display.
+2. **Services Layer** (`/services`): The only permitted bridge between UI and Engine. All public functions return `ServiceResult` objects, ensuring a clean API boundary.
+3. **Data Layer** (`/data`): Manages the loading and saving of definitions, including terrain templates, agent catalogs, zone descriptions, and static project files.
+4. **UI Layer** (`/ui`): A pure presentation layer that queries the `engine` and `data` states and renders the map to a PyQt5 window, including interactive map tools, analytics, dashboards, and live agent feeds.
 
 For a deeper dive into the exact module relationships, class diagrams, and design patterns utilized, please open the **Documentation** tab natively inside the application or view `docs/ARCHITECTURE.md`.
 

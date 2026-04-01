@@ -47,9 +47,9 @@ class Theme:
     BORDER_SUBTLE = "#3f3f46"   # Zinc 700
 
     # Cross-platform font stacks
-    FONT_HEADER = "Segoe UI, Inter, Arial, sans-serif"
-    FONT_BODY   = "Segoe UI, Inter, Arial, sans-serif"
-    FONT_MONO   = "Consolas, JetBrains Mono, Courier New, monospace"
+    FONT_HEADER = "Inter, Segoe UI, Arial, sans-serif"
+    FONT_BODY   = "Inter, Segoe UI, Arial, sans-serif"
+    FONT_MONO   = "JetBrains Mono, Consolas, Courier New, monospace"
 
     # --- LIGHT MODE PALETTE (Slate/Blue) ---
     LIGHT_BG_DEEP    = "#f8fafc"   # Slate 50
@@ -62,6 +62,10 @@ class Theme:
     # -------------------------------------------------------------------------
     @staticmethod
     def get_font(family, size=10, bold=False):
+        """
+        Creates a QFont object with the specified family, size, and weight.
+        Used throughout the UI to ensure consistent typography.
+        """
         font = QFont(family, size)
         if bold:
             font.setBold(True)
@@ -69,12 +73,21 @@ class Theme:
 
     @staticmethod
     def get_main_qss():
-        """Returns the simplified flat dark stylesheet (V5 Cyber-Tactical)."""
+        """
+        Returns the primary 'Dark Mode' tactical stylesheet.
+        
+        Style Highlights:
+        - Cyber-Tactical Palette: Deep zinc backgrounds with vibrant blue/red accents.
+        - Strategic Dock Headers: Visual separation of tool windows using neon accent borders.
+        - Input Focus: High-contrast blue rings when users interact with fields.
+        - Glassmorphism: Subtle transparency on overlays and menus.
+        """
         T = Theme
         return f"""
             QMainWindow {{ background-color: {T.BG_DEEP}; }}
             QWidget {{ color: {T.TEXT_PRIMARY}; font-family: "{T.FONT_BODY}"; font-size: 10pt; }}
 
+            /* Tool Panels (Docks) */
             QDockWidget {{
                 color: {T.TEXT_PRIMARY};
                 background-color: {T.BG_SURFACE};
@@ -87,6 +100,7 @@ class Theme:
                 border-bottom: 2px solid {T.ACCENT_ALLY};
             }}
 
+            /* Tab Containers */
             QTabWidget::pane {{ border: 1px solid {T.BG_INPUT}; background: {T.BG_SURFACE}; border-radius: 6px; }}
             QTabBar::tab {{
                 background: {T.BG_INPUT};
@@ -99,24 +113,30 @@ class Theme:
             QTabBar::tab:selected {{ background: {T.ACCENT_ALLY}; color: #ffffff; }}
             QTabBar::tab:hover:!selected {{ background: {T.BORDER_SUBTLE}; color: white; }}
 
+            /* Toolbars & ToolButtons */
             QToolBar {{ background: {T.BG_SURFACE}; border: none; border-bottom: 1px solid {T.BORDER_STRONG}; spacing: 4px; padding: 4px; }}
             QToolButton {{ background: transparent; border: none; border-radius: 4px; padding: 4px; }}
             QToolButton:hover {{ background-color: {T.BG_INPUT}; }}
             QToolButton:checked {{ background-color: {T.ACCENT_ALLY}; color: white; }}
 
+            /* Tactical Buttons (Primary Actions) */
             QPushButton {{ background-color: {T.ACCENT_ALLY}; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; }}
             QPushButton:hover {{ background-color: #2563eb; }}
             QPushButton:pressed {{ background-color: #1d4ed8; }}
 
+            /* Input Fields (Forms) */
             QLineEdit, QSpinBox, QComboBox {{ background-color: {T.BG_INPUT}; border: 1px solid {T.BORDER_SUBTLE}; color: {T.TEXT_PRIMARY}; padding: 6px; border-radius: 6px; }}
             QLineEdit:focus, QSpinBox:focus, QComboBox:focus {{ border: 1px solid {T.ACCENT_ALLY}; }}
 
+            /* Content Groups */
             QGroupBox {{ border: 1px solid {T.BORDER_SUBTLE}; border-radius: 6px; margin-top: 20px; padding-top: 10px; font-weight: 600; }}
             QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; color: {T.ACCENT_ALLY}; }}
 
+            /* Custom Styled Scrollbars */
             QScrollBar:vertical {{ border: none; background: transparent; width: 10px; }}
             QScrollBar::handle:vertical {{ background: {T.BORDER_SUBTLE}; border-radius: 5px; }}
 
+            /* Contextual Popups */
             QMenu {{ background-color: {T.BG_SURFACE}; border: 1px solid {T.BORDER_SUBTLE}; color: {T.TEXT_PRIMARY}; }}
             QMenu::item:selected {{ background-color: {T.ACCENT_ALLY}; color: white; border-radius: 4px; }}
             QMenu::separator {{ height: 1px; background: {T.BORDER_STRONG}; margin: 4px 8px; }}
@@ -124,7 +144,10 @@ class Theme:
 
     @staticmethod
     def get_light_qss():
-        """Returns the light-mode flat stylesheet (Slate palette)."""
+        """
+        Returns the 'Light Mode' (High-Visibility) stylesheet.
+        Built with a clean slate/blue palette for daytime use.
+        """
         L = Theme
         return f"""
             QMainWindow {{ background-color: {L.LIGHT_BG_DEEP}; }}
@@ -180,9 +203,14 @@ class Theme:
 
     @staticmethod
     def get_qss(mode: str = "dark") -> str:
-        """Convenience wrapper: returns dark or light QSS by mode name."""
+        """
+        Global Fetch: Gets either the light or dark tactical stylesheet 
+        depending on the user's preference found in UI settings.
+        """
         return Theme.get_light_qss() if mode == "light" else Theme.get_main_qss()
 
     @staticmethod
     def get_dialog_style():
+        """Returns the fallback style for setup/startup dialogs."""
         return Theme.get_main_qss()
+

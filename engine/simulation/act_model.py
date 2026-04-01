@@ -114,13 +114,24 @@ class ActionModel:
             attrs = self.state.data_controller.get_hex_full_attributes(h, self.map)
             base_cost = float(attrs.get("cost", 1.0))
             
+            # --- ZONE AWARENESS (MINEFIELDS/OBSTACLES) ---
+            zone_penalty = 0.0
+            if hasattr(self.map, 'get_zones'):
+                zones = self.map.get_zones()
+                h_tup = tuple(h)
+                for zid, zdata in zones.items():
+                    if zdata.get("type", "").lower() == "obstacle":
+                        if any(tuple(zh) == h_tup for zh in zdata.get("hexes", [])):
+                            # Massive mathematical penalty for attempting to path through an obstacle
+                            zone_penalty += 3.0
+                            
             # Add threat penalty. 2.0 extra tokens per enemy line-of-fire.
             threat_penalty = 0.0
             if querying_faction and hasattr(self.state, 'threat_map'):
                 threat = self.state.threat_map.get_threat_for_faction(h, querying_faction)
                 threat_penalty = threat * 2.0
                 
-            return base_cost + threat_penalty
+            return base_cost + zone_penalty + threat_penalty
             
         self.pathfinder = Pathfinder(self.map)
         
@@ -199,35 +210,31 @@ class ActionModel:
             # 1. READINESS: Get the unit's configuration (how much personnel they should have).
             config = self.state.data_controller.resolve_unit_config(entity)
             
+            # Ensure personnel is initialized if missing
             if entity.get_attribute("personnel") is None:
-                entity.set_attribute("personnel", config.get("personnel", 100))
+                entity.set_attribute("personnel", config.get("personnel", 10))
+            if entity.get_attribute("max_personnel") is None:
+                entity.set_attribute("max_personnel", config.get("personnel", 10))
             
             # --- SUPPRESSION TICK & DECAY ---
-            # Suppression naturally decays over time if units aren't actively being shot at.
             current_supp = float(entity.get_attribute("suppression", 0.0))
-            decay_rate = 20.0  # Lose 20 suppression points per turn naturally
+            decay_rate = 20.0
             new_supp = max(0.0, current_supp - decay_rate)
             entity.set_attribute("suppression", new_supp)
             
-            # --- TOKEN SYSTEM ---
-            if getattr(entity, 'tokens', None) is None:
-                # Enforce speed limit of 2 hexes per simulation step
-                speed = 2.0
-                
-                # Apply Suppression Penalties to Token Generation
-                if new_supp >= 100:
-                    # PINNED: Unit cannot move or fire. It skips its turn.
-                    entity.set_attribute("tokens", 0.0)
-                    entity.tokens = 0.0
-                elif new_supp >= 50:
-                    # SUPPRESSED: Unit only receives half its usual action tokens.
-                    # It can move slowly OR fire, but not both.
-                    entity.set_attribute("tokens", speed / 2.0)
-                    entity.tokens = speed / 2.0
-                else:
-                    # NORMAL
-                    entity.set_attribute("tokens", speed)
-                    entity.tokens = speed
+            # --- TOKEN SYSTEM (Action Readiness) ---
+            # Forced re-initialization of tokens at the start of every step
+            speed = float(config.get("speed", 2.0))
+            
+            if new_supp >= 100:
+                entity.set_attribute("tokens", 0.0)
+                entity.tokens = 0.0
+            elif new_supp >= 50:
+                entity.set_attribute("tokens", speed / 2.0)
+                entity.tokens = speed / 2.0
+            else:
+                entity.set_attribute("tokens", speed)
+                entity.tokens = speed
 
         # --- SIMULATION LOOP ---
         # Agents take actions as long as they have remaining tokens.
@@ -484,13 +491,16 @@ class ActionModel:
     
                 # --- PHASE 5: LEARN (The Teacher) ---
                 # Now we check how the unit's situation changed AFTER their action.
+                # CRITICAL: Re-query position AFTER action — my_pos is stale (pre-move).
+                new_pos = self.map.get_entity_position(entity.id)
+                
                 dist_after = float('inf')
                 target_after = self._find_target(entity)
                 if target_after:
                      # Calculate the new distance to the enemy.
                      tgt_pos = self.map.get_entity_position(target_after.id)
-                     if my_pos and tgt_pos:
-                          dist_after = HexMath.distance(my_pos, tgt_pos)
+                     if new_pos and tgt_pos:
+                          dist_after = HexMath.distance(new_pos, tgt_pos)
                 
                 # Did they get closer or further away?
                 delta = 0 
@@ -501,8 +511,8 @@ class ActionModel:
                 cmd_dist_after = float('inf')
                 cmd_delta = 0 
                 if cmd:
-                     if my_pos:
-                          cmd_dist_after = HexMath.distance(my_pos, cmd.target_hex)
+                     if new_pos:
+                          cmd_dist_after = HexMath.distance(new_pos, cmd.target_hex)
                           if cmd_dist_before != float('inf'):
                                 cmd_delta = cmd_dist_after - cmd_dist_before
     
@@ -625,7 +635,9 @@ class ActionModel:
                 })
                 
                 # LOG ENTRY: A simple text line for the scrolling history feed.
-                log_entry = f"[{step_number}] {entity.name}: {action_desc} -> R:{reward:.1f} ({tgt_info})"
+                sim_time_str = f"{(step_number * self.time_per_step):02d}m"
+                # A readable military log format (e.g. "[T+05m] Attacker 1 advanced North-East.")
+                log_entry = f"<span style='color:#a8b2d1;'>[T+{sim_time_str}]</span> {entity.name} <b>{action_desc.lower()}</b> <span style='color:#6d778a;'>({tgt_info})</span>"
                 
                 # ATTACH LOG TO EVENT: This allows the Visualizer to log it in sync with the animation.
                 if evt:
@@ -990,12 +1002,16 @@ class ActionModel:
     # ------------------------------------------------------------------
     
     def _is_obstacle(self, hex_coords):
-        """CHECKER: Returns True if a hexagon is blocked by a wall or obstacle zone."""
+        """CHECKER: Returns True if a hexagon is blocked by an IMPASSABLE obstacle.
+        Mines are passable (they trigger damage on entry), so they are NOT blocked here."""
         zones = self.map.get_zones()
         for zid, zdata in zones.items():
             if zdata.get("type") == "Obstacle":
-                if hex_coords in zdata.get('hexes', []):
-                    return True
+                subtype = zdata.get("subtype", "").lower()
+                # Mines are passable — they trigger on entry via move.py
+                if "mine" not in subtype:
+                    if hex_coords in zdata.get('hexes', []):
+                        return True
         return False
     
     @staticmethod  

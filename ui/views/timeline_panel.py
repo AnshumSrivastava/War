@@ -141,11 +141,8 @@ class TimelinePanel(QWidget):
         group_layers.setLayout(layer_layout)
         layout.addWidget(group_layers)
         
-        # --- LOG FEED ---
-        from ui.components.event_log_widget import EventLogWidget
-        self.event_log_widget = EventLogWidget()
-        layout.addWidget(QLabel("EVENT LOG:"))
-        layout.addWidget(self.event_log_widget, 1)
+        # Give layout stretch so elements compactly align to the top
+        layout.addStretch()
 
     def _on_time_limit_changed(self, mins):
         steps = max(1, mins // 10)

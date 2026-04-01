@@ -99,24 +99,8 @@ def add_zone(polygon_points: list, zone_data: dict, auto_spawn_defenders: bool =
             
         _api.map.add_zone(zone_id, zone_data)
         
-        if auto_spawn_defenders and "Goal" in zone_data.get("subtype", ""):
-            # Check overlap with "Designated Area"
-            is_in_designated = False
-            all_zones = _api.map.get_zones()
-            for ozdata in all_zones.values():
-                if ozdata.get("type") == "Designated Area":
-                    oz_hexes = set(tuple(h) for h in ozdata.get("hexes", []))
-                    for h in hexes_inside:
-                        if tuple(h) in oz_hexes:
-                            is_in_designated = True
-                            break
-                if is_in_designated: break
-            
-            if is_in_designated:
-                _spawn_goal_defenders(hexes_inside)
-        
-        if auto_spawn_defenders and "Attack" in zone_data.get("subtype", ""):
-            _spawn_attackers(hexes_inside)
+        # No automatic spawning. Deployment is now manual via Roster.
+
             
         payload = {"zone_id": zone_id, "name": zone_data.get("name"), "side": zone_data.get("side")}
         event_bus.emit("zone_added", payload)
@@ -126,38 +110,7 @@ def add_zone(polygon_points: list, zone_data: dict, auto_spawn_defenders: bool =
         return err(f"Could not add zone: {e}")
 
 
-def _spawn_goal_defenders(zone_hexes: list):
-    """Spawns defender agents around the goal area."""
-    if not zone_hexes:
-        return
-        
-    center_hex = zone_hexes[0]
-    neighbors = [HexMath.neighbor(center_hex, i) for i in range(6)]
-    valid_hexes = [h for h in neighbors if _api.map.get_terrain(h)]
-    
-    from engine.core.entity_manager import Agent
-    spawn_count = 0
-    
-    for h in valid_hexes:
-        if spawn_count >= 4:
-            break
-        if _api.map.get_entities_at(h):
-            continue
-            
-        agent_name = f"Goal Guard {spawn_count + 1}"
-        new_agent = Agent(name=agent_name)
-        new_agent.set_attribute("side", "Defender")
-        new_agent.set_attribute("type", "DefenderAgent")
-        new_agent.set_attribute("home_hex", center_hex)
-        
-        _api.entities.register_entity(new_agent)
-        _api.map.place_entity(new_agent.id, h)
-        
-        event_bus.emit("entity_placed", {
-            "id": new_agent.id, "q": h.q, "r": h.r, 
-            "name": agent_name, "side": "Defender"
-        })
-        spawn_count += 1
+# Goal Guard spawning logic removed. Deployment is now manual via Roster.
 
 def add_objective(hex_coord, name="Strategic Objective", color="#FFD700") -> ServiceResult:
     """Add a Goal Area zone at a specific hex."""

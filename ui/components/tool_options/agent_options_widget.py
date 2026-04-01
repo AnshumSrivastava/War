@@ -40,7 +40,7 @@ class AgentOptionsWidget(QWidget):
         side_layout.addWidget(radio_attacker)
         side_layout.addWidget(radio_defender)
         
-        if app_mode == "scenario":
+        if app_mode == "agents":
             active_side = getattr(self.state, "active_scenario_side", "Attacker")
             if active_side == "Combined":
                 side_widget.setEnabled(True)

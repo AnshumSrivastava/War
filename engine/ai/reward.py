@@ -28,7 +28,7 @@ class RewardModel:
         # (150 per hit, 400 for elimination) rather than instance attributes, to keep
         # them close to the logic that uses them.
         self.REWARD_EVASION_SUCCESS = 5.0  # Moving while under fire.
-        self.REWARD_CLOSING = 15.0         # Moving toward objective or enemy.
+        self.REWARD_CLOSING = 30.0         # Moving toward objective or enemy.
         self.REWARD_GOAL_COMPLETED = 400   # Arriving at a strategic objective.
         self.REWARD_ACTION_INCENTIVE = 0.0 # DISABLED: Don't reward jitter.
         
@@ -36,7 +36,7 @@ class RewardModel:
         self.PENALTY_UNIT_LOST = -400    # Normalized to match goal.
         self.PENALTY_DAMAGE_TAKEN = -2   # Reduced penalty.
         self.PENALTY_PER_STEP = -1.0     # Reduced step penalty.
-        self.PENALTY_RETREATING = -20.0  # Heavy penalty for moving away.
+        self.PENALTY_RETREATING = -40.0  # Heavy penalty for moving away.
         self.PENALTY_REVISITING_HEX = -10.0 # Discourage circular movement.
 
     def calculate_reward(self, entity, action_type, combat_result=None, previous_personnel=None, distance_delta=0, command_dist_delta=0, command_dist=float('inf'), terrain_cost=0.0, step_number=1, max_steps=50, is_revisit=False):

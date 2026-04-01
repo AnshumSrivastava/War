@@ -58,7 +58,7 @@ The entire project enforces a **strict three-layer boundary**. No layer may impo
 
 1. `engine/` never imports from `services/`, `ui/`, or `web_ui/`.
 2. `services/` never imports from `ui/` or `web_ui/`.
-3. `ui/` never imports from `engine/` directly — it always calls `services/`.
+3. `ui/` should call `services/` for state mutations. Read-only imports from `engine/` (e.g., `GlobalState`, `HexMath`) are permitted for performance-critical rendering paths.
 
 ---
 

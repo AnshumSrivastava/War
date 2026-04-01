@@ -100,14 +100,16 @@ class ToolbarController(QObject):
         mode = getattr(self.state, "app_mode", "terrain")
         allowed = []
         if mode == "terrain":
-            allowed = ["cursor", "edit", "eraser", "paint_tool", "draw_zone", "draw_path"] 
-        elif mode == "scenario":
+            allowed = ["cursor", "edit", "eraser", "paint_tool"]
+        elif "areas" in mode:
+            allowed = ["cursor", "edit", "eraser", "draw_zone", "draw_path"]
+        elif "agents" in mode:
             side = getattr(self.state, "active_scenario_side", "Attacker")
             side = side.lower() if side else "attacker"
             if side == "defender":
-                allowed = ["cursor", "edit", "eraser", "place_agent", "draw_zone", "draw_path"]
+                allowed = ["cursor", "eraser", "place_agent"]
             else:
-                allowed = ["cursor", "edit", "eraser", "place_agent", "draw_zone", "draw_path", "assign_goal"]
+                allowed = ["cursor", "eraser", "place_agent", "assign_goal"]
         elif mode == "play":
             side = getattr(self.state, "active_scenario_side", "Defender")
             if side.lower() == "defender":
@@ -122,3 +124,4 @@ class ToolbarController(QObject):
                 
         if self.state.selected_tool not in allowed:
             self.mw.set_tool("cursor")
+

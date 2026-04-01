@@ -21,52 +21,60 @@ class PaintTool(MapTool):
     A tool used to change the terrain of hexagons on the map.
     """
     def __init__(self, widget):
+        """
+        Initializes the Paintbrush tool.
+        
+        Args:
+            widget: The HexWidget canvas where painting occurs.
+        """
         super().__init__(widget)
-        self.painting = False          # True while mouse button is held to paint.
-        self.current_mouse_hex = None  # Hex currently under the cursor.
-        self.brush_radius = 1          # 1 = single hex, up to 5 = wide brush.
+        # Activation state: Is the user currently dragging to paint?
+        self.painting = False          
+        # Tracking: Which hex is the mouse currently hovering over?
+        self.current_mouse_hex = None  
+        # Brush Size: 1 = single hex, up to 5 = wide area brush.
+        self.brush_radius = 1          
 
     def get_cursor(self):
+        """Returns a 'Cross' cursor to indicate precision editing mode."""
         return Qt.CrossCursor
         
-    def get_options_widget(self):
+    def get_options_widget(self, parent=None):
         """
         THE SETTINGS BOX: Build the small menu that appears in the sidebar
-        when this tool is active.  Includes terrain pickers and a brush-size slider.
+        whenever the Paintbrush is active.  
         """
         from PyQt5.QtWidgets import QWidget, QVBoxLayout, QComboBox, QLabel, QSlider, QHBoxLayout
         from PyQt5.QtCore import Qt as _Qt
 
-        widget = QWidget()
+        container = QWidget(parent)
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(8)
 
-        # --- Terrain Selection ---
-        lbl_type = QLabel("Terrain Type")
+        # --- TERRAIN CATEGORY SELECTION ---
+        lbl_type = QLabel("CATEGORY")
+        lbl_type.setStyleSheet("font-weight: bold; font-size: 9px; color: #a1a1aa;")
         self.combo_terrain = QComboBox()
 
-        lbl_sub = QLabel("Subtype / ID")
-        self.combo_sub = QComboBox()
-
+        # Fetch dynamically from state
         t_types = []
         if hasattr(self.state, 'terrain_controller'):
-            t_types = self.state.terrain_controller.get_available_terrains()
+            t_types = sorted([t.title() for t in self.state.terrain_controller.get_available_terrains()])
         if not t_types:
             t_types = ["Vegetation", "Water", "Mountain"]
         self.combo_terrain.addItems(t_types)
 
-        self.combo_terrain.currentTextChanged.connect(self.update_terrain_subtypes)
-        self.combo_sub.currentTextChanged.connect(lambda t: setattr(self.state, 'zone_opt_subtype', t))
+        # Connect UI interactions to state updates
+        self.combo_terrain.currentTextChanged.connect(lambda t: setattr(self.state, 'zone_opt_type', t.lower()))
 
         layout.addWidget(lbl_type)
         layout.addWidget(self.combo_terrain)
-        layout.addWidget(lbl_sub)
-        layout.addWidget(self.combo_sub)
 
-        # --- Brush Size ---
+        # --- BRUSH RADIUS SLIDER ---
         brush_row = QHBoxLayout()
-        lbl_brush = QLabel("Brush:")
+        lbl_brush = QLabel("BRUSH RADIUS:")
+        lbl_brush.setStyleSheet("font-size: 10px;")
         self.brush_size_label = QLabel(f"{self.brush_radius}")
         self.brush_slider = QSlider(_Qt.Horizontal)
         self.brush_slider.setRange(1, 5)
@@ -74,8 +82,10 @@ class PaintTool(MapTool):
         self.brush_slider.setPageStep(1)
 
         def _on_brush_changed(val):
+            """Internal handler for real-time brush resizing."""
             self.brush_radius = val
             self.brush_size_label.setText(str(val))
+            # Trigging a widget update shows the new preview circle size
             self.widget.update()
 
         self.brush_slider.valueChanged.connect(_on_brush_changed)
@@ -85,100 +95,92 @@ class PaintTool(MapTool):
         brush_row.addWidget(self.brush_size_label)
         layout.addLayout(brush_row)
 
-        # Initialise state
-        self.combo_terrain.setCurrentText(getattr(self.state, 'zone_opt_type', "Vegetation"))
-        self.update_terrain_subtypes(self.combo_terrain.currentText())
+        # Sync initial state
+        curr_type = getattr(self.state, 'zone_opt_type', "plain").title()
+        if curr_type in [self.combo_terrain.itemText(i) for i in range(self.combo_terrain.count())]:
+             self.combo_terrain.setCurrentText(curr_type)
 
-        widget.setLayout(layout)
-        return widget
+        container.setLayout(layout)
+        return container
 
-    def update_terrain_subtypes(self, t_type):
-        """Updates the second dropdown menu based on the first one."""
-        self.state.zone_opt_type = t_type
-        if hasattr(self, 'combo_sub'):
-            self.combo_sub.clear()
-            # Define specific options for each category.
-            subtypes = []
-            if t_type == "Vegetation": subtypes = ["Forest", "Scrub", "Orchard"]
-            elif t_type == "Water": subtypes = ["River", "Lake", "Stream"]
-            elif t_type == "Mountain": subtypes = ["High", "Low", "Pass"]
-            else: subtypes = ["Generic"]
-            self.combo_sub.addItems(subtypes)
+    # Removed broken hardcoded update_terrain_subtypes
 
     def mousePressEvent(self, event):
-        """Starts the painting process when the mouse is clicked."""
+        """Called when you click the left mouse button to start painting."""
         if event.button() == Qt.LeftButton:
             self.painting = True
             
-            # Identify which hexagon was clicked and paint it immediately.
+            # Map the screen click to a mathematical hexagon coordinate
             click_hex = self.widget.screen_to_hex(event.x(), event.y())
+            # Apply the initial 'splat' of paint
             self.apply_paint(click_hex)
-            self.widget.refresh_map() # Redraw the map to show the new land.
+            # Redraw to show changes immediately
+            self.widget.refresh_map()
 
     def mouseMoveEvent(self, event):
-        """Continues painting as the mouse moves."""
+        """Updates the hover ghost and applies paint if dragging."""
         self.current_mouse_hex = self.widget.screen_to_hex(event.x(), event.y())
         if self.painting:
-            # If the user is holding the button down, paint every hex the mouse touches.
+            # Continue applying 'paint' to every hex the mouse enters while held
             self.apply_paint(self.current_mouse_hex)
-        self.widget.refresh_map() # Redraw for the hover highlight or the new paint.
+        # Redraw to update the cursor preview and terrain visuals
+        self.widget.refresh_map()
 
     def mouseReleaseEvent(self, event):
-        """Stops painting when the user lets go of the button."""
+        """Called when you let go of the mouse button."""
         if event.button() == Qt.LeftButton:
             self.painting = False
             self.widget.refresh_map()
 
     def apply_paint(self, hex_obj):
-        """The core logic: changes terrain for hex_obj and all hexes within brush_radius."""
+        """
+        THE ENGINE: Physically changes the Map Data.
+        Changes the center hex (hex_obj) and all neighbors within brush_radius.
+        """
         if not hex_obj:
             return
 
+        # Fetch current UI settings for paint type
         z_type = getattr(self.state, 'zone_opt_type', "Vegetation")
-        z_sub  = getattr(self.state, 'zone_opt_subtype', "Forest")
-
-        # Resolve terrain type string
-        t_type    = "plain"
-        candidate = z_sub.lower()
-        avail     = []
+        # RESOLUTION: Use exact selection from dropdown
+        t_type = z_type.lower()
         if hasattr(self.state, 'terrain_controller'):
-            avail = self.state.terrain_controller.get_available_terrains()
-
-        if candidate in avail:
-            t_type = candidate
-        elif z_type in avail:
-            t_type = z_type
-        elif z_type.lower() in avail:
-            t_type = z_type.lower()
-        else:
-            if z_type == "Vegetation":
-                if "Forest" in z_sub:    t_type = "forest"
-                elif "Scrub" in z_sub:   t_type = "scrub"
-            elif z_type == "River":      t_type = "water"
-            elif z_type == "Mountain":   t_type = "mountain"
+             avail = self.state.terrain_controller.get_available_terrains()
+             if t_type not in avail:
+                 t_type = "plain" # Fallback safeguard
 
         new_data = {"type": t_type}
 
-        # Paint all hexes within brush radius (spiral covers center + N rings)
+        # CALCULATE TARGET AREA: Uses a SPIRAL algorithm to find all hexes in the brush circle.
+        # radius-1 because spiral(R) includes center + R rings.
         targets = HexMath.spiral(hex_obj, self.brush_radius - 1)
         for target_hex in targets:
             current = self.state.map.get_terrain(target_hex)
+            # Only apply change if the terrain is actually different (optimization)
             if not current or current.get("type") != t_type:
                 self.state.map.set_terrain(target_hex, new_data)
 
     def draw_preview(self, painter):
-        """GHOST HIGHLIGHT: Draws brush-radius highlight over hovered hexes."""
+        """
+        PREVIEW CURSOR: Draws a translucent circle over the map showing 
+        exactly where the paint will land and its currently selected size.
+        """
         if not self.current_mouse_hex:
             return
 
+        # Camera offset logic to draw at the correct screen position
         cx = self.widget.width() / 2
         cy = self.widget.height() / 2
 
+        # Get all hexes that would be painted
         targets = HexMath.spiral(self.current_mouse_hex, self.brush_radius - 1)
+        
+        # Style the ghost highlight (faint white fill with stronger border)
         highlight_color = QColor(255, 255, 255, 40)
         painter.setBrush(QBrush(highlight_color))
         painter.setPen(QPen(QColor(255, 255, 255, 180), 2))
 
+        # Render each hex in the preview area
         for h in targets:
             wx, wy = HexMath.hex_to_pixel(h, self.widget.hex_size)
             sx = wx - self.widget.camera_x + cx
@@ -186,4 +188,5 @@ class PaintTool(MapTool):
             corners = HexMath.get_corners(sx, sy, self.widget.hex_size)
             poly = QPolygonF([QPointF(pt[0], pt[1]) for pt in corners])
             painter.drawPolygon(poly)
+
 

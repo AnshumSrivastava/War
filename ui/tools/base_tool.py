@@ -18,10 +18,14 @@ log = logging.getLogger(__name__)
 
 class MapTool(QObject):
     """
-    The base class (template) that all map tools inherit from.
+    ABSTRACTION: The template for any tool that interacts with the Hex Map.
+    Provides lifecycle methods (activate/deactivate) and mouse event placeholders.
     """
     def __init__(self, widget):
-        super().__init__()
+        """
+        Initializes the tool and links it to the map widget.
+        """
+        super().__init__(widget)
         # Reference to the HexWidget (the map canvas) this tool is currently being used on.
         self.widget = widget
         # Reference to the GlobalState (the application's shared notebook).
@@ -45,6 +49,13 @@ class MapTool(QObject):
         (like showing a translucent hex where you're about to paint).
         """
         pass
+
+    def get_options_widget(self, parent=None):
+        """
+        ABSTRACTION: Returns a QWidget containing the tool's settings.
+        If parent is provided, the widget will be linked to it to prevent popups.
+        """
+        return None
 
     def activate(self):
         """Called when you select this tool from the toolbar."""

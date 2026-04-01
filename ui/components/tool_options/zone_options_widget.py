@@ -1,9 +1,10 @@
 from PyQt5.QtWidgets import QWidget, QFormLayout, QLabel, QLineEdit, QComboBox, QHBoxLayout, QToolButton
+from PyQt5.QtCore import Qt
 from ui.styles.theme import Theme
 
 class ZoneOptionsWidget(QWidget):
     def __init__(self, main_window, state):
-        super().__init__()
+        super().__init__(main_window)
         self.mw = main_window
         self.state = state
         self._setup_ui()
@@ -20,7 +21,16 @@ class ZoneOptionsWidget(QWidget):
         header.setObjectName("InspectorLabel")
         layout.addRow(header)
 
-        label_instr = QLabel("Define clickable regions on the map.")
+        # Active Side Banner
+        if "areas" in app_mode:
+            side = getattr(self.state, "active_scenario_side", "Attacker")
+            color = Theme.ACCENT_ENEMY if side == "Attacker" else Theme.ACCENT_ALLY
+            banner = QLabel(f"Deploying for: {side.upper()}")
+            banner.setStyleSheet(f"background-color: {color}; color: white; font-weight: bold; padding: 4px; border-radius: 4px;")
+            banner.setAlignment(Qt.AlignCenter)
+            layout.addRow(banner)
+
+        label_instr = QLabel("Define clickable regions on the map. (Right-click to finish)")
         label_instr.setStyleSheet("color: #777777; font-size: 11px; margin-bottom: 10px;")
         layout.addRow(label_instr)
         
@@ -38,7 +48,7 @@ class ZoneOptionsWidget(QWidget):
         type_combo = QComboBox()
         if app_mode == "terrain":
             type_combo.addItems(["Terrain"])
-        elif app_mode == "scenario":
+        elif "areas" in app_mode:
             active_side = getattr(self.state, "active_scenario_side", "Attacker")
             if active_side == "Attacker":
                 type_combo.addItems(["Attacker Area", "Obstacle"])
