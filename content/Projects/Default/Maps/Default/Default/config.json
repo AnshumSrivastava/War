@@ -1,0 +1,12 @@
+{
+  "project_name": "Unnamed",
+  "file_type": "project",
+  "version": "2.0",
+  "dimensions": {
+    "width": 50,
+    "height": 50
+  },
+  "terrain": {},
+  "hex_sides": {},
+  "terrain_name": "Default"
+}

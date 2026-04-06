@@ -85,7 +85,7 @@ class Theme:
         T = Theme
         return f"""
             QMainWindow {{ background-color: {T.BG_DEEP}; }}
-            QWidget {{ color: {T.TEXT_PRIMARY}; font-family: "{T.FONT_BODY}"; font-size: 10pt; }}
+            QWidget {{ color: {T.TEXT_PRIMARY}; font-family: "{T.FONT_BODY}"; font-size: 10pt; background-color: {T.BG_SURFACE}; }}
 
             /* Tool Panels (Docks) */
             QDockWidget {{

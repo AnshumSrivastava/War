@@ -17,11 +17,11 @@ class PathOptionsWidget(QWidget):
 
         # Header Label
         header = QLabel("<b>PATH CONFIGURATION</b>")
-        header.setStyleSheet("color: #3daee9; font-size: 14px; margin-bottom: 2px;")
+        header.setStyleSheet(f"color: {Theme.ACCENT_ALLY}; font-size: 14px; margin-bottom: 2px;")
         layout.addRow(header)
 
         label_instr = QLabel("Draw tactical lines, roads, or borders.")
-        label_instr.setStyleSheet("color: #777777; font-size: 11px; margin-bottom: 10px;")
+        label_instr.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-size: 11px; margin-bottom: 10px;")
         layout.addRow(label_instr)
         
         # Name Input

@@ -190,21 +190,26 @@ class MasterDataService:
     # --- PROJECTS ---
     
     def get_projects(self) -> List[str]:
-        """Scans the 'Projects' folder to see which strategic scenarios are available."""
-        keys = self.db.keys("Projects/*/project_config.json")
-        projects = []
-        for k in keys:
+        """Scans the 'Projects' folder for monolithic .json files."""
+        # Check for new monolithic files
+        json_keys = self.db.keys("Projects/*.json")
+        projects = [os.path.basename(k) for k in json_keys]
+        
+        # Also check for legacy folders
+        legacy_keys = self.db.keys("Projects/*/project_config.json")
+        for k in legacy_keys:
             parts = k.split("/")
-            if len(parts) >= 2 and parts[0] == "Projects":
+            if len(parts) >= 2 and parts[1] not in projects:
                 projects.append(parts[1])
+                
         return list(set(projects))
 
     def create_project(self, name: str) -> bool:
-        """Creates a new project profile."""
-        if self.db.exists(f"Projects/{name}/project_config"):
+        """Creates a new monolithic project JSON (stub)."""
+        key = f"Projects/{name}"
+        if self.db.exists(key):
             return False
-        self.db.set(f"Projects/{name}/project_config", {"name": name, "created": "now"})
-        return True
+        return self.db.set(key, {"project_name": name, "version": "2.0"})
 
     def get_maps(self, project_name: str) -> List[str]:
         """Finds all the terrain maps that belong to a specific project."""

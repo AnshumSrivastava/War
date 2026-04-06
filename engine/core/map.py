@@ -48,7 +48,9 @@ class Scenario:
             "max_turns": 30,             # When the game automatically ends.
             "attacker_max_force": 10,     # Troop limit for the red side.
             "defender_max_force": 10,     # Troop limit for the blue side.
+            "roster": {"Attacker": [], "Defender": []} 
         }
+
         
     def to_dict(self) -> Dict:
         """
@@ -136,13 +138,19 @@ class Scenario:
         LOADING: Takes a dictionary (from a file) and rebuilds the scenario.
         It translates those simple 'Offset' coordinates back into 'Cube' math.
         """
-        self.name = data.get("name", "Unnamed Scenario")
-        self.rules = data.get("rules", {
+        # DATA MERGE: Ensure rules always contain all required keys (roster, limits, etc.)
+        loaded_rules = data.get("rules", {})
+        default_rules = {
             "max_agents_per_hex": 3,
             "max_turns": 30,
             "attacker_max_force": 10,
             "defender_max_force": 10,
-        })
+            "roster": {"Attacker": [], "Defender": []}
+        }
+        # Only overwrite defaults with what is actually in the file
+        default_rules.update(loaded_rules)
+        self.rules = default_rules
+
         self._zones = {}
         self._entity_positions = {}
         self._spatial_map = {}
@@ -306,6 +314,20 @@ class Map:
         # If no terrain is defined, we treat it as a 'plain' field
         return self._terrain.get(tuple(hex_obj), {"type": "plain", "elevation": 0, "cost": 1.0})
 
+    def is_walkable(self, q: int, r: int) -> bool:
+        """
+        TRAVERSAL: Checks if a hexagon is passable for ground units.
+        Returns False if the hex is out of bounds or marked as impassable (cost <= 0).
+        """
+        h = HexMath.create_hex(q, r)
+        terrain = self.get_terrain(h)
+        if not terrain:
+            return False
+            
+        # Cost of 0 or less typically means 'Impassable' (like Deep Water)
+        cost = terrain.get("cost", 1.0)
+        return cost > 0
+
     # --- Delegated to Active Scenario ---
 
     def place_entity(self, entity_id: str, hex_obj: Hex):
@@ -387,75 +409,100 @@ class Map:
          if path_id in self.active_scenario._paths:
             del self.active_scenario._paths[path_id]
 
-    # --- Persistence (Map = Terrain Only + Ref to scenarios?) ---
-    # For now, let's keep to_dict saving ONLY terrain and dimensions, 
-    # OR we can save the *current session* (Map + Scenario).
-    # Based on user request, we want separate files. 
-    # So map.to_dict() should generally serve "Terrain" saving.
+    # --- Persistence (Monolithic Support) ---
     
-    def to_dict(self, include_scenarios=False, entity_manager=None) -> Dict:
+    def to_dict(self, include_scenarios=True, entity_manager=None) -> Dict:
         """
-        SAVING TERRAIN: Converts the static map (mountains/plains) into a dictionary.
-        This is what gets saved to '.json' files.
+        CONVERSION: Turns the entire project (Map + all Scenarios) into a single dict.
+        Defaulting include_scenarios to True to support the Monolithic JSON requirement.
         """
         data = {
-            "width": self.width,
-            "height": self.height,
-            "terrain": {},
-            "file_type": "project" if include_scenarios else "terrain"
+            "project_name": getattr(self, 'name', "Unnamed"),
+            "file_type": "project",
+            "version": "2.0",
+            "dimensions": {"width": self.width, "height": self.height},
+            "terrain": {}
         }
         
-        # Save every terrain tile using easy-to-read 'column,row' coordinates
+        # 1. Save Terrain
         for hex_tuple, t_data in self._terrain.items():
             h = Hex(*hex_tuple)
             col, row = HexMath.cube_to_offset(h)
             key = f"{col},{row}"
             data["terrain"][key] = t_data
         
-        # Save which side (Red/Blue) has been assigned to each hexagon
+        # 2. Save Map Sides (Red/Blue Territory)
         data["hex_sides"] = {}
-        if hasattr(self, 'hex_sides'):
-            for hex_tuple, side_id in self.hex_sides.items():
-                 h = Hex(*hex_tuple)
-                 col, row = HexMath.cube_to_offset(h)
-                 key = f"{col},{row}"
-                 data["hex_sides"][key] = side_id
-        
+        for hex_tuple, side_id in self.hex_sides.items():
+             h = Hex(*hex_tuple)
+             col, row = HexMath.cube_to_offset(h)
+             key = f"{col},{row}"
+             data["hex_sides"][key] = side_id
+             
+        # 3. Save Scenarios
+        if include_scenarios:
+            data["scenarios"] = {}
+            for name, scen in self.scenarios.items():
+                if entity_manager and self.active_scenario and name == self.active_scenario.name:
+                    data["scenarios"][name] = scen.to_dict_with_entities(entity_manager)
+                else:
+                    data["scenarios"][name] = scen.to_dict()
+            
+            data["active_scenario_name"] = self.active_scenario.name if self.active_scenario else "Default"
+            
         return data
 
-    def load_from_dict(self, data: Dict):
-        """Restore Terrain Data from Offset Coordinates."""
-        if "width" in data: self.width = data.get("width", 50)
-        if "height" in data: self.height = data.get("height", 50)
+    def load_from_dict(self, data: Dict, entity_manager=None):
+        """
+        HYDRATION (Disk-First): Rebuilds the whole map/project from a dictionary.
+        This is used every time we switch phases to ensure data is fresh.
+        """
+        self.width = data.get("dimensions", {}).get("width", data.get("width", 50))
+        self.height = data.get("dimensions", {}).get("height", data.get("height", 50))
+        self.name = data.get("project_name", "Unnamed")
         
-        terrain_raw = data.get("terrain")
-        if terrain_raw is not None:
-            self._terrain = {}
-            for key, t_data in terrain_raw.items():
-                try:
-                    # Key is "col,row"
-                    if ',' in key:
-                        c_str, r_str = key.split(',')
-                        col, row = int(c_str), int(r_str)
-                        h = HexMath.offset_to_cube(col, row)
-                        self._terrain[(h.q, h.r, h.s)] = t_data
-                    else: 
-                        # Fallback for old "q,r,s" if mixed?
-                        parts = list(map(int, key.split(',')))
-                        if len(parts) == 3: # Legacy Cube
-                             self._terrain[(parts[0], parts[1], parts[2])] = t_data
-                except ValueError:
-                    continue
-        
-        if data.get("file_type") == "project" and "scenarios" in data:
-            scenarios_data = data["scenarios"]
-            self.scenarios = {} # Clear existing? Or merge? Clear is safer for Project Load.
+        # 1. Clear & Load Terrain
+        self._terrain = {}
+        terrain_raw = data.get("terrain", {})
+        for key, t_data in terrain_raw.items():
+            try:
+                if ',' in key:
+                    c_str, r_str = key.split(',')
+                    h = HexMath.offset_to_cube(int(c_str), int(r_str))
+                    self._terrain[(h.q, h.r, h.s)] = t_data
+            except (ValueError, TypeError): continue
             
-            # We need an entity manager passed in, or we can't restore entities.
-            # Map.load_from_dict signature doesn't have it.
-            # We should overload or check kwargs if we want to be clean, 
-            # but python allows us to add `entity_manager=None` to the signature.
-            pass
+        # 2. Clear & Load Hex Sides
+        self.hex_sides = {}
+        sides_raw = data.get("hex_sides", {})
+        for key, side_id in sides_raw.items():
+            try:
+                if ',' in key:
+                    c_str, r_str = key.split(',')
+                    h = HexMath.offset_to_cube(int(c_str), int(r_str))
+                    self.hex_sides[(h.q, h.r, h.s)] = side_id
+            except (ValueError, TypeError): continue
+            
+        # 3. Hydrate Scenarios
+        if "scenarios" in data:
+            self.scenarios = {}
+            if entity_manager: entity_manager.clear()
+            
+            active_name = data.get("active_scenario_name", "Default")
+            for name, s_data in data["scenarios"].items():
+                scen = Scenario(name)
+                # Ensure the scenario object knows its own name for internal lookups
+                scen.name = name 
+                
+                if entity_manager and name == active_name:
+                    scen.load_from_dict_with_entities(s_data, entity_manager)
+                    self.active_scenario = scen
+                else:
+                    scen.load_from_dict(s_data)
+                self.scenarios[name] = scen
+                
+            if not getattr(self, 'active_scenario', None) and self.scenarios:
+                self.active_scenario = list(self.scenarios.values())[0]
     
     def load_project_data(self, data: Dict, entity_manager):
         """Full project load with scenarios and entities."""

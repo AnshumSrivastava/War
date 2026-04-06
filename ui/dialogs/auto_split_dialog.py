@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QSlider, QDialogButtonBox, QHBoxLayout
 from PyQt5.QtCore import Qt
+from ui.styles.theme import Theme
 
 class AutoSplitDialog(QDialog):
     """
@@ -11,12 +12,12 @@ class AutoSplitDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Auto-Split Configuration")
         self.resize(300, 200)
-        self.setStyleSheet("""
-            QDialog { background-color: #2b2b2b; color: #e0e0e0; }
-            QLabel { color: #e0e0e0; }
-            QComboBox { background-color: #404040; color: #ffffff; padding: 5px; }
-            QSlider::groove:horizontal { height: 6px; background: #404040; }
-            QSlider::handle:horizontal { background: #3daee9; width: 14px; margin: -4px 0; border-radius: 7px; }
+        self.setStyleSheet(f"""
+            QDialog {{ background-color: {Theme.BG_SURFACE}; color: {Theme.TEXT_PRIMARY}; }}
+            QLabel {{ color: {Theme.TEXT_PRIMARY}; }}
+            QComboBox {{ background-color: {Theme.BG_INPUT}; color: {Theme.TEXT_PRIMARY}; padding: 5px; }}
+            QSlider::groove:horizontal {{ height: 6px; background: {Theme.BG_INPUT}; }}
+            QSlider::handle:horizontal {{ background: {Theme.ACCENT_ALLY}; width: 14px; margin: -4px 0; border-radius: 7px; }}
         """)
         
         layout = QVBoxLayout(self)

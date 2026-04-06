@@ -165,12 +165,25 @@ class Visualizer:
             end_pt = self._get_screen_pos(evt['end'])
             color = evt['color']
             
-            pen = QPen(color, 2, Qt.DotLine)
+            # --- TACTICAL FIRE LINE ---
+            # Using a thicker SolidLine for the main stream, with a glow effect if possible.
+            # For now, a 3px Wide Solid Line with alpha.
+            line_color = QColor(color)
+            line_color.setAlpha(200)
+            
+            pen = QPen(line_color, 3, Qt.SolidLine)
+            pen.setCapStyle(Qt.RoundCap)
             painter.setPen(pen)
+            painter.drawLine(start_pt, end_pt)
+            
+            # Add a secondary "spark" or "bullet" trail (Dotted)
+            pen_spark = QPen(QColor(255, 255, 255, 180), 1, Qt.DotLine)
+            painter.setPen(pen_spark)
             painter.drawLine(start_pt, end_pt)
             
             self._draw_arrowhead(painter, start_pt, end_pt, color)
         painter.restore()
+
 
     def _draw_arrowhead(self, painter, start, end, color):
         line = QLineF(start, end)

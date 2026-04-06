@@ -15,12 +15,14 @@ This file bridges the gap between the static Map/Units and the AI Learning brain
 """
 import random
 import datetime
-from typing import Optional, List, Callable
+from typing import Optional, List, Dict, Callable
 from PyQt5.QtCore import QCoreApplication
 
 from engine.core.hex_math import Hex, HexMath, DIRECTION_MAP
 from engine.core.map import Map
 from engine.core.entity_manager import EntityManager
+from ui.styles.theme import Theme
+
 
 from engine.core.pathfinding import Pathfinder
 from engine.data.definitions.constants import RL_ACTION_MAP, NUM_RL_ACTIONS
@@ -39,6 +41,7 @@ from engine.simulation.move import MoveAction
 from engine.simulation.close_combat import CloseCombatAction
 from engine.simulation.commit import CommitAction
 from engine.ai.commander import get_commander_brain
+from engine.data.api.json_db import JSONDatabase
 
 
 # DIRECTION_MAP is imported from engine.core.hex_math above — single canonical source.
@@ -82,21 +85,25 @@ class ActionModel:
         # 1. Ephemeral (The Explorer): 
         #    This brain starts empty every session. It is used by units that are 
         #    actively learning and trying out new, unpredictable tactics.
+        # NEW: Disk-based JSON storage for no-RAM footprint
+        db_ephemeral = JSONDatabase("data/training/ephemeral")
         self.q_manager_ephemeral = QTableManager(
             state_size=self.encoder.state_size,
-            action_size=NUM_RL_ACTIONS
+            action_size=NUM_RL_ACTIONS,
+            db=db_ephemeral
         )
         self.q_manager_ephemeral.epsilon = 1.0 # 1.0 means 'always try something random'
-        self.q_manager_ephemeral.load_q_table("data/models/ephemeral_q_table.npy")
         
         # 2. Persistent (The Veteran): 
         #    This brain loads previously saved knowledge from a file. 
         #    It is used by units that should behave like 'Hard' difficulty AI.
+        # NEW: Disk-based JSON storage for no-RAM footprint
+        db_persistent = JSONDatabase("data/training/persistent")
         self.q_manager_persistent = QTableManager(
             state_size=self.encoder.state_size,
-            action_size=NUM_RL_ACTIONS
+            action_size=NUM_RL_ACTIONS,
+            db=db_persistent
         )
-        self.q_manager_persistent.load_q_table("data/models/q_table.npy")
         self.q_manager_persistent.epsilon = 0.01 # 0.01 means 'almost always use your experience'
         
         # BRAIN TRANSITION: 'Decay' makes the 'Explorer' brain slowly become a 'Veteran' brain over time.
@@ -245,7 +252,6 @@ class ActionModel:
                 
             for entity in active_entities:
                 # --- INITIALIZE SCRATCHPAD ---
-                # These must be reset for every agent to avoid UnboundLocalError
                 evt = None
                 action_desc = "HOLD / END TURN"
                 combat_result = None
@@ -255,6 +261,10 @@ class ActionModel:
                 terrain_cost = 0.0
                 think_str = "HOLDING"
                 
+                # Yield to Qt event loop frequently for massive agent counts
+                if step_number % 1 == 0:
+                    QCoreApplication.processEvents()
+
                 config = self.state.data_controller.resolve_unit_config(entity)
             
                 # 3. STATUS: If a unit's personnel count is 0, they are out of combat.
@@ -334,56 +344,58 @@ class ActionModel:
                 # OPTION SCAN: Figure out which actions (Move, Fire, etc.) are physically possible right now.
                 allowed = self._get_allowed_actions(entity, target)
                 
-                # --- OVERRIDE LOGIC FOR USER GOALS ---
+                # --- OVERRIDE/SHORTCUT LOGIC ---
                 action_idx = 7 # HOLD by default
                 thinking = {"mode": "Override", "epsilon": 0.0, "q_values": {}}
                 override_applied = False
+                goto_next_agent = False
                 
-                # If it's a USER-assigned command, we still want to give them some direct guidance
-                # if they manually clicked a destination without RL training for that specific goal.
-                if cmd and cmd.is_user_assigned and cmd.command_type == "MOVE":
-                    if my_pos and HexMath.distance(my_pos, cmd.target_hex) > 0:
-                        # RESPECT STRATEGIC AXIS
-                        axis = getattr(cmd, "axis", 0)
-                        if axis == 1: # SAFE
-                            cost_fn = lambda h: self.get_true_cost(h, querying_faction=my_side)
-                        elif axis == 2: # FAST
-                            cost_fn = lambda h: 1.0 if self.map.get_terrain(h) else float('inf')
-                        else: # DIRECT
-                            def direct_cost(h):
-                                t = self.map.get_terrain(h)
-                                return t.get("cost", 1.0) if t else float('inf')
-                            cost_fn = direct_cost
-
-                        path_to_follow = self.pathfinder.get_path(
-                            my_pos, cmd.target_hex,
-                            cost_fn=cost_fn
-                        )
-                    
-                        if path_to_follow and len(path_to_follow) > 1:
-                            next_hex = path_to_follow[1]
-                            direction_idx = HexMath.get_neighbor_direction(my_pos, next_hex)
+                # --- EFFICIENCY: PATHFINDING SHORTCUT (NO ENEMIES NEAR) ---
+                # If an agent is in a "Clear" zone (no enemies in sight), we skip the RL loop 
+                # for simple movement to prevent simulation hangs.
+                if not target and cmd and not cmd.is_user_assigned and cmd.command_type == "MOVE":
+                    # Use Pathfinder directly to move as far as tokens allow
+                    path = self.pathfinder.get_path(my_pos, cmd.target_hex)
+                    if path and len(path) > 1:
+                        # How many steps can we take?
+                        max_steps = int(entity.tokens)
+                        actual_path = path[1:max_steps+1]
+                        
+                        if actual_path:
+                            final_hex = actual_path[-1]
+                            # Move the unit directly to the furthest reachable hex
+                            direction_idx = HexMath.get_neighbor_direction(my_pos, actual_path[0])
+                            direction_str = ["east", "northeast", "northwest", "west", "southwest", "southeast"][direction_idx]
                             
-                            if direction_idx != -1:
-                                direction_str = ["east", "northeast", "northwest", "west", "southwest", "southeast"][direction_idx]
-                                for aidx, (atype, param) in RL_ACTION_MAP.items():
-                                    if atype == "MOVE" and param == direction_str:
-                                        if aidx in allowed:
-                                            action_idx = aidx
-                                            override_applied = True
-                                            break
-
-                elif cmd and cmd.is_user_assigned and cmd.command_type == "FIRE":
-                    for aidx, (atype, param) in RL_ACTION_MAP.items():
-                        if atype == "FIRE" and aidx in allowed:
-                            action_idx = aidx
+                            # Deduct tokens all at once
+                            cost = float(len(actual_path))
+                            entity.tokens -= cost
+                            
+                            self.map.place_entity(entity.id, final_hex)
+                            action_desc = f"FAST ADVANCE x{len(actual_path)}"
+                            evt = {"type": "move", "agent_id": entity.id, "from": my_pos, "to": final_hex}
                             override_applied = True
-                            break
+                            thinking["mode"] = "Simple Move"
+                            think_str = "<b>Efficiency Mode</b><br>Pathfinding active"
+                            # Skip standard logic and learning
+                            goto_next_agent = True
+                            
+                            # Log and add to event list
+                            if evt: events.append(evt)
+                            step_data.append({
+                                "Agent": entity.name,
+                                "Type": entity.get_attribute("type", "Unit"),
+                                "Personnel": str(entity.get_attribute("personnel", 0)),
+                                "Tokens": f"{entity.tokens:.1f}",
+                                "Pos": f"({final_hex.q}, {final_hex.r})",
+                                "Action": action_desc,
+                                "Reward": "0.00",
+                                "Thinking": think_str
+                            })
+                            continue
 
                 if not override_applied:
                     # THE MOMENT OF CHOICE: The AI picks an action index (0 to 10).
-                    # For AI-assigned commands, the Resolution Agent is now FULLY AUTONOMOUS.
-                    # It knows its target from `entity.current_command` and uses RL to get there.
                     action_idx, thinking = self._select_action(state_features, allowed, q_mgr)
                 
                 # TRANSLATION: Turn the choice (e.g., Index 2) into a real action command (e.g., MOVE NORTHEAST).
@@ -435,13 +447,19 @@ class ActionModel:
                 think_parts = []
                 for aidx, qv in sorted_q:
                     aname, _ = RL_ACTION_MAP.get(aidx, ("?", None))
-                    # Shorten the names for the UI 'Think Bubble'.
-                    if aname.startswith("COMMIT"): aname = "C" + aname[6:]
-                    think_parts.append(f"{aname}:{qv:.2f}")
+                    # Human-friendly labels for tactical display
+                    btn_map = {"FIRE": "SHOT", "MOVE": "POS", "HOLD": "WAIT", "CLOSE_COMBAT": "MELEE"}
+                    label = btn_map.get(aname.split("_")[0], aname[:4])
+                    think_parts.append(f"{label}:{qv:+.1f}")
                     
+                # Terminology shift: Exploit -> Tactical Logic, Explore -> Learning / Improvising
+                mode_label = "Veteran Strategy" if thinking.get("mode") == "Exploit" else "Learning Pattern"
+                if thinking.get("mode") == "Override": mode_label = "Operational Directive"
+                
                 # The 'Think Bubble' text shown in the Inspector panel.
-                think_str = f"<b>{thinking['mode']}</b>(\u03b5={thinking['epsilon']:.2f})<br>" + ", ".join(think_parts)
-                think_str += f"<br><span style='color: #61afef'>Cost:{action_cost} | Tokens:{entity.tokens:.1f}</span>"
+                think_str = f"<b style='color: {Theme.ACCENT_GOOD}'>{mode_label}</b><br>" + " | ".join(think_parts)
+                think_str += f"<br><span style='color: {Theme.TEXT_DIM}'>Confidence: {max(0, min(100, int(thinking.get('epsilon', 0)*100)))}% | Cost: {action_cost}</span>"
+
                 
                 # STATS: Log whether the AI is 'Exploring' (guessing) or 'Exploiting' (using experience).
                 mode = thinking.get("mode", "Exploit")
@@ -480,7 +498,9 @@ class ActionModel:
                              evt = None
                              combat_result = None
                      except Exception as e:
-                         # If something goes wrong (e.g., a bug in the code), report the error instead of crashing.
+                         import traceback
+                         print(f'CRITICAL AI ACTION ERROR: {e}')
+                         traceback.print_exc()
                          action_desc = f"ACTION ERROR ({e})"
                          evt = None
                          combat_result = None
@@ -663,6 +683,10 @@ class ActionModel:
             from engine.core.debug_utils import format_html_log
             table_str = format_html_log(f"EPISODE {episode_number} STEP {step_number} TIME {elapsed_minutes} REPORT", step_data)
             self._log(log_func, table_str, force_console=False)
+            
+            # --- TACTICAL FIRE SUMMARY ---
+            self._log_fire_summary(events, log_func)
+            
         elif not step_data and table_mode and not is_learning:
              self._log(log_func, "No Active Agents.")
              
@@ -688,6 +712,42 @@ class ActionModel:
         self.event_log.clear()
         return events, logs
     
+    def _log_fire_summary(self, events: List[Dict], log_func: Optional[Callable]):
+        """TACTICAL RECAP: Summarizes all firing actions in this step for the UI."""
+        fire_events = [e for e in events if e.get("type") == "fire"]
+        if not fire_events:
+            return
+            
+        hits = [e for e in fire_events if e.get("hit")]
+        misses = len(fire_events) - len(hits)
+        
+        # Calculate total casualties from individual fire logs if they exist
+        # Or, just count hit/miss for a rapid summary
+        summary_html = f"""
+        <div style='background: rgba(30, 34, 42, 0.9); border: 2px solid #ff4757; border-radius: 8px; padding: 15px; margin: 10px 0; font-family: "Segoe UI", Roboto, sans-serif;'>
+            <h3 style='color: #ff4757; margin: 0 0 10px 0; border-bottom: 2px solid #ff4757; padding-bottom: 5px; font-size: 1.1em; text-transform: uppercase;'>🎯 Tactical Fire Summary</h3>
+            <div style='display: flex; gap: 20px; justify-content: space-around;'>
+                <div style='text-align: center;'>
+                    <div style='color: #aaa; font-size: 0.85em;'>ENGAGEMENTS</div>
+                    <div style='color: #fff; font-size: 1.4em; font-weight: bold;'>{len(fire_events)}</div>
+                </div>
+                <div style='text-align: center;'>
+                    <div style='color: #aaa; font-size: 0.85em;'>HITS</div>
+                    <div style='color: #2ed573; font-size: 1.4em; font-weight: bold;'>{len(hits)}</div>
+                </div>
+                <div style='text-align: center;'>
+                    <div style='color: #aaa; font-size: 0.85em;'>MISSES</div>
+                    <div style='color: #ff4757; font-size: 1.4em; font-weight: bold;'>{misses}</div>
+                </div>
+                <div style='text-align: center;'>
+                    <div style='color: #aaa; font-size: 0.85em;'>ACCURACY</div>
+                    <div style='color: #eccc68; font-size: 1.4em; font-weight: bold;'>{(len(hits)/len(fire_events)*100):.0f}%</div>
+                </div>
+            </div>
+        </div>
+        """
+        self._log(log_func, summary_html, force_console=False)
+
     def reset_episode(self):
         """
         PREPARE NEXT ROUND: Wipes temporary memories and increments the round number.
@@ -734,7 +794,29 @@ class ActionModel:
         self.q_manager_ephemeral.save_q_table("data/models/ephemeral_q_table.npy")
 
     def _get_q_manager(self, entity):
-        """AI SELECTOR: Picks whether this unit should use an 'Empty' or 'Veteran' brain."""
+        """AI SELECTOR: Picks whether this unit should use an 'Empty', 'Veteran', or 'Individual' brain."""
+        # 1. OPTION: AGENT-BASED BRAINS
+        # High-Fidelity simulation: each agent learns its own specific patterns.
+        # This prevents "abstracted" logic where multiple units confuse a shared brain.
+        if not hasattr(entity, 'brain') or entity.brain is None:
+            config = self.state.data_controller.resolve_unit_config(entity)
+            if config.get("agent_based", False) or True: # Force individual learning for all for research
+                print(f"ActionModel: Seeding local DISK brain for {entity.name}")
+                from engine.ai.q_table import QTableManager
+                from engine.data.api.json_db import JSONDatabase
+                # Store agent-specific brain in a unique folder per-agent to avoid conflicts
+                agent_id = entity.id.replace("-", "_")
+                db_local = JSONDatabase(f"data/training/agents/{agent_id}")
+                entity.brain = QTableManager(
+                    state_size=self.encoder.state_size,
+                    action_size=NUM_RL_ACTIONS,
+                    epsilon=1.0, # Agents start curious
+                    db=db_local
+                )
+        
+        if hasattr(entity, 'brain') and entity.brain:
+            return entity.brain
+
         config = self.state.data_controller.resolve_unit_config(entity)
         # If the unit's config file has 'learned: True', it will use the pre-trained veteran brain.
         if config.get("learned", False):
@@ -823,10 +905,11 @@ class ActionModel:
                 continue
             
             dist = HexMath.distance(my_pos, other_pos)
-            # To shoot, they must be in range AND in a straight line axis (Axial Alignment).
+            # RELAXED FIRE RULE: To shoot, they only need to be in range.
+            # We no longer strictly enforce 'Axial Alignment' (straight lines) 
+            # as it was causing units to fail to fire diagonally.
             if dist <= fire_range:
-                if HexMath.is_aligned(my_pos, other_pos):
-                    return other
+                return other
         
         return None
 
@@ -938,9 +1021,12 @@ class ActionModel:
                     if len(self.map.get_entities_at(new_hex)) < limit:
                         allowed.append(idx)
 
-            # ---- FIRE CHECK: Is the enemy in range? ----
+            # ---- FIRE CHECK: Is ANY enemy in range? ----
             elif base_type == "FIRE":
-                if action_obj.is_allowed(entity, self.map, target):
+                # BUG FIX: Don't just check the primary 'vision' target.
+                # Check if ANY valid target is in range for this action.
+                fire_target = self._find_target_in_fire_range(entity)
+                if fire_target and action_obj.is_allowed(entity, self.map, fire_target):
                     allowed.append(idx)
 
             # ---- CLOSE COMBAT CHECK: Is anyone next to me? ----

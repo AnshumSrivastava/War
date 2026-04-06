@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QMessageBox
+from ui.styles.theme import Theme
 
 class ThemedMessageBox:
     """
@@ -10,27 +11,27 @@ class ThemedMessageBox:
         # Apply a consistent dark theme style directly
         # Ideally this should match the app's QSS, but for popups we force it
         # to ensure they don't look like native OS white dialogs.
-        msg_box.setStyleSheet("""
-            QMessageBox {
-                background-color: #2b2b2b;
-                color: #e0e0e0;
-            }
-            QLabel {
-                color: #e0e0e0;
-            }
-            QPushButton {
-                background-color: #404040;
-                color: #ffffff;
-                border: 1px solid #555555;
+        msg_box.setStyleSheet(f"""
+            QMessageBox {{
+                background-color: {Theme.BG_SURFACE};
+                color: {Theme.TEXT_PRIMARY};
+            }}
+            QLabel {{
+                color: {Theme.TEXT_PRIMARY};
+            }}
+            QPushButton {{
+                background-color: {Theme.BG_INPUT};
+                color: {Theme.TEXT_PRIMARY};
+                border: 1px solid {Theme.BORDER_SUBTLE};
                 padding: 5px 15px;
                 border-radius: 3px;
-            }
-            QPushButton:hover {
-                background-color: #505050;
-            }
-            QPushButton:pressed {
-                background-color: #252525;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {Theme.BORDER_SUBTLE};
+            }}
+            QPushButton:pressed {{
+                background-color: {Theme.BG_DEEP};
+            }}
         """)
 
     @staticmethod

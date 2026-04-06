@@ -1,0 +1,77 @@
+{
+  "name": "Default",
+  "description": "",
+  "rules": {
+    "max_agents_per_hex": 3,
+    "max_turns": 30,
+    "attacker_max_force": 2,
+    "defender_max_force": 2,
+    "roster": {
+      "Attacker": [
+        {
+          "uid": "ffdc2871",
+          "name": "Alpha HQ",
+          "weapon_id": "INSAS",
+          "type_display": "Section (10)",
+          "personnel": 10,
+          "side": "Attacker",
+          "placed": false
+        },
+        {
+          "uid": "0121ba0c",
+          "name": "Vanguard 1",
+          "weapon_id": "LMG",
+          "type_display": "Section (10)",
+          "personnel": 10,
+          "side": "Attacker",
+          "placed": false
+        }
+      ],
+      "Defender": [
+        {
+          "uid": "2f43b7e7",
+          "name": "Static HQ",
+          "weapon_id": "INSAS",
+          "type_display": "Section (10)",
+          "personnel": 10,
+          "side": "Defender",
+          "placed": false
+        },
+        {
+          "uid": "a034bb69",
+          "name": "Garrison A",
+          "weapon_id": "INSAS",
+          "type_display": "Section (10)",
+          "personnel": 10,
+          "side": "Defender",
+          "placed": false
+        },
+        {
+          "name": "Defender HQ",
+          "weapon_id": "None",
+          "type_display": "Headquarters",
+          "personnel": 10,
+          "side": "Defender",
+          "placed": false
+        },
+        {
+          "name": "Defender Vanguard",
+          "weapon_id": "Rifle",
+          "type_display": "Section (10)",
+          "personnel": 10,
+          "side": "Defender",
+          "placed": false
+        },
+        {
+          "name": "Defender Support",
+          "weapon_id": "Rifle",
+          "type_display": "Section (10)",
+          "personnel": 10,
+          "side": "Defender",
+          "placed": false
+        }
+      ]
+    }
+  },
+  "obstacles": []
+}

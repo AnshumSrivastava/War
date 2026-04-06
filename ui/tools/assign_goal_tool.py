@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox, QGroupBox, 
 from PyQt5.QtGui import QPen, QColor, QBrush
 from engine.simulation.command import AgentCommand
 from engine.core.hex_math import HexMath
+from ui.styles.theme import Theme
 
 class AssignGoalTool(MapTool):
     """
@@ -76,7 +77,7 @@ class AssignGoalTool(MapTool):
         
         # Instructions Label
         instr = QLabel("<i>1. Click Agent to select them<br>2. Pick action above<br>3. Click Hex to assign destination</i>")
-        instr.setStyleSheet("color: #aaaaaa; font-size: 11px;")
+        instr.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-size: 11px;")
         v_layout.addWidget(instr)
         
         group.setLayout(v_layout)

@@ -1,0 +1,1 @@
+{"name":"Firing Agent","cost":100,"personnel":100,"icon":"agent.svg","role":"attacker","weight":1,"hierarchy":"Platoon","capabilities":{"speed":5,"range":6,"attack":25,"defense":20,"stealth":0},"actions":["FIRE","MOVE","HOLD / END TURN"]}

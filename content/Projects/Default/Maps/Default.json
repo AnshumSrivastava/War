@@ -1,0 +1,89 @@
+{
+  "project_name": "Unnamed",
+  "file_type": "project",
+  "version": "2.0",
+  "dimensions": {
+    "width": 50,
+    "height": 50
+  },
+  "terrain": {},
+  "hex_sides": {},
+  "scenarios": {
+    "Default": {
+      "name": "Default",
+      "rules": {
+        "roster": {
+          "Attacker": [
+            {
+              "name": "Alpha HQ",
+              "weapon_id": "INSAS",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Attacker",
+              "placed": false
+            },
+            {
+              "name": "Vanguard 1",
+              "weapon_id": "LMG",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Attacker",
+              "placed": false
+            }
+          ],
+          "Defender": [
+            {
+              "name": "Static HQ",
+              "weapon_id": "INSAS",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Defender",
+              "placed": false
+            },
+            {
+              "name": "Garrison A",
+              "weapon_id": "INSAS",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Defender",
+              "placed": false
+            },
+            {
+              "name": "Defender HQ",
+              "weapon_id": "None",
+              "type_display": "Headquarters",
+              "personnel": 10,
+              "side": "Defender",
+              "placed": false
+            },
+            {
+              "name": "Defender Vanguard",
+              "weapon_id": "Rifle",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Defender",
+              "placed": false
+            },
+            {
+              "name": "Defender Support",
+              "weapon_id": "Rifle",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Defender",
+              "placed": false
+            }
+          ]
+        },
+        "max_agents_per_hex": 3,
+        "attacker_max_force": 2,
+        "defender_max_force": 2
+      },
+      "zones": {},
+      "paths": {},
+      "entity_positions": {},
+      "entities": {}
+    }
+  },
+  "active_scenario_name": "Default",
+  "current_map_name": "Default"
+}

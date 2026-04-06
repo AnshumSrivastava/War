@@ -1,0 +1,962 @@
+{
+  "project_name": "trialProjects",
+  "file_type": "project",
+  "version": "2.0",
+  "dimensions": {
+    "width": 50,
+    "height": 50
+  },
+  "terrain": {
+    "13,14": {
+      "type": "water"
+    },
+    "0,15": {
+      "type": "water"
+    },
+    "1,14": {
+      "type": "water"
+    },
+    "2,14": {
+      "type": "water"
+    },
+    "3,14": {
+      "type": "water"
+    },
+    "4,14": {
+      "type": "water"
+    },
+    "5,13": {
+      "type": "water"
+    },
+    "6,14": {
+      "type": "water"
+    },
+    "6,13": {
+      "type": "water"
+    },
+    "7,13": {
+      "type": "water"
+    },
+    "8,14": {
+      "type": "water"
+    },
+    "9,13": {
+      "type": "water"
+    },
+    "10,14": {
+      "type": "water"
+    },
+    "11,14": {
+      "type": "water"
+    },
+    "12,14": {
+      "type": "water"
+    },
+    "14,14": {
+      "type": "water"
+    },
+    "15,14": {
+      "type": "water"
+    },
+    "16,14": {
+      "type": "water"
+    },
+    "17,14": {
+      "type": "water"
+    },
+    "18,15": {
+      "type": "water"
+    },
+    "19,14": {
+      "type": "water"
+    },
+    "20,15": {
+      "type": "water"
+    },
+    "21,14": {
+      "type": "water"
+    },
+    "22,15": {
+      "type": "water"
+    },
+    "23,14": {
+      "type": "water"
+    },
+    "24,15": {
+      "type": "water"
+    },
+    "25,14": {
+      "type": "water"
+    },
+    "26,15": {
+      "type": "water"
+    },
+    "27,14": {
+      "type": "water"
+    },
+    "28,15": {
+      "type": "water"
+    },
+    "29,14": {
+      "type": "water"
+    },
+    "30,15": {
+      "type": "water"
+    },
+    "31,14": {
+      "type": "water"
+    },
+    "32,15": {
+      "type": "water"
+    },
+    "33,14": {
+      "type": "water"
+    },
+    "34,15": {
+      "type": "water"
+    },
+    "35,14": {
+      "type": "water"
+    },
+    "36,15": {
+      "type": "water"
+    },
+    "37,14": {
+      "type": "water"
+    },
+    "38,15": {
+      "type": "water"
+    },
+    "39,14": {
+      "type": "water"
+    },
+    "40,15": {
+      "type": "water"
+    },
+    "41,14": {
+      "type": "water"
+    },
+    "42,15": {
+      "type": "water"
+    },
+    "43,14": {
+      "type": "water"
+    },
+    "44,15": {
+      "type": "water"
+    },
+    "45,14": {
+      "type": "water"
+    },
+    "46,15": {
+      "type": "water"
+    },
+    "47,14": {
+      "type": "water"
+    },
+    "48,15": {
+      "type": "water"
+    },
+    "49,14": {
+      "type": "water"
+    },
+    "50,15": {
+      "type": "water"
+    },
+    "51,14": {
+      "type": "water"
+    },
+    "52,15": {
+      "type": "water"
+    },
+    "42,19": {
+      "type": "quicksand"
+    },
+    "41,19": {
+      "type": "quicksand"
+    },
+    "40,20": {
+      "type": "quicksand"
+    },
+    "39,20": {
+      "type": "quicksand"
+    },
+    "39,21": {
+      "type": "quicksand"
+    },
+    "38,22": {
+      "type": "quicksand"
+    },
+    "38,23": {
+      "type": "quicksand"
+    },
+    "39,23": {
+      "type": "quicksand"
+    },
+    "40,23": {
+      "type": "quicksand"
+    },
+    "40,24": {
+      "type": "quicksand"
+    },
+    "41,23": {
+      "type": "quicksand"
+    },
+    "42,24": {
+      "type": "quicksand"
+    },
+    "43,23": {
+      "type": "quicksand"
+    },
+    "44,23": {
+      "type": "quicksand"
+    },
+    "45,22": {
+      "type": "quicksand"
+    },
+    "45,21": {
+      "type": "quicksand"
+    },
+    "44,21": {
+      "type": "quicksand"
+    },
+    "44,20": {
+      "type": "quicksand"
+    },
+    "43,19": {
+      "type": "quicksand"
+    },
+    "42,20": {
+      "type": "quicksand"
+    },
+    "41,20": {
+      "type": "quicksand"
+    },
+    "40,21": {
+      "type": "quicksand"
+    },
+    "39,22": {
+      "type": "quicksand"
+    },
+    "40,22": {
+      "type": "quicksand"
+    },
+    "41,21": {
+      "type": "quicksand"
+    },
+    "42,21": {
+      "type": "quicksand"
+    },
+    "43,20": {
+      "type": "quicksand"
+    },
+    "43,21": {
+      "type": "quicksand"
+    },
+    "42,22": {
+      "type": "quicksand"
+    },
+    "42,23": {
+      "type": "quicksand"
+    },
+    "41,22": {
+      "type": "quicksand"
+    },
+    "44,22": {
+      "type": "quicksand"
+    },
+    "43,22": {
+      "type": "quicksand"
+    }
+  },
+  "hex_sides": {},
+  "scenarios": {
+    "sa": {
+      "name": "sa",
+      "rules": {
+        "max_agents_per_hex": 3,
+        "max_turns": 30,
+        "attacker_max_force": 4,
+        "defender_max_force": 2,
+        "roster": {
+          "Attacker": [
+            {
+              "uid": "ba5eb0e5",
+              "name": "Alpha HQ",
+              "weapon_id": "INSAS",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Attacker",
+              "placed": true
+            },
+            {
+              "uid": "d5b2d06a",
+              "name": "Vanguard 1",
+              "weapon_id": "LMG",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Attacker",
+              "placed": true
+            },
+            {
+              "uid": "6cacc3db",
+              "name": "Attacker 3",
+              "weapon_id": "Sniper_Rifle",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Attacker",
+              "placed": false
+            },
+            {
+              "uid": "47e97601",
+              "name": "Attacker 4",
+              "weapon_id": "Sniper_Rifle",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Attacker",
+              "placed": false
+            }
+          ],
+          "Defender": [
+            {
+              "uid": "99c892b2",
+              "name": "Static HQ",
+              "weapon_id": "INSAS",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Defender",
+              "placed": true
+            },
+            {
+              "uid": "cfb7c7b3",
+              "name": "Defender 2",
+              "weapon_id": "INSAS",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Defender",
+              "placed": true
+            }
+          ]
+        }
+      },
+      "zones": {
+        "70add9e2": {
+          "type": "Designated Area",
+          "subtype": "Base Area",
+          "side": "Defender",
+          "name": "Base Area 8e216011",
+          "color": "#0000FF",
+          "hexes": [
+            [
+              21,
+              23
+            ],
+            [
+              22,
+              23
+            ],
+            [
+              22,
+              24
+            ],
+            [
+              23,
+              21
+            ],
+            [
+              23,
+              22
+            ],
+            [
+              23,
+              23
+            ],
+            [
+              24,
+              21
+            ],
+            [
+              24,
+              22
+            ],
+            [
+              24,
+              23
+            ],
+            [
+              24,
+              24
+            ],
+            [
+              25,
+              20
+            ],
+            [
+              25,
+              21
+            ],
+            [
+              25,
+              22
+            ],
+            [
+              25,
+              23
+            ],
+            [
+              25,
+              24
+            ],
+            [
+              26,
+              19
+            ],
+            [
+              26,
+              20
+            ],
+            [
+              26,
+              21
+            ],
+            [
+              26,
+              22
+            ],
+            [
+              26,
+              23
+            ],
+            [
+              26,
+              24
+            ],
+            [
+              27,
+              18
+            ],
+            [
+              27,
+              19
+            ],
+            [
+              27,
+              20
+            ],
+            [
+              27,
+              21
+            ],
+            [
+              27,
+              22
+            ],
+            [
+              27,
+              23
+            ],
+            [
+              27,
+              24
+            ],
+            [
+              28,
+              18
+            ],
+            [
+              28,
+              19
+            ],
+            [
+              28,
+              20
+            ],
+            [
+              28,
+              21
+            ],
+            [
+              28,
+              22
+            ],
+            [
+              28,
+              23
+            ],
+            [
+              28,
+              24
+            ],
+            [
+              29,
+              19
+            ],
+            [
+              29,
+              20
+            ],
+            [
+              29,
+              21
+            ],
+            [
+              29,
+              22
+            ],
+            [
+              29,
+              23
+            ],
+            [
+              30,
+              22
+            ]
+          ],
+          "vertices": [
+            [
+              28,
+              -179,
+              151
+            ],
+            [
+              20,
+              -116,
+              96
+            ],
+            [
+              28,
+              -171,
+              143
+            ],
+            [
+              30,
+              -188,
+              158
+            ]
+          ]
+        }
+      },
+      "paths": {},
+      "entity_positions": {
+        "b3861959-1c74-41db-b88b-9bc84d8f4e9c": "15,26",
+        "0b9c1b9e-ec0a-4cc4-bd3a-df15a0a77a36": "20,26",
+        "a1385970-5932-4c27-bf10-cdf9b984e898": "20,28",
+        "3f1c37f7-e8dd-455e-a28f-344be3d368c9": "21,25",
+        "d39332ed-f358-4bce-97b4-db927d1b9588": "9,22",
+        "c937c563-30b8-45f0-99f2-df6ae78cc39c": "19,23",
+        "ed7d0085-130b-4f8b-86bf-e63f80b7adbe": "20,26"
+      },
+      "entities": {
+        "b3861959-1c74-41db-b88b-9bc84d8f4e9c": {
+          "id": "b3861959-1c74-41db-b88b-9bc84d8f4e9c",
+          "name": "Static HQ",
+          "components": [
+            "Movement",
+            "Combat",
+            "AI"
+          ],
+          "attributes": {
+            "home_hex": null,
+            "vulnerability_score": 0.0,
+            "type": "Standard",
+            "subtype": "Direct",
+            "health": 100,
+            "side": "Defender",
+            "weapon": "INSAS",
+            "personnel": 10,
+            "unit_type": "Section (10)"
+          }
+        },
+        "0b9c1b9e-ec0a-4cc4-bd3a-df15a0a77a36": {
+          "id": "0b9c1b9e-ec0a-4cc4-bd3a-df15a0a77a36",
+          "name": "Defender 2",
+          "components": [
+            "Movement",
+            "Combat",
+            "AI"
+          ],
+          "attributes": {
+            "home_hex": null,
+            "vulnerability_score": 0.0,
+            "type": "Standard",
+            "subtype": "Direct",
+            "health": 100,
+            "side": "Defender",
+            "weapon": "INSAS",
+            "personnel": 10,
+            "unit_type": "Section (10)"
+          }
+        },
+        "a1385970-5932-4c27-bf10-cdf9b984e898": {
+          "id": "a1385970-5932-4c27-bf10-cdf9b984e898",
+          "name": "Defender 3",
+          "components": [
+            "Movement",
+            "Combat",
+            "AI"
+          ],
+          "attributes": {
+            "home_hex": null,
+            "vulnerability_score": 0.0,
+            "type": "Standard",
+            "subtype": "Direct",
+            "health": 100,
+            "side": "Defender",
+            "weapon": "INSAS",
+            "personnel": 10,
+            "unit_type": "Section (10)"
+          }
+        },
+        "3f1c37f7-e8dd-455e-a28f-344be3d368c9": {
+          "id": "3f1c37f7-e8dd-455e-a28f-344be3d368c9",
+          "name": "Static HQ",
+          "components": [
+            "Movement",
+            "Combat",
+            "AI"
+          ],
+          "attributes": {
+            "home_hex": null,
+            "vulnerability_score": 0.0,
+            "type": "Standard",
+            "subtype": "Direct",
+            "health": 100,
+            "side": "Defender",
+            "weapon": "INSAS",
+            "personnel": 10,
+            "unit_type": "Section (10)"
+          }
+        },
+        "d39332ed-f358-4bce-97b4-db927d1b9588": {
+          "id": "d39332ed-f358-4bce-97b4-db927d1b9588",
+          "name": "Alpha HQ",
+          "components": [
+            "Movement",
+            "Combat",
+            "AI"
+          ],
+          "attributes": {
+            "home_hex": null,
+            "vulnerability_score": 0.0,
+            "type": "Standard",
+            "subtype": "Direct",
+            "health": 100,
+            "side": "Attacker",
+            "weapon": "INSAS",
+            "personnel": 10,
+            "unit_type": "Section (10)"
+          }
+        },
+        "c937c563-30b8-45f0-99f2-df6ae78cc39c": {
+          "id": "c937c563-30b8-45f0-99f2-df6ae78cc39c",
+          "name": "Vanguard 1",
+          "components": [
+            "Movement",
+            "Combat",
+            "AI"
+          ],
+          "attributes": {
+            "home_hex": null,
+            "vulnerability_score": 0.0,
+            "type": "Standard",
+            "subtype": "Direct",
+            "health": 100,
+            "side": "Attacker",
+            "weapon": "LMG",
+            "personnel": 10,
+            "unit_type": "Section (10)"
+          }
+        },
+        "ed7d0085-130b-4f8b-86bf-e63f80b7adbe": {
+          "id": "ed7d0085-130b-4f8b-86bf-e63f80b7adbe",
+          "name": "Vanguard 1",
+          "components": [
+            "Movement",
+            "Combat",
+            "AI"
+          ],
+          "attributes": {
+            "home_hex": null,
+            "vulnerability_score": 0.0,
+            "type": "Standard",
+            "subtype": "Direct",
+            "health": 100,
+            "side": "Attacker",
+            "weapon": "LMG",
+            "personnel": 10,
+            "unit_type": "Section (10)"
+          }
+        }
+      }
+    },
+    "Default": {
+      "name": "Default",
+      "rules": {
+        "max_agents_per_hex": 3,
+        "max_turns": 30,
+        "attacker_max_force": 2,
+        "defender_max_force": 3,
+        "roster": {
+          "Attacker": [
+            {
+              "uid": "ba5eb0e5",
+              "name": "Alpha HQ",
+              "weapon_id": "INSAS",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Attacker",
+              "placed": true
+            },
+            {
+              "uid": "d5b2d06a",
+              "name": "Vanguard 1",
+              "weapon_id": "LMG",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Attacker",
+              "placed": true
+            }
+          ],
+          "Defender": [
+            {
+              "uid": "99c892b2",
+              "name": "Static HQ",
+              "weapon_id": "INSAS",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Defender",
+              "placed": true
+            },
+            {
+              "uid": "cfb7c7b3",
+              "name": "Defender 2",
+              "weapon_id": "INSAS",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Defender",
+              "placed": true
+            },
+            {
+              "uid": "9d1d5596",
+              "name": "Defender 3",
+              "weapon_id": "INSAS",
+              "type_display": "Section (10)",
+              "personnel": 10,
+              "side": "Defender",
+              "placed": true
+            }
+          ]
+        }
+      },
+      "zones": {
+        "70add9e2": {
+          "type": "Designated Area",
+          "subtype": "Base Area",
+          "side": "Defender",
+          "name": "Base Area 8e216011",
+          "color": "#0000FF",
+          "hexes": [
+            [
+              21,
+              23
+            ],
+            [
+              22,
+              23
+            ],
+            [
+              22,
+              24
+            ],
+            [
+              23,
+              21
+            ],
+            [
+              23,
+              22
+            ],
+            [
+              23,
+              23
+            ],
+            [
+              24,
+              21
+            ],
+            [
+              24,
+              22
+            ],
+            [
+              24,
+              23
+            ],
+            [
+              24,
+              24
+            ],
+            [
+              25,
+              20
+            ],
+            [
+              25,
+              21
+            ],
+            [
+              25,
+              22
+            ],
+            [
+              25,
+              23
+            ],
+            [
+              25,
+              24
+            ],
+            [
+              26,
+              19
+            ],
+            [
+              26,
+              20
+            ],
+            [
+              26,
+              21
+            ],
+            [
+              26,
+              22
+            ],
+            [
+              26,
+              23
+            ],
+            [
+              26,
+              24
+            ],
+            [
+              27,
+              18
+            ],
+            [
+              27,
+              19
+            ],
+            [
+              27,
+              20
+            ],
+            [
+              27,
+              21
+            ],
+            [
+              27,
+              22
+            ],
+            [
+              27,
+              23
+            ],
+            [
+              27,
+              24
+            ],
+            [
+              28,
+              18
+            ],
+            [
+              28,
+              19
+            ],
+            [
+              28,
+              20
+            ],
+            [
+              28,
+              21
+            ],
+            [
+              28,
+              22
+            ],
+            [
+              28,
+              23
+            ],
+            [
+              28,
+              24
+            ],
+            [
+              29,
+              19
+            ],
+            [
+              29,
+              20
+            ],
+            [
+              29,
+              21
+            ],
+            [
+              29,
+              22
+            ],
+            [
+              29,
+              23
+            ],
+            [
+              30,
+              22
+            ]
+          ],
+          "vertices": [
+            [
+              28,
+              -165,
+              137
+            ],
+            [
+              20,
+              -106,
+              86
+            ],
+            [
+              28,
+              -157,
+              129
+            ],
+            [
+              30,
+              -173,
+              143
+            ]
+          ]
+        }
+      },
+      "paths": {},
+      "entity_positions": {
+        "b3861959-1c74-41db-b88b-9bc84d8f4e9c": "15,26",
+        "0b9c1b9e-ec0a-4cc4-bd3a-df15a0a77a36": "20,26",
+        "a1385970-5932-4c27-bf10-cdf9b984e898": "20,28",
+        "3f1c37f7-e8dd-455e-a28f-344be3d368c9": "21,25",
+        "d39332ed-f358-4bce-97b4-db927d1b9588": "13,22",
+        "c937c563-30b8-45f0-99f2-df6ae78cc39c": "17,23",
+        "ed7d0085-130b-4f8b-86bf-e63f80b7adbe": "16,24"
+      }
+    }
+  },
+  "active_scenario_name": "sa",
+  "current_map_name": "trialProjects"
+}

@@ -170,3 +170,32 @@ def _spawn_attackers(zone_hexes: list):
     
     from services import entity_service
     entity_service.spawn_attack_force(zone_hexes[0])
+
+
+def delete_zone(zone_id: str) -> ServiceResult:
+    """
+    Remove a zone from the map.
+    """
+    guard = _require_api()
+    if guard: return guard
+    try:
+        zones = _api.map.get_zones()
+        if zone_id not in zones:
+            return err(f"Zone {zone_id} not found.", code="NOT_FOUND")
+            
+        zone_data = zones[zone_id]
+        
+        # Add to Undo stack
+        if _api.undo_stack:
+            from engine.core.undo_system import RemoveZoneCommand
+            cmd = RemoveZoneCommand(_api.map, zone_id, zone_data)
+            _api.undo_stack.push(cmd)
+            
+        _api.map.remove_zone(zone_id)
+        
+        payload = {"zone_id": zone_id, "name": zone_data.get("name")}
+        event_bus.emit("zone_deleted", payload)
+        return ok(payload)
+        
+    except Exception as e:
+        return err(f"Could not delete zone: {e}")

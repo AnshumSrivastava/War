@@ -9,6 +9,7 @@ By separating this from MainWindow, we reduce the complexity of the main control
 from PyQt5.QtWidgets import QAction, QActionGroup, QToolBar, QDockWidget, QVBoxLayout, QWidget, QButtonGroup
 from PyQt5.QtCore import Qt, QSize, QObject
 from ui.core.icon_painter import VectorIconPainter
+from ui.styles.theme import Theme
 
 class ToolbarController(QObject):
     def __init__(self, main_window):
@@ -62,7 +63,7 @@ class ToolbarController(QObject):
         ]
         
         for name, icon_type, tid, tooltip in tools:
-            icon = VectorIconPainter.create_icon(icon_type, color="#3daee9" if tid == "cursor" else "#eeeeee")
+            icon = VectorIconPainter.create_icon(icon_type, color=Theme.ACCENT_ALLY if tid == "cursor" else Theme.TEXT_PRIMARY)
             action = QAction(icon, name, self.mw)
             action.setData(tid)
             action.setCheckable(True)
@@ -98,24 +99,24 @@ class ToolbarController(QObject):
 
     def update_tools_visibility(self):
         mode = getattr(self.state, "app_mode", "terrain")
-        allowed = []
-        if mode == "terrain":
-            allowed = ["cursor", "edit", "eraser", "paint_tool"]
-        elif "areas" in mode:
-            allowed = ["cursor", "edit", "eraser", "draw_zone", "draw_path"]
-        elif "agents" in mode:
-            side = getattr(self.state, "active_scenario_side", "Attacker")
-            side = side.lower() if side else "attacker"
-            if side == "defender":
-                allowed = ["cursor", "eraser", "place_agent"]
-            else:
-                allowed = ["cursor", "eraser", "place_agent", "assign_goal"]
-        elif mode == "play":
+        
+        # Explicit mode → allowed tools mapping (no fragile string matching)
+        MODE_TOOLS = {
+            "terrain":    ["cursor", "edit", "eraser", "paint_tool"],
+            "def_areas":  ["cursor", "edit", "eraser", "draw_zone", "draw_path"],
+            "atk_areas":  ["cursor", "edit", "eraser", "draw_zone", "draw_path"],
+            "def_agents": ["cursor", "eraser", "place_agent"],
+            "atk_agents": ["cursor", "eraser", "place_agent", "assign_goal"],
+            "play":       ["cursor", "assign_goal"],
+        }
+        
+        allowed = MODE_TOOLS.get(mode, ["cursor"])
+        
+        # Defender play mode: restrict to cursor only
+        if mode == "play":
             side = getattr(self.state, "active_scenario_side", "Defender")
             if side.lower() == "defender":
                 allowed = ["cursor"]
-            else:
-                allowed = ["cursor", "assign_goal"]
             
         for tid, action in self.tool_actions.items():
             visible = tid in allowed

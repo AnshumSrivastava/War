@@ -24,14 +24,17 @@ class QTableManager:
     The "Brain Storage" Manager. It handles reading from and writing to the 
     AI's long-term memory spreadsheet.
     """
-    def __init__(self, state_size=2160, action_size=7, alpha=0.1, gamma=0.99, epsilon=0.1):
+    def __init__(self, state_size=2160, action_size=7, alpha=0.1, gamma=0.99, epsilon=0.1, db=None):
         self.state_size = state_size
         self.action_size = action_size
         
         # Internal tools for talking to the database.
-        # This version uses MemoryDatabase directly without Redis integration.
-        self.db = MemoryDatabase()
-        print("Using MemoryDatabase for RL Memory.")
+        # This allows us to switch between Memory (RAM) and JSON (Disk) storage.
+        self.db = db if db is not None else MemoryDatabase()
+        if isinstance(self.db, MemoryDatabase):
+            print("Using MemoryDatabase for RL Memory (RAM-Based).")
+        else:
+            print(f"Using Persistent Database for RL Memory (Disk-Based).")
             
         self.service = RLDataService(self.db)
         

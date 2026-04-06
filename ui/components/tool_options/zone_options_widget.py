@@ -31,7 +31,7 @@ class ZoneOptionsWidget(QWidget):
             layout.addRow(banner)
 
         label_instr = QLabel("Define clickable regions on the map. (Right-click to finish)")
-        label_instr.setStyleSheet("color: #777777; font-size: 11px; margin-bottom: 10px;")
+        label_instr.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-size: 11px; margin-bottom: 10px;")
         layout.addRow(label_instr)
         
         # Name Input

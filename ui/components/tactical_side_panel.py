@@ -258,11 +258,8 @@ class TacticalSidePanel(QWidget):
         for box in palette.findChildren(QGroupBox):
             if "Awaiting Deployment" in box.title(): 
                 box.setTitle("")
-                box.setStyleSheet("border: none; padding: 0;")
+                box.setStyleSheet("QGroupBox { border: none; padding: 0; }")
                 
         self.deploy_options_container.addWidget(palette)
-        # Explicit hard-refresh to ensure data is populated
-        QTimer.singleShot(0, tool.refresh_roster)
-        
-        # Explicit synchronization: Ensure the tool has the latest data from the Rules tab
-        tool.refresh_roster()
+        # Single deferred refresh to ensure data is populated after widget layout
+        QTimer.singleShot(50, tool.refresh_roster)

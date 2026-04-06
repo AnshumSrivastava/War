@@ -6,6 +6,7 @@ DESCRIPTION: A scrolling text area that keeps a complete history of every comman
 """
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QToolButton, QCheckBox, QTextEdit
 from PyQt5.QtCore import pyqtSignal
+from ui.styles.theme import Theme
 
 class EventLogWidget(QWidget):
     popout_requested = pyqtSignal()
@@ -45,16 +46,16 @@ class EventLogWidget(QWidget):
         self.info_log = QTextEdit()
         self.info_log.setReadOnly(True)
         # Apply a sleek, authentic dark terminal aesthetic
-        self.info_log.setStyleSheet("""
-            QTextEdit {
-                background-color: #0d1117;
-                color: #c9d1d9;
-                font-family: 'Consolas', 'Courier New', monospace;
+        self.info_log.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {Theme.BG_DEEP};
+                color: {Theme.TEXT_PRIMARY};
+                font-family: '{Theme.FONT_MONO}';
                 font-size: 13px;
-                border: 1px solid #30363d;
+                border: 1px solid {Theme.BORDER_STRONG};
                 border-radius: 6px;
                 padding: 8px;
-            }
+            }}
         """)
         layout.addWidget(self.info_log)
 
@@ -72,7 +73,7 @@ class EventLogWidget(QWidget):
 
     def log_info(self, message):
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        self.info_log.append(f"<span style='color: #8b949e;'>[{timestamp}]</span> {message}")
+        self.info_log.append(f"<span style='color: {Theme.TEXT_DIM};'>[{timestamp}]</span> {message}")
         self.info_log.verticalScrollBar().setValue(self.info_log.verticalScrollBar().maximum())
         
     def clear(self):

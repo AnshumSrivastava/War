@@ -38,16 +38,20 @@ class FireAction(BaseAction):
             return False
 
         dist = HexMath.distance(my_pos, other_pos)
-        aligned = (my_pos.q == other_pos.q) or (my_pos.r == other_pos.r) or (my_pos.s == other_pos.s)
         
         # 1. RANGE DETERMINATION
         # Honor agent-specific attributes first (overriding config)
         max_range = int(entity.get_attribute("fire_range", 0))
         
+        # Fallback to capabilities.range (used in many agent JSONs)
+        if max_range <= 0:
+            caps = entity.get_attribute("capabilities", {})
+            max_range = int(caps.get("range", 0))
+        
         # 2. UNIT TYPE FALLBACK
         u_type = entity.get_attribute("type", "")
         if max_range <= 0:
-            if u_type == "FiringAgent": max_range = 6
+            if u_type == "FiringAgent" or u_type == "FireAgent": max_range = 6
             elif u_type == "CloseCombatAgent": max_range = 2
             elif u_type == "DefenderAgent": max_range = 2
             else: max_range = 3 # Standard default
@@ -55,13 +59,11 @@ class FireAction(BaseAction):
         if dist > max_range:
             return False
             
-        # 3. ALIGNMENT POLICY (Axial required for Direct Fire)
-        if aligned:
-            return True
-                        
-        return False
-                        
-        return False
+        # 3. ALIGNMENT POLICY (Relaxed for accessibility)
+        # In this tactical simulation, we allow firing in any direction 
+        # as long as range and LOS are clear.
+        return True
+
 
     def execute(self, entity, game_map, target=None, combat_engine=None, data_controller=None):
         """
@@ -77,13 +79,18 @@ class FireAction(BaseAction):
         u_type = entity.get_attribute("type", "")
         max_range = int(entity.get_attribute("fire_range", 0))
         if max_range <= 0:
-            if u_type == "FiringAgent": max_range = 6
+            caps = entity.get_attribute("capabilities", {})
+            max_range = int(caps.get("range", 0))
+
+        if max_range <= 0:
+            if u_type == "FiringAgent" or u_type == "FireAgent": max_range = 6
             elif u_type == "CloseCombatAgent": max_range = 2
             elif u_type == "DefenderAgent": max_range = 2
             else: max_range = 3
             
         if dist > max_range:
             return "OUT OF RANGE", None, None
+
             
         # For simplicity in this specialized tactical scenario, 
         # we bypass the strict inventory/ammo checks if the unit is a specialized type.

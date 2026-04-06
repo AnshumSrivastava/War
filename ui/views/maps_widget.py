@@ -198,6 +198,12 @@ class MapsWidget(QWidget):
         btn_create.clicked.connect(self.mw.action_save_scenario if self.mw else lambda: None)
         h_layout.addWidget(btn_create)
         
+        btn_database = QPushButton("DATABASE")
+        btn_database.setFixedSize(140, 40)
+        btn_database.setStyleSheet(f"background-color: {Theme.BG_DEEP}; border: 1px solid {Theme.ACCENT_GOOD}; color: {Theme.ACCENT_GOOD}; font-weight: bold;")
+        btn_database.clicked.connect(lambda: self.mw.switch_mode(8) if self.mw else None)
+        h_layout.addWidget(btn_database)
+        
         self.layout.addWidget(header)
         
         # --- GRIDS (Scrollable) ---
@@ -211,7 +217,6 @@ class MapsWidget(QWidget):
         self.grid_layout.setSpacing(40)
         
         # Sections
-        self.data_grid = self._setup_section("TACTICAL REGISTRIES", color=Theme.ACCENT_ALLY)
         self.maps_grid = self._setup_section("MAPS & TERRAIN")
         self.scen_grid = self._setup_section("OPERATIONAL MISSIONS", color=Theme.ACCENT_WARN)
         self.model_grid = self._setup_section("INTELLIGENCE VARIANTS", color=Theme.ACCENT_GOOD)
@@ -264,22 +269,6 @@ class MapsWidget(QWidget):
         manifest = result.data
         root_path = manifest["root_path"]
         maps_dict = manifest["maps"]
-        
-        # 0. RENDER REGISTRIES (Static)
-        self._clear_grid(self.data_grid, self.registries)
-        registries = [
-            ("UNIT CATALOG", "agents"),
-            ("WEAPON ARSENAL", "weapons"),
-            ("RESOURCE LOGISTICS", "resources"),
-            ("OBSTACLE DATABASE", "obstacles"),
-            ("TERRAIN INTEL", "terrain")
-        ]
-        for i, (name, key) in enumerate(registries):
-            card = ProjectCard("data", proj_name, name, root_path, extra=key)
-            card.clicked.connect(self._on_item_clicked)
-            card.double_clicked.connect(self._on_item_double_clicked)
-            self.registries[key] = card
-            self.data_grid.addWidget(card, 0, i)
 
         # 1. RENDER MAPS
         self._clear_grid(self.maps_grid, self.maps)

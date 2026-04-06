@@ -81,7 +81,31 @@ class PlaceAgentTool(MapTool):
             }}
         """)
         btn_layout.addStretch()
+        
+        btn_recall = QPushButton("Recall All Units")
+        btn_recall.clicked.connect(self.reset_side_roster)
+        btn_recall.setStyleSheet(f"""
+            QPushButton {{
+                background: {Theme.BG_DEEP};
+                border: 1px solid {Theme.ACCENT_ENEMY};
+                color: {Theme.ACCENT_ENEMY};
+                font-weight: bold;
+                font-size: 10px;
+                padding: 4px 8px;
+            }}
+            QPushButton:hover {{
+                background: {Theme.ACCENT_ENEMY};
+                color: {Theme.BG_DEEP};
+            }}
+        """)
+        btn_layout.addWidget(btn_recall)
+        
+        btn_sync = QPushButton("Sync Roster")
+        btn_sync.clicked.connect(self.refresh_roster)
+        # ... existing sync style ...
+        btn_sync.setStyleSheet(f"background: {Theme.BG_INPUT}; color: {Theme.TEXT_PRIMARY}; font-size: 10px; padding: 4px;")
         btn_layout.addWidget(btn_sync)
+        
         layout.addLayout(btn_layout)
         
         # --- ROSTER LIST ---
@@ -117,7 +141,42 @@ class PlaceAgentTool(MapTool):
         
         return widget
 
+    def reset_side_roster(self):
+        """Removes all placed units for the active side and returns them to the palette."""
+        if not self.state.map or not self.state.map.active_scenario: return
+        
+        active_side = getattr(self.state, "active_scenario_side", "Attacker")
+        if not active_side or active_side == "Combined": active_side = "Attacker"
+        side = active_side.title()
+        
+        # 1. Identify and remove entities from manager and map
+        to_remove = []
+        for eid, ent in self.state.entity_manager._entities.items():
+            if ent.get_attribute("side") == side:
+                to_remove.append(eid)
+        
+        for eid in to_remove:
+            self.state.map.remove_entity_pos(eid)
+            self.state.entity_manager.remove_entity(eid)
+            
+        # 2. Update roster state in scenario rules
+        rules = self.state.map.active_scenario.rules
+        roster = rules.get("roster", {})
+        side_roster = roster.get(side, roster.get(side.lower(), roster.get(side.upper(), [])))
+        
+        for unit in side_roster:
+            unit["placed"] = False
+            
+        # 3. UI Refresh
+        self.refresh_roster()
+        self.widget.update()
+        
+        mw = self.widget.window()
+        if hasattr(mw, 'log_info'):
+            mw.log_info(f"Recalled all <b>{side}</b> units to roster.")
+
     def seed_default_units(self):
+
         """Emergency seeding of units if the Rules tab was skipped."""
         if not self.state.map or not self.state.map.active_scenario: return
         
@@ -147,18 +206,37 @@ class PlaceAgentTool(MapTool):
         """Loads unplaced units from the Roster for the active side (Attacker/Defender)."""
         from ui.core.icon_painter import VectorIconPainter
         from ui.styles.theme import Theme
-        import sip
         import json
         
-        if not self.list_widget or sip.isdeleted(self.list_widget): 
+        print(f"DEBUG: Entering refresh_roster. list_widget={self.list_widget}")
+        if self.list_widget is None: 
             return
             
-        self.list_widget.clear()
-        
-        if not self.state.map or not self.state.map.active_scenario:
+        print("DEBUG A")
+        try:
+            self.list_widget.clear()
+            print("DEBUG B")
+        except RuntimeError:
+            print("DEBUG: list_widget was deleted (RuntimeError)")
+            return
+        except Exception as e:
+            print(f"DEBUG EXCEPTION: {e}")
+            return
+            
+        print("DEBUG C")
+        try:
+            mapp = getattr(self.state, "map", None)
+            ac = getattr(mapp, "active_scenario", None) if mapp else None
+        except Exception as e:
+            print(f"DEBUG D Error: {e}")
+            return
+            
+        print(f"DEBUG D: map={mapp}, active_scenario={ac}")
+        if not mapp or not ac:
             print("DEBUG: refresh_roster failed - No active map/scenario")
             return
             
+        print("DEBUG E")
         # Force synchronization check: Normalize side names and look carefully for roster data
         active_side = getattr(self.state, "active_scenario_side", "Attacker")
         if not active_side or active_side == "Combined": 

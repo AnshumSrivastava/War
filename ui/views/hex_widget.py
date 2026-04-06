@@ -375,13 +375,16 @@ class HexWidget(QWidget):
             self.draw_threat_heatmap(painter, cx, cy, viewport_width, viewport_height)
         
         # --- LAYER 3: MISSION ELEMENTS (The Scenario) ---
-        # These only appear when we are setting up a mission or playing.
+        # Implementation of "Cumulative Visibility": 
+        # Elements from previous phases stay visible as we advance.
         app_mode = getattr(self.state, "app_mode", "terrain")
-        if app_mode != "terrain":
+        tactical_modes = ["def_areas", "def_agents", "atk_areas", "atk_agents", "play"]
+        if app_mode in tactical_modes:
             # Draw the semi-transparent "Capture Zones" and "Obstacles".
             self.draw_zone_layer(painter, cx, cy)
             # Draw the units (Agents) as colored circles.
             self.draw_entity_layer(painter, cx, cy, viewport_width, viewport_height)
+
         
         # --- LAYER 3.5: TRANSIENT EFFECTS (Fire, Move Trails) ---
         if hasattr(self, 'visualizer') and self.visualizer:
@@ -476,7 +479,7 @@ class HexWidget(QWidget):
                       
              elif "water" in t_type or "sea" in t_type:
                   icon_rect = QRectF(sx - self.hex_size*0.4, sy - self.hex_size*0.4, self.hex_size*0.8, self.hex_size*0.8)
-                  VectorIconPainter.draw_vector_icon(painter, icon_rect, "terrain_water", color=Theme.BLUE_HIGHLIGHT if hasattr(Theme, 'BLUE_HIGHLIGHT') else "#3daee9")
+                  VectorIconPainter.draw_vector_icon(painter, icon_rect, "terrain_water", color=Theme.ACCENT_ALLY)
                       
              elif "mountain" in t_type:
                   icon_rect = QRectF(sx - self.hex_size*0.4, sy - self.hex_size*0.4, self.hex_size*0.8, self.hex_size*0.8)
@@ -587,7 +590,19 @@ class HexWidget(QWidget):
         
         zones = self.state.map.get_zones()
         for zid, zdata in zones.items():
-            # All zones are now unconditionally visible across all phases.
+            # [CUMULATIVE VISIBILITY FILTER]
+            z_side = zdata.get('side', 'Neutral')
+            
+            # Logic:
+            # - Defender zones visible in ALL tactical phases
+            # - Attacker zones visible from 'atk_areas' onwards
+            if z_side == "Defender":
+                pass # Always show
+            elif z_side == "Attacker":
+                if app_mode in ["def_areas", "def_agents"]:
+                    continue # Hide attacker areas during defender setup
+            elif app_mode != "play":
+                continue # Hide Neutral/Unknown unless it is play time
 
             
             hexes = zdata.get('hexes', [])
@@ -630,8 +645,23 @@ class HexWidget(QWidget):
         selected_id = getattr(self.active_tool, 'selected_entity_id', None)
         
         for eid, ent in self.state.entity_manager._entities.items():
-             # All units strictly visible regardless of current workflow mode.
+             # [CUMULATIVE VISIBILITY FILTER]
              side = ent.get_attribute("side", "Neutral")
+             
+             # Logic:
+             # - Common: Hide all agents in 'def_areas' (only zones visible there)
+             # - Defender agents: Visible from 'def_agents' onwards
+             # - Attacker agents: Visible from 'atk_agents' onwards
+             if app_mode == "def_areas":
+                 continue
+             
+             if side == "Defender":
+                 pass # Visible in def_agents, atk_areas, atk_agents, play
+             elif side == "Attacker":
+                 if app_mode in ["def_agents", "atk_areas"]:
+                     continue # Hide Attacker agents during Defender placement or Attacker area setup
+             elif app_mode != "play":
+                 continue # Hide Neutral
              
              hex_obj = self.state.map.get_entity_position(eid)
              if not hex_obj: continue
@@ -1287,6 +1317,113 @@ class HexWidget(QWidget):
         return None
 
 
+    # --- DRAG & DROP (Roster → Map Deployment) ---
+
+    def dragEnterEvent(self, event):
+        """Accept drags carrying roster agent data."""
+        if event.mimeData().hasFormat("application/x-war-agent"):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        """Accept drag-over so cursor feedback shows drop is allowed."""
+        if event.mimeData().hasFormat("application/x-war-agent"):
+            event.acceptProposedAction()
+            # Update hovered hex for visual feedback
+            pos = event.pos()
+            cx, cy = self.width() / 2, self.height() / 2
+            world_x = pos.x() - cx + self.camera_x
+            world_y = pos.y() - cy + self.camera_y
+            self.hovered_hex = HexMath.pixel_to_hex(world_x, world_y, self.hex_size)
+            self.update()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        """Deploy a roster agent onto the map hex where the drop occurred."""
+        if not event.mimeData().hasFormat("application/x-war-agent"):
+            event.ignore()
+            return
+            
+        import json as _json
+        
+        # 1. Decode the payload
+        raw = bytes(event.mimeData().data("application/x-war-agent")).decode('utf-8')
+        try:
+            payload = _json.loads(raw)
+        except Exception as e:
+            print(f"Drop payload decode error: {e}")
+            event.ignore()
+            return
+        
+        # 2. Determine the target hex
+        pos = event.pos()
+        cx, cy = self.width() / 2, self.height() / 2
+        world_x = pos.x() - cx + self.camera_x
+        world_y = pos.y() - cy + self.camera_y
+        target_hex = HexMath.pixel_to_hex(world_x, world_y, self.hex_size)
+        
+        if not target_hex:
+            event.ignore()
+            return
+        
+        # 3. Validate hex is within map bounds
+        col, row = HexMath.cube_to_offset(target_hex)
+        if not (0 <= col < self.state.map.width and 0 <= row < self.state.map.height):
+            print(f"Drop rejected: ({col},{row}) is outside map bounds")
+            event.ignore()
+            return
+        
+        # 4. Create and register the entity
+        from engine.core.entity_manager import Agent
+        import uuid as _uuid
+        
+        agent_name = payload.get("name", "Unknown")
+        uid = payload.get("uid", str(_uuid.uuid4())[:8])
+        side = payload.get("side", "Attacker")
+        weapon = payload.get("weapon_id", "None")
+        personnel = payload.get("personnel", 10)
+        type_display = payload.get("type_display", "Section")
+        
+        entity = Agent(agent_id=uid, name=agent_name)
+        entity.attributes.update({
+            "side": side,
+            "weapon": weapon,
+            "personnel": personnel,
+            "type": type_display,
+            "health": 100,
+            "suppression": 0.0,
+        })
+        
+        self.state.entity_manager.register_entity(entity)
+        self.state.map.place_entity(uid, target_hex)
+        
+        # 5. Mark agent as placed in the roster
+        roster_idx = payload.get("roster_index", -1)
+        if roster_idx >= 0:
+            rules = self.state.map.active_scenario.rules
+            roster = rules.get("roster", {})
+            side_roster = roster.get(side, [])
+            if roster_idx < len(side_roster):
+                side_roster[roster_idx]["placed"] = True
+        
+        # 6. Refresh the roster palette and map
+        place_tool = self.tools.get("place_agent")
+        if place_tool:
+            place_tool.refresh_roster()
+        
+        self.cache_valid = False
+        self.update()
+        
+        # Log
+        mw = self.window()
+        if hasattr(mw, 'log_info'):
+            mw.log_info(f"Deployed <b>{agent_name}</b> ({side}) at ({col},{row})")
+        
+        event.acceptProposedAction()
+        print(f"DEBUG: Dropped '{agent_name}' [{uid}] at hex ({col},{row})")
+
     # --- INTERACTION & INPUT HANDLING ---
 
     def mousePressEvent(self, event):
@@ -1335,9 +1472,9 @@ class HexWidget(QWidget):
         from engine.simulation.command import AgentCommand
         
         menu = QMenu(self)
-        menu.setStyleSheet("""
-            QMenu { background-color: #2b2b2b; color: #dcdcdc; border: 1px solid #444; }
-            QMenu::item:selected { background-color: #3d3d3d; }
+        menu.setStyleSheet(f"""
+            QMenu {{ background-color: {Theme.BG_SURFACE}; color: {Theme.TEXT_PRIMARY}; border: 1px solid {Theme.BORDER_SUBTLE}; }}
+            QMenu::item:selected {{ background-color: {Theme.BG_INPUT}; }}
         """)
         
         # Header showing agent name and target
@@ -1410,87 +1547,9 @@ class HexWidget(QWidget):
             self._update_hover_tooltip(event.globalPos(), hex_obj)
             self.update() # Redraw to show the highlight on the new hex
 
-    # ===================================================================
-    # DRAG & DROP DEPLOYMENT SYSTEM (ROSTER)
-    # ===================================================================
-    
-    def dragEnterEvent(self, event):
-        """Called when a dragged item crosses into the map's airspace."""
-        if event.mimeData().hasFormat("application/x-war-agent"):
-            event.acceptProposedAction()
-        else:
-            event.ignore()
-
-    def dragMoveEvent(self, event):
-        """Tracks the dragged item over the map (required to accept drops)."""
-        if event.mimeData().hasFormat("application/x-war-agent"):
-            event.acceptProposedAction()
-        else:
-            event.ignore()
-
-    def dropEvent(self, event):
-        """Handles the actual release of the dragged unit onto a Hex."""
-        self.unsetCursor()
-        if not event.mimeData().hasFormat("application/x-war-agent"):
-            event.ignore()
-            return
-            
-        import json
-        payload_str = event.mimeData().data("application/x-war-agent").data().decode('utf-8')
-        try:
-            payload = json.loads(payload_str)
-        except json.JSONDecodeError:
-            event.ignore()
-            return
-            
-        # Calculate which hex was targeted
-        hex_obj = self.screen_to_hex(event.pos().x(), event.pos().y())
-        if not hex_obj:
-            event.ignore()
-            return
-            
-        q, r = hex_obj.q, hex_obj.r
-        
-        # Terrain Validation: Must be walkable
-        terrain_type = self.state.map.get_hex(q, r)
-        if not self.state.map.is_walkable(q, r):
-             from PyQt5.QtWidgets import QMessageBox
-             QMessageBox.warning(self, "Deployment Failed", "Cannot drop units on impassable terrain.")
-             event.ignore()
-             return
-             
-        # Create Entity using exact Roster specifications
-        from engine.core.entity_manager import Agent
-        new_agent = Agent(name=payload.get("name", "Unknown"))
-        new_agent.set_attribute("type", "Standard")
-        new_agent.set_attribute("health", 100)
-        new_agent.set_attribute("side", payload.get("side", "Neutral"))
-        new_agent.set_attribute("weapon", payload.get("weapon_id", "None"))
-        new_agent.set_attribute("personnel", payload.get("personnel", 10))
-        new_agent.set_attribute("unit_type", payload.get("type_display", "Section (10)"))
-        
-        # Register with Entity Manager (Staff Registry)
-        # Using the correct method name 'register_entity' from engine/core/entity_manager.py
-        self.state.entity_manager.register_entity(new_agent)
-        self.state.map.place_entity(new_agent.id, hex_obj)
-        self.update()
-        
-        # Log to UI
-        if hasattr(self.mw, 'log_info'):
-            self.mw.log_info(f"Deployed <b>{new_agent.name}</b> to ({q}, {r})")
-        
-        # Mark as placed in the active scenario's true roster
-        side = payload.get("side")
-        idx = payload.get("roster_index")
-        try:
-             roster_list = self.state.map.active_scenario.rules["roster"][side]
-             roster_list[idx]["placed"] = True
-        except (KeyError, IndexError):
-             pass
-             
-        event.acceptProposedAction()
 
     def _update_hover_tooltip(self, screen_pos, hex_obj):
+
         """Builds and shows a rich tooltip for the hexagon under the cursor."""
         if not hex_obj:
             QToolTip.hideText()

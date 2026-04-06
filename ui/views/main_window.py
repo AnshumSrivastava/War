@@ -49,6 +49,8 @@ import services.rules_service as rules_svc
 import services.data_service as data_svc
 import services.zone_service as zone_svc
 import services.path_service as path_svc
+import services.project_service as project_svc
+from services.service_result import ServiceResult
 
 # New Specialized Controllers
 from ui.core.toolbar_controller import ToolbarController
@@ -89,6 +91,7 @@ class MainWindow(QMainWindow):
         data_svc.init(self.state)
         zone_svc.init(self.state)
         path_svc.init(self.state)
+        project_svc.init(self.state)
         
         # --- DATA & MODELS ---
         from engine.data.loaders.data_manager import DataManager
@@ -138,6 +141,7 @@ class MainWindow(QMainWindow):
         self._init_ui()
         
         # --- SESSION RECOVERY (Load Last Project) ---
+        project_svc.init(self.state)
         self._load_last_project()
         
         # --- FALLBACK: If no project loaded, open Default ---
@@ -675,38 +679,7 @@ class MainWindow(QMainWindow):
         # the Attacker or Defender based on which side of the line they are on.
         self.start_side_assignment()
 
-    def update_tools_visibility(self):
-        mode = getattr(self.state, "app_mode", "terrain")
-        
-        # Define allowed tools per mode
-        allowed = []
-        if mode == "terrain":
-            allowed = ["cursor", "edit", "eraser", "paint_tool"]
-        elif mode == "area":
-            allowed = ["cursor", "edit", "eraser", "draw_zone", "draw_path"]
-        elif mode == "agents":
-            side = getattr(self.state, "active_scenario_side", "Attacker")
-            side = side.lower() if side else "attacker"
-            if side == "defender":
-                allowed = ["cursor", "eraser", "place_agent"]
-            else:
-                allowed = ["cursor", "eraser", "place_agent", "assign_goal"]
-        elif mode == "play":
-            side = getattr(self.state, "active_scenario_side", "Defender")
-            if side.lower() == "defender":  # Blue
-                allowed = ["cursor"]
-            else:
-                allowed = ["cursor", "assign_goal"]
-            
-        for action in self.tool_actions.values():
-            tid = action.data()
-            visible = tid in allowed
-            action.setVisible(visible)
-            action.setEnabled(visible)
-                
-        # Reset to cursor if current tool is hidden
-        if self.state.selected_tool not in allowed:
-            self.set_tool("cursor")
+
 
     def action_save_project(self, silent=False):
         """Standard project save: Map + all Scenarios."""
@@ -734,6 +707,10 @@ class MainWindow(QMainWindow):
             if not silent:
                 self.statusBar().showMessage(f"Project Saved ({res_scen.data['saved_count']} scenarios)", 5000)
                 ThemedMessageBox.information(self, "Success", "Project saved successfully.")
+            
+            if hasattr(self, 'maps_widget'):
+                self.maps_widget.refresh_list()
+
         else:
             if not silent:
                 error = res_map.error or res_scen.error
@@ -785,33 +762,21 @@ class MainWindow(QMainWindow):
                 ThemedMessageBox.critical(self, "Error", result.error)
 
     def action_load_project(self):
-        """Standard project folder load via map_svc."""
-        dir_path = QFileDialog.getExistingDirectory(self, "Select Project / Map Folder", self.data_loader.content_root)
-        if not dir_path: return
-
-        # Try to find Terrain.json if user picked the root project folder
-        if not os.path.exists(os.path.join(dir_path, "Terrain.json")):
-             maps_dir = os.path.join(dir_path, "Maps")
-             if os.path.exists(maps_dir):
-                 subs = [d for d in os.listdir(maps_dir) if os.path.isdir(os.path.join(maps_dir, d))]
-                 if subs:
-                     dir_path = os.path.join(maps_dir, subs[0])
-
-        result = map_svc.load_project_folder(dir_path)
-        if result.ok:
-            self.current_project_path = dir_path
-            self.state.current_map = result.data['map_name']
-            self._save_last_project(dir_path)
-            
-            self.action_model.reinit_models()
-            self.hex_widget.refresh_map()
-            
-            ThemedMessageBox.information(self, "Success", f"Loaded Project: {result.data['map_name']}")
-            self.setWindowTitle(f"Wargame Engine - {result.data['map_name']}")
-            
-            if hasattr(self, 'maps_widget'): self.maps_widget.refresh_list()
-        else:
-            ThemedMessageBox.critical(self, "Load Error", result.error)
+        """Manual prompt to load a monolithic project JSON."""
+        from PyQt5.QtWidgets import QFileDialog
+        root = self.data_loader.content_root
+        path, _ = QFileDialog.getOpenFileName(self, "Open Project JSON", root, "Project Files (*.json)")
+        
+        if path:
+            res = project_svc.load_project(path)
+            if res.ok:
+                self.current_project_path = path
+                self.state.project_path = path
+                self.switch_mode(1) # Start at Terrain
+                self.hex_widget.refresh_map()
+                self.log_info(f"Project Loaded: {res.data['name']}")
+            else:
+                ThemedMessageBox.critical(self, "Load Error", f"Failed to load project: {res.error}")
 
     def action_reload_master_data(self):
          """Hot-reloads Master Data JSON files without a full app restart.""" # Docstring for the function.
@@ -827,55 +792,33 @@ class MainWindow(QMainWindow):
              ThemedMessageBox.critical(self, "Error", f"Failed to reload JSON configs: {e}") # Show a critical error message.
 
     def action_new_project(self, reset_map=True):
-        parent_dir = QFileDialog.getExistingDirectory(self, "Select Parent Folder for New Project", self.data_loader.content_root)
-        if not parent_dir: return False
-
-        name, ok = QInputDialog.getText(self, "New Project", "Project Name:")
-        if ok and name:
-            project_dir = os.path.join(parent_dir, name)
-            if os.path.exists(project_dir):
-                 ThemedMessageBox.warning(self, "Error", f"Folder '{name}' already exists.")
-                 return False
+        """Initializes a brand new monolithic project."""
+        from PyQt5.QtWidgets import QInputDialog, QFileDialog
+        
+        name, ok = QInputDialog.getText(self, "New Project", "Enter Project Name:")
+        if not ok or not name: return
+        
+        root = self.data_loader.content_root
+        path = os.path.join(root, "Projects", f"{name}.json")
+        
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        
+        if reset_map:
+            self.state.map = map_svc.create_empty_map(50, 50)
+            self.state.map.name = name
             
-            try:
-                # V3 Folder Structure: [Project]/Maps/[MapName]/Terrain.json
-                map_dir = os.path.join(project_dir, "Maps", name)
-                os.makedirs(map_dir, exist_ok=True)
-                os.makedirs(os.path.join(map_dir, "Scenarios"), exist_ok=True)
-                
-                # Create default terrain
-                terrain_path = os.path.join(map_dir, "Terrain.json")
-                terrain_data = {
-                    "dimensions": {"width": self.state.map.width, "height": self.state.map.height},
-                    "grid": {"default": "plain"},
-                    "layers": {}
-                }
-                with open(terrain_path, 'w') as f:
-                    json.dump(terrain_data, f, indent=4)
-                
-                self.state.current_project = name
-                self.state.current_map = name
-                self.current_project_path = map_dir
-                self._save_last_project(map_dir)
-                
-                if reset_map:
-                    self.state.map = self.state.map.__class__()
-                    self.state.entity_manager._entities = {}
-                    self.hex_widget.recenter_view()
-                    self.action_model.reinit_models()
-                    self.hex_widget.refresh_map()
-                
-                ThemedMessageBox.information(self, "New Project", f"Project '{name}' created at {project_dir}")
-                self.setWindowTitle(f"Wargame Engine - {name} / {name}")
-                
-                if hasattr(self, 'maps_widget'):
-                    self.maps_widget.refresh_list()
-                    
-                return True
-            except Exception as e:
-                ThemedMessageBox.critical(self, "Error", f"Failed to create project: {e}")
-                return False
-        return False
+        self.state.current_project = name
+        self.state.project_path = path
+        self.current_project_path = path
+        
+        # Save immediately to create the monolithic file
+        project_svc.save_project(path)
+        
+        self.switch_mode(1) # Start at Terrain
+        self.hex_widget.refresh_map()
+        self.log_info(f"New Project Created: {name}")
+        return True
 
     def action_create_new_map(self):
         """Creates a new map within the CURRENT project."""
@@ -1063,7 +1006,7 @@ class MainWindow(QMainWindow):
             self.tool_opts_layout.addRow(header)
 
             label_instr = QLabel("Define clickable regions on the map.")
-            label_instr.setStyleSheet("color: #777777; font-size: 11px; margin-bottom: 10px;")
+            label_instr.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-size: 11px; margin-bottom: 10px;")
             self.tool_opts_layout.addRow(label_instr)
             
             # Name Input
@@ -1167,11 +1110,11 @@ class MainWindow(QMainWindow):
 
             # Header Label
             header = QLabel("<b>PATH CONFIGURATION</b>")
-            header.setStyleSheet("color: #3daee9; font-size: 14px; margin-bottom: 2px;")
+            header.setStyleSheet(f"color: {Theme.ACCENT_ALLY}; font-size: 14px; margin-bottom: 2px;")
             self.tool_opts_layout.addRow(header)
 
             label_instr = QLabel("Draw tactical lines, roads, or borders.")
-            label_instr.setStyleSheet("color: #777777; font-size: 11px; margin-bottom: 10px;")
+            label_instr.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-size: 11px; margin-bottom: 10px;")
             self.tool_opts_layout.addRow(label_instr)
             
             # Name Input
@@ -1232,11 +1175,11 @@ class MainWindow(QMainWindow):
 
             # Header Label
             header = QLabel("<b>AGENT DEPLOYMENT</b>")
-            header.setStyleSheet("color: #3daee9; font-size: 14px; margin-bottom: 2px;")
+            header.setStyleSheet(f"color: {Theme.ACCENT_ALLY}; font-size: 14px; margin-bottom: 2px;")
             self.tool_opts_layout.addRow(header)
 
             label_instr = QLabel("Place individual units on the battlefield.")
-            label_instr.setStyleSheet("color: #777777; font-size: 11px; margin-bottom: 10px;")
+            label_instr.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-size: 11px; margin-bottom: 10px;")
             self.tool_opts_layout.addRow(label_instr)
             
             # Side Selection First (to filter names)
@@ -1385,11 +1328,11 @@ class MainWindow(QMainWindow):
         color_edit = QLineEdit("#FF00FF")
         preview_label = QLabel()
         preview_label.setFixedSize(24, 24)
-        preview_label.setStyleSheet("background-color: #FF00FF; border: 1px solid #555; border-radius: 12px;")
+        preview_label.setStyleSheet(f"background-color: #FF00FF; border: 1px solid {Theme.BORDER_SUBTLE}; border-radius: 12px;")
         
         def update_preview(text):
             if QColor.isValidColor(text):
-                 preview_label.setStyleSheet(f"background-color: {text}; border: 1px solid #555; border-radius: 12px;")
+                 preview_label.setStyleSheet(f"background-color: {text}; border: 1px solid {Theme.BORDER_SUBTLE}; border-radius: 12px;")
         color_edit.textChanged.connect(update_preview)
         
         color_layout.addWidget(preview_label)
@@ -1441,11 +1384,11 @@ class MainWindow(QMainWindow):
         # Color Preview Circle
         preview_label = QLabel()
         preview_label.setFixedSize(24, 24)
-        preview_label.setStyleSheet("background-color: #808080; border: 1px solid #555; border-radius: 12px;")
+        preview_label.setStyleSheet(f"background-color: #808080; border: 1px solid {Theme.BORDER_SUBTLE}; border-radius: 12px;")
         
         def update_preview(text):
             if QColor.isValidColor(text):
-                 preview_label.setStyleSheet(f"background-color: {text}; border: 1px solid #555; border-radius: 12px;")
+                 preview_label.setStyleSheet(f"background-color: {text}; border: 1px solid {Theme.BORDER_SUBTLE}; border-radius: 12px;")
         color_edit.textChanged.connect(update_preview)
         
         preset_combo = QComboBox()
@@ -1562,7 +1505,7 @@ class MainWindow(QMainWindow):
         elif hasattr(self, 'info_log'):
             import datetime
             timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-            self.info_log.append(f"<span style='color: #888888;'>[{timestamp}]</span> {message}")
+            self.info_log.append(f"<span style='color: {Theme.TEXT_DIM};'>[{timestamp}]</span> {message}")
             self.info_log.verticalScrollBar().setValue(self.info_log.verticalScrollBar().maximum())
 
     def sanitize_agents(self):
@@ -1652,32 +1595,32 @@ class MainWindow(QMainWindow):
         dialog.setWindowTitle("Agent Allocation")
         
         # Apply Dark Theme
-        dialog.setStyleSheet("""
-            QDialog {
-                background-color: #1e1e23;
-                color: #ffffff;
-            }
-            QLabel {
-                color: #dcdcdc;
+        dialog.setStyleSheet(f"""
+            QDialog {{
+                background-color: {Theme.BG_SURFACE};
+                color: {Theme.TEXT_PRIMARY};
+            }}
+            QLabel {{
+                color: {Theme.TEXT_PRIMARY};
                 font-size: 13px;
-            }
-            QComboBox {
-                background-color: #2b2b30;
-                color: #ffffff;
-                border: 1px solid #3f3f46;
+            }}
+            QComboBox {{
+                background-color: {Theme.BG_INPUT};
+                color: {Theme.TEXT_PRIMARY};
+                border: 1px solid {Theme.BORDER_SUBTLE};
                 padding: 4px;
                 border-radius: 4px;
-            }
-            QPushButton {
-                background-color: #3f3f46;
-                color: #ffffff;
+            }}
+            QPushButton {{
+                background-color: {Theme.BG_INPUT};
+                color: {Theme.TEXT_PRIMARY};
                 border: none;
                 padding: 6px 12px;
                 border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #52525b;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {Theme.BORDER_SUBTLE};
+            }}
         """)
         
         layout = QFormLayout(dialog)
@@ -1742,11 +1685,11 @@ class MainWindow(QMainWindow):
                     path = settings.get("last_project_path")
                     if path and os.path.exists(path):
                         # Load found project
-                        result = map_svc.load_project_folder(path)
+                        result = project_svc.load_project(path)
                         if result.ok:
                             self.current_project_path = path
-                            self.state.current_map = result.data['map_name']
-                            self.setWindowTitle(f"Wargame Engine - {result.data['map_name']}")
+                            self.state.project_path = path
+                            self.setWindowTitle(f"Wargame Engine - {result.data['name']}")
                             self.action_model.reinit_models()
                             
                             # Standard Auto-Entry: Switch directly to Landing Page (Gallery)
@@ -1769,49 +1712,72 @@ class MainWindow(QMainWindow):
             print(f"Error saving user settings: {e}")
 
     def handle_deep_link(self, data):
-        """Processes interaction events from the Tactical Project Explorer."""
-        if not isinstance(data, dict):
-            print(f"Error: handle_deep_link received non-dict data: {data}")
-            return
-            
-        kind = data.get('type', 'map')
-        proj = data.get('project', 'Default')
-        map_name = data.get('map_name', 'Default')
-        scen_name = data.get('scenario_name', "")
-        model_name = data.get('model_name', "")
-        root = data.get('root', self.data_loader.content_root)
+        """Handles project loading via deep links (e.g., from Dashboard)."""
+        # Handle both string format ("map://ProjectName") and dict format
+        if isinstance(data, str):
+            if not data.startswith("map://"): return
+            data = {"type": "map", "project": data.replace("map://", ""), 
+                    "root": self.data_loader.content_root}
         
-        self.log_info(f"Navigating to {kind}: <b>{proj}/{map_name}</b>")
-        
-        # 1. TACTICAL REGISTRIES: Bypass map loading for data-only links
-        if kind == "data":
-            sub_type = data.get("scenario_name") or data.get("model_name") or data.get("extra")
-            self.switch_mode(8) # Phase 8: Master Data (Registry)
-            if hasattr(self, 'master_data_widget'):
-                self.master_data_widget.select_tab_by_key(sub_type)
-            self.log_info(f"Opening Tactical Registry: <b>{sub_type.upper()}</b>")
-            return
-        
-        # 1. Resolve Map Path
-        map_path = os.path.join(root, "Projects", proj, "Maps", map_name)
-        if not os.path.exists(map_path):
-            self.log_info(f"<font color='red'>Error: Map Path not found {map_path}</font>")
-            return
+        try:
+            link_type = data.get("type", "map")
+            project_name = data.get("project", "Default")
+            map_name = data.get("map_name", project_name)
+            root = data.get("root", self.data_loader.content_root)
+            extra = data.get("extra", "")
             
-        # Standard load (Terrain + Scenarios discovery)
-        import services.map_service as map_svc
-        result = map_svc.load_project_folder(map_path)
-        if not result.ok:
-            self.log_info(f"<font color='red'>Load Failed: {result.error}</font>")
-            return
+            # DATA REGISTRY — Navigate to Master Data tab
+            if link_type == "data":
+                tab_map = {"agents": 0, "weapons": 1, "resources": 2, "obstacles": 3, "terrain": 4}
+                tab_idx = tab_map.get(extra, 0)
+                if hasattr(self, 'master_data_widget'):
+                    self.master_data_widget.main_tabs.setCurrentIndex(tab_idx)
+                    self.switch_mode(8) # Safely transition to mode 8 (Master Data) via the state machine
+                self.log_info(f"Opened Master Database: {extra.upper()}")
+                return
             
-        self.current_project_path = map_path
-        self.state.current_project = proj
-        self.state.current_map = map_name
-        self.setWindowTitle(f"Wargame Engine - {proj} / {map_name}")
-        self._save_last_project(map_path)
-        self.action_model.reinit_models()
-        self.switch_mode(1) # Start in Tactical Theater
+            # MAP / SCENARIO / SIMULATION — Load project
+            # Try folder-based first
+            map_dir = os.path.join(root, "Projects", project_name, "Maps", map_name)
+            mono_path = os.path.join(root, "Projects", f"{project_name}.json")
+            
+            loaded = False
+            if os.path.isdir(map_dir):
+                self.state.current_map = map_name
+                res = map_svc.load_project_folder(map_dir)
+                if res.ok:
+                    loaded = True
+                    self.state.current_project = project_name
+                    self.current_project_path = map_dir
+                    self.state.project_path = map_dir
+                    
+                    # Select specific scenario if requested
+                    if link_type == "scenario" and extra:
+                        scen = self.state.map.scenarios.get(extra)
+                        if scen:
+                            self.state.map.active_scenario = scen
+                    
+                    self.switch_mode(1)  # Go to Terrain editor
+                    self.hex_widget.refresh_map()
+                    self.log_info(f"Deep Link Loaded: {project_name}/{map_name}")
+            
+            if not loaded and os.path.exists(mono_path):
+                import services.project_service as project_svc
+                res = project_svc.load_project(mono_path)
+                if res.ok:
+                    self.current_project_path = mono_path
+                    self.state.project_path = mono_path
+                    self.switch_mode(1)
+                    self.hex_widget.refresh_map()
+                    self.log_info(f"Deep Link Loaded (monolithic): {project_name}")
+                else:
+                    self.log_info(f"<font color='red'>Deep Link Failed: {res.error}</font>")
+            elif not loaded:
+                self.log_info(f"<font color='red'>Project not found: {project_name}</font>")
+                    
+        except Exception as e:
+            self.log_info(f"<font color='red'>Deep Link Error: {e}</font>")
+
 
     def action_delete_project(self, project_name):
         """DELETION COMMAND: Removes a project folder from the disk."""
@@ -1835,34 +1801,6 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     self.log_info(f"<font color='red'>Delete Failed: {e}</font>")
         self.hex_widget.update()
-
-        # 2. Refine based on Kind
-        if kind == "map":
-            self.switch_mode(1) # Terrain Doctrine
-        elif kind == "scenario" and scen_name:
-            import services.scenario_service as scenario_svc
-            scen_path = os.path.join(map_path, "Scenarios", f"{scen_name}.json")
-            load_res = scenario_svc.load_scenario(scen_path)
-            if load_res.ok:
-                self.state.current_scenario_name = scen_name
-                # Snapshot the design state immediately upon entry
-                if self.state.map.active_scenario:
-                    self.state.map.active_scenario.capture_state(self.state.entity_manager)
-                self.switch_mode(3) # Phase 3: Defensive Perimeters (def_areas)
-            else:
-                self.log_info(f"<font color='red'>Scenario Load Failed: {load_res.error}</font>")
-        elif kind == "simulation" and model_name:
-            # Simulation implies Map + Specific Model
-            model_path = os.path.join(map_path, "Simulations", f"{model_name}.json")
-            from engine.ai import commander
-            commander.set_commander_model(model_path)
-            
-            # Snapshot the design state before jumping into simulation
-            if self.state.map.active_scenario:
-                self.state.map.active_scenario.capture_state(self.state.entity_manager)
-                
-            self.switch_mode(7) # Phase 7: Tactical Execution (play)
-            self.log_info(f"Model <b>{model_name}</b> injected for simulation.")
 
     def get_simulation_model_path(self, model_name="default_model"):
         """Returns the absolute path for a simulation model within the current project/map."""
@@ -1942,7 +1880,40 @@ class MainWindow(QMainWindow):
                 map_name=self.state.current_map
             )
 
+    def _hard_sync_scenario(self):
+        """
+        SAVES and RELOADS the current scenario from disk.
+        This ensures that the 'In-Memory' state matches the 'On-Disk' JSON exactly,
+        preventing 'ghost' agents or missing zones during phase transitions.
+        """
+        if not self.current_project_path:
+            return
+            
+        # 1. Save Map + All Scenarios
+        self.action_save_project(silent=True)
+        
+        # 2. Identify the active scenario file
+        cur_scen_name = getattr(self.state, 'current_scenario_name', "Default")
+        scen_path = os.path.join(self.current_project_path, "Scenarios", f"{cur_scen_name}.json")
+        
+        # 3. Reload from JSON (Hard Sync)
+        if os.path.exists(scen_path):
+            res = scenario_svc.load_scenario(scen_path)
+            if res.ok:
+                # Capture the 'Golden State' immediately after loading
+                if self.state.map.active_scenario:
+                    self.state.map.active_scenario.capture_state(self.state.entity_manager)
+                
+                self.log_info(f"Phase synchronized via disk: <b>{cur_scen_name}</b>")
+                if hasattr(self, 'hex_widget'):
+                    self.hex_widget.refresh_map()
+                if hasattr(self, 'scene_hierarchy_widget'):
+                    self.scene_hierarchy_widget.refresh_tree()
+            else:
+                self.log_info(f"<font color='red'>Hard Sync Failed: {res.error}</font>")
+
     def _on_done_clicked(self):
+
         """Handles the 'Done' click, moving to the next logical phase."""
         mode = self.state.app_mode
         
@@ -1957,27 +1928,16 @@ class MainWindow(QMainWindow):
             else:
                 self.action_save_project(silent=True)
                 self.switch_mode(2)  # → Rules
-                
-        elif mode == "rules":
-            # Rules → Defender Areas
-            self.switch_mode(3)
-            self.log_info("Scenario constraints finalized.")
+        elif mode in ["rules", "def_areas", "def_agents", "atk_areas"]:
+            # All intermediate phases: Save monolithic → Load monolithic → Switch
+            self.log_info(f"Finalizing {mode.upper()} phase... Persistence active.")
+            project_svc.auto_persist()
+            project_svc.load_project(self.state.project_path)
             
-        elif mode == "def_areas":
-            # Def Areas → Def Agents
-            self.switch_mode(4)
-            self.log_info("Defender perimeters established.")
+            # Map mode to next index
+            next_idx = self.mode_machine.current_mode_index + 1
+            self.switch_mode(next_idx)
             
-        elif mode == "def_agents":
-            # Def Agents → Atk Areas
-            self.switch_mode(5)
-            self.log_info("Defender garrison deployed.")
-            
-        elif mode == "atk_areas":
-            # Atk Areas → Atk Agents
-            self.switch_mode(6)
-            self.log_info("Attacker perimeters established.")
-                
         elif mode == "atk_agents":
             # Atk Agents → Play: Finalize scenario, capture golden state, start simulation
             from PyQt5.QtWidgets import QInputDialog
@@ -2006,31 +1966,46 @@ class MainWindow(QMainWindow):
                 result = scenario_svc.save_all_scenarios(self.current_project_path)
                 
                 if result.ok:
-                    # Capture the 'Golden State' before simulation begins
-                    self.state.map.active_scenario.capture_state(self.state.entity_manager)
+                    # Final disk-sync before simulation begins
+                    self._hard_sync_scenario()
                     
+                    if hasattr(self, 'maps_widget'):
+                        self.maps_widget.refresh_list()
+                        
                     self.switch_mode(7)  # → Play/Simulation
-                    self.log_info(f"Scenario <b>'{name}'</b> Finalized and Saved.")
+                    self.log_info(f"Scenario <b>'{name}'</b> Finalized and Disk-Synced.")
+
                 else:
                     from ui.dialogs.themed_dialogs import ThemedMessageBox
                     ThemedMessageBox.critical(self, "Save Error", f"Failed to save scenario: {result.error}")
 
     def _on_back_clicked(self):
-        """Navigate backward through the 8-phase tactical workflow."""
-        current_mode = self.mode_machine.current_mode_index
+        """Handles the 'Back' click, returning to the previous logical phase."""
+        mode = self.state.app_mode
+        self.log_info(f"Stepping back from {mode.upper()}... Saving state.")
         
-        if current_mode == 7:  # Play → Atk Agents
-            self.pause_simulation()
-            if self.state.map.active_scenario:
-                self.state.map.active_scenario.restore_state(self.state.entity_manager)
-            self.hex_widget.clear_animations()
-            self.switch_mode(6)
-        elif current_mode > 1 and current_mode <= 6:
-            self.switch_mode(current_mode - 1)
-        elif current_mode == 1:  # Terrain → Dashboard
-            self.switch_mode(0)
-        elif current_mode == 8:  # Master Data → Dashboard
-            self.switch_mode(0)
+        # 1. Save current progress before retreating
+        if self.state.project_path:
+            project_svc.auto_persist()
+            
+        # 2. Sequential Logic
+        if mode == "play":
+            self.switch_mode(6) # Back to Atk Agents
+        elif mode == "atk_agents":
+            self.switch_mode(5) # Back to Atk Areas
+        elif mode == "atk_areas":
+            self.switch_mode(4) # Back to Def Agents
+        elif mode == "def_agents":
+            self.switch_mode(3) # Back to Def Areas
+        elif mode == "def_areas":
+            self.switch_mode(2) # Back to Rules
+        elif mode in ["rules", "terrain"]:
+            self.switch_mode(0) # Back to Dashboard
+            
+        # 3. DISK-FIRST: Re-load state from disk to ensure RAM matches the "Truth"
+        if self.state.project_path:
+            project_svc.load_project(self.state.project_path)
+            self.hex_widget.refresh_map()
 
     def undo_action(self):
         if hasattr(self.state, "undo_stack"):

@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (
     QSpinBox
 )
 from PyQt5.QtCore import Qt
+from ui.styles.theme import Theme
 
 
 class DirectFireSimpleUI(QWidget):
@@ -68,17 +69,18 @@ class DirectFireSimpleUI(QWidget):
         self.execute_btn = QPushButton("EXECUTE FIRE ORDER")
         self.execute_btn.setEnabled(True)
         self.execute_btn.setFixedHeight(45)
-        self.execute_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2ecc71;
+        self.execute_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {Theme.ACCENT_GOOD};
                 color: white;
                 font-size: 16px;
                 font-weight: bold;
                 border-radius: 6px;
-            }
-            QPushButton:hover {
-                background-color: #27ae60;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {Theme.ACCENT_GOOD};
+                filter: brightness(0.85);
+            }}
         """)
         self.execute_btn.clicked.connect(self.execute_order)
 

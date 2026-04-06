@@ -3,6 +3,7 @@ FILE: ui/widgets/rules_widget.py
 ROLE: The "Rulebook" Editor.
 DESCRIPTION: A panel for modifying simulation-wide constants like learning rate, weapon lethality, and movement speeds.
 """
+import uuid
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QDoubleSpinBox, QSpinBox, 
                              QLabel, QPushButton, QMessageBox)
 from engine.state.global_state import GlobalState
@@ -224,7 +225,7 @@ class RulesWidget(QWidget):
         rules["attacker_max_force"] = self.sb_atk_force.value()
         rules["defender_max_force"] = self.sb_def_force.value()
         
-        # Save exact entity rosters (preserving 'placed' status from existing data)
+        # Save exact entity rosters (preserving 'placed' status and UIDs from existing data)
         roster_data = {"Attacker": [], "Defender": []}
         existing_roster = rules.get("roster", {"Attacker": [], "Defender": []})
         
@@ -234,13 +235,16 @@ class RulesWidget(QWidget):
             if "Platoon" in t_text: personnel = 30
             elif "Company" in t_text: personnel = 110
             
-            # Check if this index was already placed in the current session
+            # Preserve existing placement status and UID
             was_placed = False
+            existing_uid = None
             atks = existing_roster.get("Attacker", [])
             if i < len(atks):
                 was_placed = atks[i].get("placed", False)
+                existing_uid = atks[i].get("uid")
             
             roster_data["Attacker"].append({
+                "uid": existing_uid or str(uuid.uuid4())[:8],
                 "name": row["name_edit"].text().strip(),
                 "weapon_id": row["weapon_combo"].currentData(),
                 "type_display": t_text,
@@ -255,13 +259,16 @@ class RulesWidget(QWidget):
             if "Platoon" in t_text: personnel = 30
             elif "Company" in t_text: personnel = 110
             
-            # Check if this index was already placed in the current session
+            # Preserve existing placement status and UID
             was_placed = False
+            existing_uid = None
             defs = existing_roster.get("Defender", [])
             if i < len(defs):
                 was_placed = defs[i].get("placed", False)
+                existing_uid = defs[i].get("uid")
             
             roster_data["Defender"].append({
+                "uid": existing_uid or str(uuid.uuid4())[:8],
                 "name": row["name_edit"].text().strip(),
                 "weapon_id": row["weapon_combo"].currentData(),
                 "type_display": t_text,

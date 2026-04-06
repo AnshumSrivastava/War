@@ -302,7 +302,7 @@ def load_project_folder(map_dir: str) -> ServiceResult:
             _api.map.active_scenario = Scenario("Default")
             _api.map.scenarios["Default"] = _api.map.active_scenario
              
-        payload = {"map_name": _state.current_map, "scenarios_loaded": loaded_scens}
+        payload = {"map_name": _state.current_map, "name": _state.current_map, "scenarios_loaded": loaded_scens}
         event_bus.emit("map_loaded", payload)
         
         # Ensure thumbnail exists
