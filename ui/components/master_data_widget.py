@@ -498,6 +498,7 @@ class MasterDataWidget(QWidget):
             table.setRowCount(len(catalog))
             
             table.blockSignals(True)   # Prevent phantom writes during population
+            row = 0
             for uid, info in catalog.items():
                 cap = info.get("capabilities", {})
                 
