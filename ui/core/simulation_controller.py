@@ -68,6 +68,10 @@ class SimulationController(QObject):
         if not silent:
             self.episode_completed.emit(self.current_episode)
 
+    def step(self):
+        """Manual single-step trigger."""
+        self.tick()
+
     def tick(self):
         """A single 'heartbeat' triggered by the QTimer."""
         if not self.is_running:

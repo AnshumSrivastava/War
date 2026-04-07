@@ -38,6 +38,57 @@ from ui.tools.paint_tool import PaintTool
 from ui.tools.assign_goal_tool import AssignGoalTool
 from ui.core.arrow_painter import TacticalArrowPainter
 
+# --- UI CONFIGURATION ---
+# Camera & Rendering Limits
+HEX_DEFAULT_SIZE = 50.0
+HEX_MIN_SIZE = 10.0
+HEX_MAX_SIZE = 200.0
+HEX_ZOOM_FACTOR = 1.2
+ANIM_TIMER_MS = 33  # ~30 FPS
+
+# Colors & Visuals
+COLOR_VOID_DEFAULT = QColor(20, 20, 25)
+COLOR_HOVER_FILL = QColor(255, 255, 255, 50)
+COLOR_SHADOW = QColor(0, 0, 0, 80)
+COLOR_SELECTION_GLOW = QColor(Theme.ACCENT_ALLY)
+COLOR_UNIT_LABEL = Qt.white
+COLOR_REWARD_POS = Theme.ACCENT_ALLY
+COLOR_REWARD_NEG = Theme.ACCENT_ENEMY
+
+# Command Colors
+COLOR_CMD_MOVE = QColor(Theme.ACCENT_ALLY)
+COLOR_CMD_FIRE = QColor(Theme.ACCENT_ENEMY)
+COLOR_CMD_CAPTURE = QColor(Theme.ACCENT_WARN)
+COLOR_CMD_DEFEND = QColor(0, 100, 255, 150)
+COLOR_CMD_LINE = QColor(255, 255, 255, 150)
+
+# Fonts & Scaling
+FONT_DEBUG_RATIO = 3.0   # hex_size / 3
+FONT_LABEL_RATIO = 4.0   # hex_size / 4
+FONT_REWARD_RATIO = 3.0  # hex_size / 3
+
+# String Templates & Messages
+MSG_UNPLACED_FMT = "Removing unplaced agent {id} from simulation."
+MSG_DEPLOYED_FMT = "Deployed <b>{name}</b> ({side}) at ({col},{row})"
+MSG_CLEAR_CMD_FMT = "Cleared Command for {name}"
+MSG_ASSIGNED_CMD_FMT = "Assigned <b>{type}</b> Command to {name} at Hex({q},{r})"
+
+# Styles
+STYLE_CTX_MENU = f"""
+    QMenu {{ background-color: {Theme.BG_SURFACE}; color: {Theme.TEXT_PRIMARY}; border: 1px solid {Theme.BORDER_SUBTLE}; }}
+    QMenu::item:selected {{ background-color: {Theme.BG_INPUT}; }}
+"""
+
+# Rendering Specifics
+COLOR_THREAT_BASE = QColor(255, 0, 0)
+COLOR_PATH_DEFAULT = QColor("#CCCCCC")
+COLOR_PATH_PREVIEW = QColor("#FFFF00")
+COLOR_POLY_PREVIEW = QColor("#00FF00")
+COLOR_ZONE_VERTEX = QColor("#FFFF00")
+COLOR_PATH_VERTEX = QColor("#FF00FF")
+COLOR_VERTEX_HANDLE_BG = QColor(0, 0, 0, 180)
+FONT_VERTEX_SIZE = 10
+
 class HexWidget(QWidget):
     """
     The main interactive map area. It handles drawing everything and 
@@ -60,15 +111,15 @@ class HexWidget(QWidget):
         
         # --- CAMERA & VIEWPORT SETTINGS ---
         # The zoom level (higher number = bigger hexagons).
-        self.hex_size = 50.0  
+        self.hex_size = HEX_DEFAULT_SIZE  
         # Camera Focus: Horizontal/Vertical world coordinates where the view is centered.
         self.camera_x = 0.0   
         self.camera_y = 0.0   
         
         # --- THEME COLORS (DYNAMIC) ---
-        self.background_color = QColor(30, 30, 35)
-        self.grid_color = QColor(60, 60, 65)
-        self.void_color = QColor(20, 20, 25) 
+        self.background_color = QColor(Theme.BG_DEEP)
+        self.grid_color = QColor(Theme.BORDER_STRONG)
+        self.void_color = COLOR_VOID_DEFAULT 
         
         # --- TOGGLEABLE OVERLAYS ---
         self.show_coords = getattr(state, "show_coords", False) # Show map coordinates (0,0)
@@ -120,7 +171,7 @@ class HexWidget(QWidget):
         from PyQt5.QtCore import QTimer
         self.animation_timer = QTimer(self)
         self.animation_timer.timeout.connect(self.update_animations)
-        self.animation_timer.start(33) # Targets ~30-60 FPS for smooth interpolations
+        self.animation_timer.start(ANIM_TIMER_MS) # Targets ~30-60 FPS for smooth interpolations
         
         # Temporary stores for visual-only movement states
         self.agent_anim_state = {} 
@@ -225,7 +276,7 @@ class HexWidget(QWidget):
             scale = pinch.scaleFactor()
             self.hex_size *= scale
             # CLAMP: Prevent zooming in/out to infinity
-            self.hex_size = max(10, min(200, self.hex_size)) 
+            self.hex_size = max(HEX_MIN_SIZE, min(HEX_MAX_SIZE, self.hex_size)) 
             self.cache_valid = False 
             self.update()
             return True
@@ -575,7 +626,7 @@ class HexWidget(QWidget):
         corners = HexMath.get_corners(sx, sy, self.hex_size - 1)
         poly = QPolygonF([QPointF(x, y) for x, y in corners])
         
-        painter.setBrush(QBrush(QColor(255, 255, 255, 50))) # Semi-Transparent white
+        painter.setBrush(QBrush(COLOR_HOVER_FILL)) # Semi-Transparent white
         painter.setPen(QPen(QColor(Theme.ACCENT_ALLY), 2))
         painter.drawPolygon(poly)
 
@@ -693,7 +744,7 @@ class HexWidget(QWidget):
              # --- 1. SELECTION GLOW (Pulse) ---
              radius = self.hex_size * 0.5
              if eid == selected_id:
-                 glow_color = QColor(Theme.ACCENT_ALLY)
+                 glow_color = COLOR_SELECTION_GLOW
                  glow_color.setAlpha(int(100 + 100 * self.selection_pulse))
                  painter.setBrush(Qt.NoBrush)
                  painter.setPen(QPen(glow_color, 4 + 2 * self.selection_pulse))
@@ -701,7 +752,7 @@ class HexWidget(QWidget):
 
              # --- 2. DROP SHADOW (Grounding) ---
              # Draw a slightly offset dark ellipse to look like it's on the ground.
-             shadow_color = QColor(0, 0, 0, 80)
+             shadow_color = COLOR_SHADOW
              painter.setBrush(QBrush(shadow_color))
              painter.setPen(Qt.NoPen)
              painter.drawEllipse(QPointF(sx + 4, sy + 4), radius, radius)
@@ -781,16 +832,18 @@ class HexWidget(QWidget):
              
              # --- COMMAND VISUALS (Dashed Lines) ---
              cmd = getattr(ent, 'current_command', None)
-             if cmd and getattr(cmd, 'target_hex', None):
-                 wx_tgt, wy_tgt = HexMath.hex_to_pixel(cmd.target_hex, self.hex_size)
+             if cmd:
+                 t_hex = getattr(cmd, 'target_hex', None)
+                 if t_hex and (not isinstance(t_hex, (list, tuple)) or len(t_hex) >= 2):
+                     wx_tgt, wy_tgt = HexMath.hex_to_pixel(t_hex, self.hex_size)
                  sx_tgt = wx_tgt - self.camera_x + cx
                  sy_tgt = wy_tgt - self.camera_y + cy
                  
-                 cmd_color = QColor(255, 255, 255, 150)
-                 if cmd.command_type == "MOVE": cmd_color = QColor(Theme.ACCENT_ALLY)
-                 elif cmd.command_type == "CAPTURE": cmd_color = QColor(Theme.ACCENT_WARN)
-                 elif cmd.command_type == "DEFEND": cmd_color = QColor(0, 100, 255, 150)
-                 elif cmd.command_type == "FIRE": cmd_color = QColor(Theme.ACCENT_ENEMY)
+                 cmd_color = COLOR_CMD_LINE
+                 if cmd.command_type == "MOVE": cmd_color = COLOR_CMD_MOVE
+                 elif cmd.command_type == "CAPTURE": cmd_color = COLOR_CMD_CAPTURE
+                 elif cmd.command_type == "DEFEND": cmd_color = COLOR_CMD_DEFEND
+                 elif cmd.command_type == "FIRE": cmd_color = COLOR_CMD_FIRE
                  
                  width = 3 if getattr(cmd, 'is_user_assigned', False) else 2
                  TacticalArrowPainter.draw_arrow(painter, QPointF(sx, sy), QPointF(sx_tgt, sy_tgt), cmd_color, width=width, style=Qt.DashLine)
@@ -811,7 +864,7 @@ class HexWidget(QWidget):
          radius = int(max(vw, vh) / self.hex_size) + 2
          painter.setPen(QPen(self.text_color))
          font = painter.font()
-         font.setPointSize(max(8, int(self.hex_size / 3)))
+         font.setPointSize(max(8, int(self.hex_size / FONT_DEBUG_RATIO)))
          painter.setFont(font)
          
          grid_mode = getattr(self.state, "grid_mode", "infinite")
@@ -875,7 +928,7 @@ class HexWidget(QWidget):
                      if 0 < sx < vw and 0 < sy < vh:
                          # Scale alpha based on danger (e.g. 1 threat = light red, 5 threat = solid red)
                          alpha_val = min(150, int(threat_score * 30))
-                         threat_color = QColor(255, 0, 0, alpha_val)
+                         threat_color = QColor(COLOR_THREAT_BASE.red(), COLOR_THREAT_BASE.green(), COLOR_THREAT_BASE.blue(), alpha_val)
                          
                          corners = HexMath.get_corners(sx, sy, self.hex_size - 1)
                          poly = QPolygonF([QPointF(x, y) for x, y in corners])
@@ -905,7 +958,7 @@ class HexWidget(QWidget):
             hexes = pdata.get('hexes', [])
             if len(hexes) < 2: continue
             
-            color = QColor(pdata.get('color', '#CCCCCC'))
+            color = QColor(pdata.get('color', COLOR_PATH_DEFAULT))
             pen = QPen(color, 5)
             pen.setJoinStyle(Qt.RoundJoin) # Makes corners smooth.
             painter.setPen(pen)
@@ -1001,7 +1054,7 @@ class HexWidget(QWidget):
             
         path_mode = getattr(self.state, 'path_mode', "Center-to-Center")
         
-        pen = QPen(QColor("#FFFF00"), 3, Qt.DashLine)
+        pen = QPen(COLOR_PATH_PREVIEW, 3, Qt.DashLine)
         painter.setPen(pen)
         
         if path_mode == "Edge-Aligned":
@@ -1197,14 +1250,14 @@ class HexWidget(QWidget):
                 poly = QPolygonF([QPointF(x, y) for x, y in corners])
                 
                 # Semi-transparent fill
-                color = QColor("#00FF00")
+                color = COLOR_POLY_PREVIEW
                 color.setAlpha(60)
                 painter.setBrush(QBrush(color))
                 painter.setPen(Qt.NoPen)
                 painter.drawPolygon(poly)
         
         # 2. Draw vertex line loop
-        pen = QPen(QColor("#00FF00"), 3, Qt.DashLine)
+        pen = QPen(COLOR_POLY_PREVIEW, 3, Qt.DashLine)
         painter.setPen(pen)
         painter.setBrush(Qt.NoBrush)
         
@@ -1230,14 +1283,14 @@ class HexWidget(QWidget):
                 return
             # Use vertices if available, otherwise fall back to hexes
             vertices = zone_data.get('vertices', zone_data.get('hexes', []))
-            color = QColor("#FFFF00")  # Yellow for zone vertices
+            color = COLOR_ZONE_VERTEX  # Yellow for zone vertices
             
         elif mode == "path" and self.editing_path_id:
             path_data = self.state.map.get_paths().get(self.editing_path_id)
             if not path_data:
                 return
             vertices = path_data.get('hexes', [])  # Paths use hexes as vertices
-            color = QColor("#FF00FF")  # Magenta for path vertices
+            color = COLOR_PATH_VERTEX  # Magenta for path vertices
         else:
             return
         
@@ -1268,7 +1321,7 @@ class HexWidget(QWidget):
             
             # Draw outer ring (The 'handle')
             painter.setPen(QPen(color, 3))
-            painter.setBrush(QBrush(QColor(0, 0, 0, 180)))
+            painter.setBrush(QBrush(COLOR_VERTEX_HANDLE_BG))
             radius = self.hex_size * 0.5
             painter.drawEllipse(QPointF(sx, sy), radius, radius)
             
@@ -1280,7 +1333,7 @@ class HexWidget(QWidget):
             # Draw vertex number so the user knows the order
             painter.setPen(QPen(Qt.white))
             font = painter.font()
-            font.setPointSize(10)
+            font.setPointSize(FONT_VERTEX_SIZE)
             font.setBold(True)
             painter.setFont(font)
             painter.drawText(QPointF(sx - 5, sy + 5), str(i))
@@ -1419,7 +1472,7 @@ class HexWidget(QWidget):
         # Log
         mw = self.window()
         if hasattr(mw, 'log_info'):
-            mw.log_info(f"Deployed <b>{agent_name}</b> ({side}) at ({col},{row})")
+            mw.log_info(MSG_DEPLOYED_FMT.format(name=agent_name, side=side, col=col, row=row))
         
         event.acceptProposedAction()
         print(f"DEBUG: Dropped '{agent_name}' [{uid}] at hex ({col},{row})")
@@ -1472,10 +1525,7 @@ class HexWidget(QWidget):
         from engine.simulation.command import AgentCommand
         
         menu = QMenu(self)
-        menu.setStyleSheet(f"""
-            QMenu {{ background-color: {Theme.BG_SURFACE}; color: {Theme.TEXT_PRIMARY}; border: 1px solid {Theme.BORDER_SUBTLE}; }}
-            QMenu::item:selected {{ background-color: {Theme.BG_INPUT}; }}
-        """)
+        menu.setStyleSheet(STYLE_CTX_MENU)
         
         # Header showing agent name and target
         title = menu.addAction(f"Command [{agent.name}] targets ({target_hex.q},{target_hex.r})")
@@ -1487,7 +1537,7 @@ class HexWidget(QWidget):
             agent.current_command = AgentCommand(cmd_type, target_hex, is_user_assigned=True)
             mw = self.window()
             if hasattr(mw, 'log_info'):
-                mw.log_info(f"Assigned <b>{cmd_type}</b> Command to {agent.name} at Hex({target_hex.q},{target_hex.r})")
+                mw.log_info(MSG_ASSIGNED_CMD_FMT.format(type=cmd_type, name=agent.name, q=target_hex.q, r=target_hex.r))
             self.update()
             
         # List of available orders
@@ -1501,7 +1551,7 @@ class HexWidget(QWidget):
             def clear_cmd():
                 agent.current_command = None
                 mw = self.window()
-                if hasattr(mw, 'log_info'): mw.log_info(f"Cleared Command for {agent.name}")
+                if hasattr(mw, 'log_info'): mw.log_info(MSG_CLEAR_CMD_FMT.format(name=agent.name))
                 self.update()
             menu.addAction("Clear Command").triggered.connect(clear_cmd)
             

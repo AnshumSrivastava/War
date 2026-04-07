@@ -64,11 +64,15 @@ class HexMath:
     @staticmethod
     def add(a: Hex, b: Hex) -> Hex:
         """Adds two hexagon locations together (useful for moving or offsets)."""
+        if not hasattr(a, 'q'): a = Hex(a[0], a[1], a[2] if len(a) > 2 else -a[0]-a[1])
+        if not hasattr(b, 'q'): b = Hex(b[0], b[1], b[2] if len(b) > 2 else -b[0]-b[1])
         return Hex(a.q + b.q, a.r + b.r, a.s + b.s)
 
     @staticmethod
     def subtract(a: Hex, b: Hex) -> Hex:
         """Finds the difference between two hexagon locations."""
+        if not hasattr(a, 'q'): a = Hex(a[0], a[1], a[2] if len(a) > 2 else -a[0]-a[1])
+        if not hasattr(b, 'q'): b = Hex(b[0], b[1], b[2] if len(b) > 2 else -b[0]-b[1])
         return Hex(a.q - b.q, a.r - b.r, a.s - b.s)
 
     @staticmethod
@@ -79,6 +83,8 @@ class HexMath:
     @staticmethod
     def length(hex: Hex) -> int:
         """Calculates the distance from the center of the world (0,0,0) to this hexagon."""
+        if not hasattr(hex, 'q'):
+            hex = Hex(hex[0], hex[1], hex[2] if len(hex) > 2 else -hex[0]-hex[1])
         return int((abs(hex.q) + abs(hex.r) + abs(hex.s)) / 2)
 
     @staticmethod
@@ -114,6 +120,10 @@ class HexMath:
         Used by the game to know WHERE to draw a hexagon on your screen.
         'size' is the distance from the center of the hex to one of its corners.
         """
+        if not hasattr(hex, 'q'):
+            # Resilience Check: If a raw list [q,r,s] was passed, convert back home.
+            hex = Hex(hex[0], hex[1], hex[2] if len(hex) > 2 else -hex[0]-hex[1])
+            
         q = hex.q
         r = hex.r
         x = size * (3/2 * q)

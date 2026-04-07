@@ -51,8 +51,13 @@ class SimulationManager(QObject):
             self.mw.log_info(f"<b>Priming Systems...</b>")
             
             # Save the current tactical layout as the 'Start State'
+            # ONLY capture if not already in Play mode or if state was never captured
             if self.state.map.active_scenario:
-                self.state.map.active_scenario.capture_state(self.state.entity_manager)
+                # Basic check: if scenario has no saved state at all, capture now.
+                # This prevents overwriting the design state if we resume from a pause.
+                if not getattr(self.state.map.active_scenario, '_captured_state', None):
+                    self.state.map.active_scenario.capture_state(self.state.entity_manager)
+                    self.mw.log_info("Tactical Design <b>Captured</b> as Reset-Point.")
             
             import services.scenario_service as scenario_svc
             scenario_svc.save_scenario("active_scenario.json")

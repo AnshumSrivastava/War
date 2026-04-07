@@ -44,8 +44,13 @@ class StrategicCommander:
             # Set Home Hex (where they were initially dropped)
             home = entity.get_attribute("home_hex")
             if not home:
-                entity.set_attribute("home_hex", my_pos)
-                home = my_pos
+                # Resilience: Ensure my_pos is a formal Hex before saving as attribute
+                home_h = Hex(my_pos[0], my_pos[1], my_pos[2]) if isinstance(my_pos, (list, tuple)) else my_pos
+                entity.set_attribute("home_hex", home_h)
+                home = home_h
+            else:
+                # Resilience: attributes from JSON might be lists, convert back to Hex
+                home = Hex(home[0], home[1], home[2]) if isinstance(home, (list, tuple)) else home
             
             # DEFAULT: Protect the Home area.
             # Only move if the commander decides a reinforcement is critical (Sequencing logic)
@@ -77,9 +82,12 @@ class StrategicCommander:
                 entity.commander_trajectory = []
             entity.commander_trajectory.append((state_idx, axis_idx))
 
+            # Resilience: converter back if find_best_offensive_target returned a list
+            target_h = Hex(target_hex[0], target_hex[1], target_hex[2]) if isinstance(target_hex, (list, tuple)) else target_hex
+
             entity.current_command = AgentCommand(
                 "CAPTURE" if is_goal else "MOVE",
-                target_hex,
+                target_h,
                 is_user_assigned=False,
                 objective_type="REACH_TARGET",
                 axis=axis_idx
