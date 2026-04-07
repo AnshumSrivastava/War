@@ -43,7 +43,7 @@ STYLE_TABLE = f"""
         gridline-color: {Theme.BORDER_SUBTLE};
     }}
     QHeaderView::section {{
-        background-color: {Theme.BG_PANEL};
+        background-color: {Theme.BG_SURFACE};
         color: {Theme.TEXT_DIM};
         font-size: 10px;
         font-weight: bold;

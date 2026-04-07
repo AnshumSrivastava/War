@@ -284,7 +284,7 @@ class BarChart(QWidget):
         super().__init__()
         self.data = {}
         self.horizontal = horizontal
-        self.colors = [QColor(Theme.ACCENT_ALLY), QColor(Theme.ACCENT_ENEMY), QColor(Theme.OLIVE_DRAB), QColor(Theme.ACCENT_WARN), QColor(Theme.SAND_DESERT)]
+        self.colors = [QColor(Theme.ACCENT_ALLY), QColor(Theme.ACCENT_ENEMY), QColor(Theme.ACCENT_NEUTRAL), QColor(Theme.ACCENT_WARN), QColor(Theme.ACCENT_GOOD)]
         
     def set_data(self, data):
         self.data = data
