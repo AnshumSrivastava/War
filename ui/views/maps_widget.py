@@ -304,30 +304,33 @@ class MapsWidget(QWidget):
             col += 1
             if col > 4: col = 0; row += 1 # Increased columns for wider view
 
-        # 2. RENDER MISSIONS (Scenarios) — show all scenarios from all maps
+        # Determine filter: if a map is selected, show only its scenarios; else show all
+        filter_map = self.active_map  # None = show all
+
+        # 2. RENDER MISSIONS (Scenarios)
         self._clear_grid(self.scen_grid, self.scenarios)
         col, row = 0, 0
         for m_name, m_info in sorted(maps_dict.items()):
+            if filter_map and m_name != filter_map:
+                continue  # skip maps that don't match the selected one
             for s_name in m_info.get("scenarios", []):
-                card_label = f"{s_name}"
-                card_info  = f"Map: {m_name}"
                 card = ProjectCard("scenario", proj_name, m_name, root_path,
-                                   extra=s_name, info=card_info)
+                                   extra=s_name, info=f"Map: {m_name}")
                 card.clicked.connect(self._on_item_clicked)
                 card.double_clicked.connect(self._on_item_double_clicked)
                 card.delete_requested.connect(self._on_item_delete_requested)
-                # Use a unique key: map/scenario so duplicate names across maps don't collide
-                key = f"{m_name}/{s_name}"
+                key = f"{m_name}/{s_name}"  # unique across all maps
                 self.scenarios[key] = card
                 self.scen_grid.addWidget(card, row, col)
                 col += 1
                 if col > 4: col = 0; row += 1
 
-
-        # 3. RENDER VARIANTS (Models) — show all simulations from all maps
+        # 3. RENDER VARIANTS (Simulations)
         self._clear_grid(self.model_grid, self.models)
         col, row = 0, 0
         for m_name, m_info in sorted(maps_dict.items()):
+            if filter_map and m_name != filter_map:
+                continue
             for mo_name in m_info.get("simulations", []):
                 card = ProjectCard("simulation", proj_name, m_name, root_path,
                                    extra=mo_name, info=f"Map: {m_name}")
@@ -337,7 +340,7 @@ class MapsWidget(QWidget):
                 self.model_grid.addWidget(card, row, col)
                 col += 1
                 if col > 4: col = 0; row += 1
-        
+
         self._update_selection_borders()
 
     def _update_selection_borders(self):

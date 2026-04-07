@@ -40,7 +40,7 @@ STYLE_TABLE = f"""
         background-color: {Theme.BG_DEEP};
         color: {Theme.TEXT_PRIMARY};
         border: 1px solid {Theme.BORDER_STRONG};
-        gridline-color: {Theme.BORDER_SOFT};
+        gridline-color: {Theme.BORDER_SUBTLE};
     }}
     QHeaderView::section {{
         background-color: {Theme.BG_PANEL};
