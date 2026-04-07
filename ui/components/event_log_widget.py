@@ -172,14 +172,17 @@ class EventLogWidget(QWidget):
         """Adds a structured item to the list feed."""
         timestamp = datetime.datetime.now().strftime(STR_TS_FMT)
         
-        # Colorize items contextually
+        # Colorize items contextually based on message content
         fg_color = Theme.TEXT_PRIMARY
-        if "Completed" in message or "Finished" in message:
-            fg_color = Theme.ACCENT_ALLY
-        elif "Error" in message or "Failed" in message:
+        msg_lower = message.lower()
+        if any(k in msg_lower for k in ("completed", "finished", "captured", "victory")):
+            fg_color = Theme.ACCENT_GOOD
+        elif any(k in msg_lower for k in ("error", "failed", "critical")):
             fg_color = Theme.ACCENT_WARN
-        elif "Attack" in message or "Damage" in message:
-            fg_color = Theme.ACCENT_HOSTILE
+        elif any(k in msg_lower for k in ("attack", "damage", "fire", "kill", "casualt", "destroyed")):
+            fg_color = Theme.ACCENT_ENEMY
+        elif any(k in msg_lower for k in ("deploy", "placed", "move", "reposit")):
+            fg_color = Theme.ACCENT_ALLY
             
         item = QListWidgetItem(f"[{timestamp}] {message}")
         item.setForeground(QBrush(QColor(fg_color)))

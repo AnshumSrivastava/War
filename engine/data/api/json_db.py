@@ -30,16 +30,25 @@ class JSONDatabase(BaseDB):
 
     def _get_path(self, key: str) -> str:
         """
-        CONVERTER: Turns a database key into a windows/linux file path.
-        If the key is already an absolute path, it respects it.
+        CONVERTER: Turns a database key into a file path under root_dir.
+        
+        Keys must be RELATIVE (e.g. 'Projects/Default/Maps/Dual/Scenarios/Alpha').
+        If an absolute path is accidentally passed, it is converted to a CWD-relative
+        path and then joined with root_dir — preventing writes to 'content/unnamed/...'.
         """
+        # Step 1: Sanitize each path component for cross-OS safety
         safe_key = NamingUtils.sanitize_path(key)
         
-        # If the key is already absolute, don't join with root_dir
+        # Step 2: If absolute, convert to relative from CWD first
         if os.path.isabs(safe_key):
-            path = safe_key
-        else:
-            path = os.path.join(self.root_dir, safe_key)
+            try:
+                safe_key = os.path.relpath(safe_key)
+            except ValueError:
+                # On Windows, relpath fails across drives — use basename as last resort
+                safe_key = os.path.basename(safe_key)
+        
+        # Step 3: Always join with root_dir (relative keys land inside content/)
+        path = os.path.join(self.root_dir, safe_key)
             
         if not path.endswith(".json"):
             path += ".json"

@@ -19,7 +19,7 @@
         "roster": {
           "Attacker": [
             {
-              "uid": "7563eac4",
+              "uid": "c5f3dd91",
               "name": "A/Section1",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -30,7 +30,7 @@
               "placed": false
             },
             {
-              "uid": "5501b82a",
+              "uid": "7eebada2",
               "name": "B/Section1",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -43,7 +43,7 @@
           ],
           "Defender": [
             {
-              "uid": "6e2230a6",
+              "uid": "294ef5c6",
               "name": "A/Section1",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -54,7 +54,7 @@
               "placed": false
             },
             {
-              "uid": "6fe817bf",
+              "uid": "49c6bd1e",
               "name": "B/Section1",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",

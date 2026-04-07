@@ -17,6 +17,7 @@ import os
 from typing import Dict, Any, List, Optional
 from engine.data.api.base_db import BaseDB
 from engine.core.items import Weapon
+from engine.core.naming_utils import NamingUtils
 from engine.data.definitions.constants import ROLES, UNIT_TYPES
 
 class MasterDataService:
@@ -180,11 +181,32 @@ class MasterDataService:
         return self.db.get(f"maps/scenarios/{doc_name}")
 
     def save_scenario(self, filename: str, data: Dict[str, Any], project_path: Optional[str] = None) -> bool:
-        """Saves a complete scenario to a specific project folder."""
-        doc_name = os.path.splitext(filename)[0]
+        """Saves a complete scenario to a specific project folder.
+        
+        IMPORTANT: db.set() always receives a RELATIVE key (e.g. 'Projects/Foo/Maps/Bar/Scenarios/Name').
+        If project_path is an absolute path we convert it to a CWD-relative path first, then
+        strip the content root prefix so the key stays inside the DB's root_dir.
+        """
+        doc_name = NamingUtils.sanitize_filename(os.path.splitext(filename)[0])
         if project_path:
-            # If we know exactly where the project is, save the scenario inside it.
-            return self.db.set(os.path.join(project_path, "Scenarios", doc_name), data)
+            # Normalize to relative path from CWD
+            rel_project = project_path
+            if os.path.isabs(project_path):
+                try:
+                    rel_project = os.path.relpath(project_path)
+                except ValueError:
+                    rel_project = project_path  # Different drives on Windows — fallback
+            
+            # Strip the DB root_dir prefix if present (e.g. 'content/')
+            db_root = getattr(self.db, 'root_dir', 'content')
+            db_root = db_root.rstrip('/')
+            if rel_project.startswith(db_root + '/'):
+                rel_project = rel_project[len(db_root) + 1:]
+            elif rel_project.startswith(db_root + os.sep):
+                rel_project = rel_project[len(db_root) + 1:]
+            
+            key = f"{rel_project}/Scenarios/{doc_name}"
+            return self.db.set(key, data)
         return self.db.set(f"scenarios/{doc_name}", data)
 
     # --- PROJECTS ---
