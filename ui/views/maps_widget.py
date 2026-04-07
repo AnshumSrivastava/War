@@ -304,30 +304,36 @@ class MapsWidget(QWidget):
             col += 1
             if col > 4: col = 0; row += 1 # Increased columns for wider view
 
-        # 2. RENDER MISSIONS (Scenarios)
+        # 2. RENDER MISSIONS (Scenarios) — show all scenarios from all maps
         self._clear_grid(self.scen_grid, self.scenarios)
         col, row = 0, 0
-        target_map = self.active_map if self.active_map else list(maps_dict.keys())[0] if maps_dict else None
-        if target_map and target_map in maps_dict:
-            for s_name in maps_dict[target_map].get("scenarios", []):
-                card = ProjectCard("scenario", proj_name, target_map, root_path, extra=s_name, info=f"Map: {target_map}")
+        for m_name, m_info in sorted(maps_dict.items()):
+            for s_name in m_info.get("scenarios", []):
+                card_label = f"{s_name}"
+                card_info  = f"Map: {m_name}"
+                card = ProjectCard("scenario", proj_name, m_name, root_path,
+                                   extra=s_name, info=card_info)
                 card.clicked.connect(self._on_item_clicked)
                 card.double_clicked.connect(self._on_item_double_clicked)
                 card.delete_requested.connect(self._on_item_delete_requested)
-                self.scenarios[s_name] = card
+                # Use a unique key: map/scenario so duplicate names across maps don't collide
+                key = f"{m_name}/{s_name}"
+                self.scenarios[key] = card
                 self.scen_grid.addWidget(card, row, col)
                 col += 1
                 if col > 4: col = 0; row += 1
 
-        # 3. RENDER VARIANTS (Models)
+
+        # 3. RENDER VARIANTS (Models) — show all simulations from all maps
         self._clear_grid(self.model_grid, self.models)
         col, row = 0, 0
-        if target_map and target_map in maps_dict:
-            for mo_name in maps_dict[target_map].get("simulations", []):
-                card = ProjectCard("simulation", proj_name, target_map, root_path, extra=mo_name, info=f"Model: {mo_name}")
+        for m_name, m_info in sorted(maps_dict.items()):
+            for mo_name in m_info.get("simulations", []):
+                card = ProjectCard("simulation", proj_name, m_name, root_path,
+                                   extra=mo_name, info=f"Map: {m_name}")
                 card.double_clicked.connect(self._on_item_double_clicked)
                 card.delete_requested.connect(self._on_item_delete_requested)
-                self.models[mo_name] = card
+                self.models[f"{m_name}/{mo_name}"] = card
                 self.model_grid.addWidget(card, row, col)
                 col += 1
                 if col > 4: col = 0; row += 1

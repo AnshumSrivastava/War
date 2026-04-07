@@ -19,7 +19,7 @@
         "roster": {
           "Attacker": [
             {
-              "uid": "e6a7d9d3",
+              "uid": "328ad6f6",
               "name": "A/Section1",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -30,7 +30,7 @@
               "placed": false
             },
             {
-              "uid": "6834d33c",
+              "uid": "8db2b08a",
               "name": "B/Section1",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -38,10 +38,10 @@
               "ammo_type": "NATO_762",
               "total_ammo": "300",
               "side": "Attacker",
-              "placed": true
+              "placed": false
             },
             {
-              "uid": "eed53a1c",
+              "uid": "0726c376",
               "name": "C/Section1",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -49,10 +49,10 @@
               "ammo_type": "NATO_762",
               "total_ammo": "300",
               "side": "Attacker",
-              "placed": true
+              "placed": false
             },
             {
-              "uid": "892be0dc",
+              "uid": "8b393b94",
               "name": "D/Section1",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -63,7 +63,7 @@
               "placed": false
             },
             {
-              "uid": "f0df5ed7",
+              "uid": "71c081a9",
               "name": "A/Section2",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -74,7 +74,7 @@
               "placed": false
             },
             {
-              "uid": "b5327f66",
+              "uid": "4f293451",
               "name": "B/Section2",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -85,7 +85,7 @@
               "placed": false
             },
             {
-              "uid": "ad2b6b10",
+              "uid": "d70d4e3b",
               "name": "C/Section2",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -96,7 +96,7 @@
               "placed": false
             },
             {
-              "uid": "ed8765ef",
+              "uid": "967801b2",
               "name": "D/Section2",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -107,7 +107,7 @@
               "placed": false
             },
             {
-              "uid": "059e7a55",
+              "uid": "8953ad48",
               "name": "A/Section3",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -118,7 +118,7 @@
               "placed": false
             },
             {
-              "uid": "7d127483",
+              "uid": "370ec39a",
               "name": "B/Section3",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -131,7 +131,7 @@
           ],
           "Defender": [
             {
-              "uid": "e616e692",
+              "uid": "aa127a6b",
               "name": "A/Section1",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -139,10 +139,10 @@
               "ammo_type": "NATO_762",
               "total_ammo": "300",
               "side": "Defender",
-              "placed": true
+              "placed": false
             },
             {
-              "uid": "d562f028",
+              "uid": "0dcdcb08",
               "name": "B/Section1",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -150,10 +150,10 @@
               "ammo_type": "NATO_762",
               "total_ammo": "300",
               "side": "Defender",
-              "placed": true
+              "placed": false
             },
             {
-              "uid": "c1e613e8",
+              "uid": "04cab3bf",
               "name": "C/Section1",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -164,7 +164,7 @@
               "placed": false
             },
             {
-              "uid": "00c2734a",
+              "uid": "05484d90",
               "name": "D/Section1",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -175,7 +175,7 @@
               "placed": false
             },
             {
-              "uid": "cee1743b",
+              "uid": "ff12546a",
               "name": "A/Section2",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -186,7 +186,7 @@
               "placed": false
             },
             {
-              "uid": "56498eab",
+              "uid": "27c335ca",
               "name": "B/Section2",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -197,7 +197,7 @@
               "placed": false
             },
             {
-              "uid": "3cb47a0f",
+              "uid": "44ca3770",
               "name": "C/Section2",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -208,7 +208,7 @@
               "placed": false
             },
             {
-              "uid": "11d68011",
+              "uid": "7a15a3eb",
               "name": "D/Section2",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -219,7 +219,7 @@
               "placed": false
             },
             {
-              "uid": "34c9a902",
+              "uid": "1f30adb5",
               "name": "A/Section3",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -230,7 +230,7 @@
               "placed": false
             },
             {
-              "uid": "36923001",
+              "uid": "803ba7a3",
               "name": "B/Section3",
               "weapon_id": "Sniper_Rifle",
               "type_display": "Section",
@@ -245,94 +245,8 @@
       },
       "zones": {},
       "paths": {},
-      "entity_positions": {
-        "bad09bc2": "25,13",
-        "0d3443df": "25,36",
-        "6b0a9fa8": "22,30",
-        "86d3f6d4": "27,22"
-      },
-      "entities": {
-        "bad09bc2": {
-          "id": "bad09bc2",
-          "name": "B/Section1",
-          "components": [
-            "Movement",
-            "Combat",
-            "AI"
-          ],
-          "attributes": {
-            "home_hex": null,
-            "vulnerability_score": 0.0,
-            "type": "Section",
-            "subtype": "Direct",
-            "side": "Attacker",
-            "weapon": "Sniper_Rifle",
-            "personnel": 10,
-            "health": 100,
-            "suppression": 0.0
-          }
-        },
-        "0d3443df": {
-          "id": "0d3443df",
-          "name": "C/Section1",
-          "components": [
-            "Movement",
-            "Combat",
-            "AI"
-          ],
-          "attributes": {
-            "home_hex": null,
-            "vulnerability_score": 0.0,
-            "type": "Section",
-            "subtype": "Direct",
-            "side": "Attacker",
-            "weapon": "Sniper_Rifle",
-            "personnel": 10,
-            "health": 100,
-            "suppression": 0.0
-          }
-        },
-        "6b0a9fa8": {
-          "id": "6b0a9fa8",
-          "name": "B/Section1",
-          "components": [
-            "Movement",
-            "Combat",
-            "AI"
-          ],
-          "attributes": {
-            "home_hex": null,
-            "vulnerability_score": 0.0,
-            "type": "Section",
-            "subtype": "Direct",
-            "side": "Defender",
-            "weapon": "Sniper_Rifle",
-            "personnel": 10,
-            "health": 100,
-            "suppression": 0.0
-          }
-        },
-        "86d3f6d4": {
-          "id": "86d3f6d4",
-          "name": "A/Section1",
-          "components": [
-            "Movement",
-            "Combat",
-            "AI"
-          ],
-          "attributes": {
-            "home_hex": null,
-            "vulnerability_score": 0.0,
-            "type": "Section",
-            "subtype": "Direct",
-            "side": "Defender",
-            "weapon": "Sniper_Rifle",
-            "personnel": 10,
-            "health": 100,
-            "suppression": 0.0
-          }
-        }
-      }
+      "entity_positions": {},
+      "entities": {}
     }
   },
   "active_scenario_name": "Default",
