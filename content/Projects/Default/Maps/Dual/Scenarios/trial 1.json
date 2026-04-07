@@ -1,0 +1,454 @@
+{
+    "name": "trial 1",
+    "rules": {
+        "max_agents_per_hex": 3,
+        "max_turns": 30,
+        "attacker_max_force": 2,
+        "defender_max_force": 2,
+        "roster": {
+            "Attacker": [
+                {
+                    "uid": "13101d49",
+                    "name": "A/Section1",
+                    "weapon_id": "Sniper_Rifle",
+                    "type_display": "Section",
+                    "personnel": 10,
+                    "ammo_type": "NATO_762",
+                    "total_ammo": "300",
+                    "side": "Attacker",
+                    "placed": true
+                },
+                {
+                    "uid": "6c0aa8eb",
+                    "name": "B/Section1",
+                    "weapon_id": "Sniper_Rifle",
+                    "type_display": "Section",
+                    "personnel": 10,
+                    "ammo_type": "NATO_762",
+                    "total_ammo": "300",
+                    "side": "Attacker",
+                    "placed": true
+                }
+            ],
+            "Defender": [
+                {
+                    "uid": "7b9fd572",
+                    "name": "A/Section1",
+                    "weapon_id": "Sniper_Rifle",
+                    "type_display": "Section",
+                    "personnel": 10,
+                    "ammo_type": "NATO_762",
+                    "total_ammo": "300",
+                    "side": "Defender",
+                    "placed": true
+                },
+                {
+                    "uid": "d38088ca",
+                    "name": "B/Section1",
+                    "weapon_id": "Sniper_Rifle",
+                    "type_display": "Section",
+                    "personnel": 10,
+                    "ammo_type": "NATO_762",
+                    "total_ammo": "300",
+                    "side": "Defender",
+                    "placed": true
+                }
+            ]
+        }
+    },
+    "zones": {
+        "43e1400e": {
+            "type": "Designated Area",
+            "subtype": "Goal Area",
+            "side": "Defender",
+            "name": "Goal Area 1",
+            "color": "#FFD700",
+            "hexes": [
+                [
+                    19,
+                    6
+                ]
+            ],
+            "vertices": [
+                [
+                    19,
+                    -48,
+                    29
+                ]
+            ]
+        },
+        "ded6a3ca": {
+            "type": "Designated Area",
+            "subtype": "Goal Area",
+            "side": "Defender",
+            "name": "Goal Area 2",
+            "color": "#FFD700",
+            "hexes": [
+                [
+                    29,
+                    6
+                ]
+            ],
+            "vertices": [
+                [
+                    29,
+                    -78,
+                    49
+                ]
+            ]
+        },
+        "89887834": {
+            "type": "Designated Area",
+            "subtype": "FA",
+            "side": "Attacker",
+            "name": "FA 2b269572",
+            "color": "#FF0000",
+            "hexes": [
+                [
+                    23,
+                    25
+                ],
+                [
+                    24,
+                    25
+                ],
+                [
+                    24,
+                    26
+                ],
+                [
+                    25,
+                    25
+                ],
+                [
+                    26,
+                    25
+                ]
+            ],
+            "vertices": [
+                [
+                    23,
+                    -20,
+                    -3
+                ],
+                [
+                    22,
+                    -18,
+                    -4
+                ],
+                [
+                    25,
+                    -22,
+                    -3
+                ],
+                [
+                    26,
+                    -27,
+                    1
+                ],
+                [
+                    25,
+                    -24,
+                    -1
+                ],
+                [
+                    25,
+                    -24,
+                    -1
+                ]
+            ]
+        }
+    },
+    "paths": {},
+    "entity_positions": {
+        "58716698": "12,20",
+        "007df264": "30,9",
+        "9828fcbc": "22,12",
+        "584082e3": "21,6"
+    },
+    "entities": {
+        "58716698": {
+            "id": "58716698",
+            "name": "A/Section1",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    19,
+                    -2,
+                    -17
+                ],
+                "vulnerability_score": 0.0,
+                "type": "Section",
+                "subtype": "Direct",
+                "side": "Defender",
+                "weapon": "Sniper_Rifle",
+                "personnel": 10,
+                "health": 100,
+                "suppression": 0.0,
+                "max_personnel": 100,
+                "tokens": 2.0,
+                "under_fire": false,
+                "visited_hexes": [
+                    [
+                        14,
+                        14,
+                        -28
+                    ],
+                    [
+                        15,
+                        14,
+                        -29
+                    ],
+                    [
+                        15,
+                        13,
+                        -28
+                    ],
+                    [
+                        13,
+                        13,
+                        -26
+                    ],
+                    [
+                        12,
+                        13,
+                        -25
+                    ],
+                    [
+                        12,
+                        14,
+                        -26
+                    ],
+                    [
+                        11,
+                        14,
+                        -25
+                    ]
+                ],
+                "last_action": "advanced southeast"
+            },
+            "current_command": {
+                "type": "DEFEND",
+                "target_hex": [
+                    19,
+                    -2,
+                    -17
+                ],
+                "is_user_assigned": false
+            }
+        },
+        "007df264": {
+            "id": "007df264",
+            "name": "B/Section1",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": [
+                    29,
+                    -7,
+                    -22
+                ],
+                "vulnerability_score": 0.0,
+                "type": "Section",
+                "subtype": "Direct",
+                "side": "Defender",
+                "weapon": "Sniper_Rifle",
+                "personnel": 3,
+                "health": 100,
+                "suppression": 0.0,
+                "max_personnel": 100,
+                "tokens": 2.0,
+                "under_fire": false,
+                "visited_hexes": [
+                    [
+                        26,
+                        -4,
+                        -22
+                    ],
+                    [
+                        28,
+                        -5,
+                        -23
+                    ],
+                    [
+                        29,
+                        -7,
+                        -22
+                    ],
+                    [
+                        30,
+                        -7,
+                        -23
+                    ],
+                    [
+                        31,
+                        -7,
+                        -24
+                    ],
+                    [
+                        30,
+                        -6,
+                        -24
+                    ],
+                    [
+                        31,
+                        -6,
+                        -25
+                    ]
+                ],
+                "last_action": "HOLD / END TURN"
+            },
+            "current_command": {
+                "type": "DEFEND",
+                "target_hex": [
+                    29,
+                    -7,
+                    -22
+                ],
+                "is_user_assigned": false
+            }
+        },
+        "9828fcbc": {
+            "id": "9828fcbc",
+            "name": "A/Section1",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": null,
+                "vulnerability_score": 0.0,
+                "type": "Section",
+                "subtype": "Direct",
+                "side": "Attacker",
+                "weapon": "Sniper_Rifle",
+                "personnel": 10,
+                "health": 100,
+                "suppression": 0.0,
+                "max_personnel": 100,
+                "tokens": 2.0,
+                "under_fire": false,
+                "visited_hexes": [
+                    [
+                        25,
+                        1,
+                        -26
+                    ],
+                    [
+                        24,
+                        1,
+                        -25
+                    ],
+                    [
+                        24,
+                        0,
+                        -24
+                    ],
+                    [
+                        24,
+                        -1,
+                        -23
+                    ],
+                    [
+                        23,
+                        0,
+                        -23
+                    ],
+                    [
+                        22,
+                        1,
+                        -23
+                    ]
+                ],
+                "last_action": "HOLD / END TURN"
+            },
+            "current_command": {
+                "type": "MOVE",
+                "target_hex": [
+                    20,
+                    0,
+                    -20
+                ],
+                "is_user_assigned": false
+            }
+        },
+        "584082e3": {
+            "id": "584082e3",
+            "name": "B/Section1",
+            "components": [
+                "Movement",
+                "Combat",
+                "AI"
+            ],
+            "attributes": {
+                "home_hex": null,
+                "vulnerability_score": 0.0,
+                "type": "Section",
+                "subtype": "Direct",
+                "side": "Attacker",
+                "weapon": "Sniper_Rifle",
+                "personnel": 10,
+                "health": 100,
+                "suppression": 0.0,
+                "max_personnel": 100,
+                "tokens": 2.0,
+                "under_fire": false,
+                "visited_hexes": [
+                    [
+                        22,
+                        -5,
+                        -17
+                    ],
+                    [
+                        20,
+                        -5,
+                        -15
+                    ],
+                    [
+                        21,
+                        -6,
+                        -15
+                    ],
+                    [
+                        22,
+                        -6,
+                        -16
+                    ],
+                    [
+                        22,
+                        -7,
+                        -15
+                    ],
+                    [
+                        21,
+                        -7,
+                        -14
+                    ],
+                    [
+                        23,
+                        -5,
+                        -18
+                    ]
+                ],
+                "last_action": "HOLD / END TURN"
+            },
+            "current_command": {
+                "type": "MOVE",
+                "target_hex": [
+                    27,
+                    -4,
+                    -23
+                ],
+                "is_user_assigned": false
+            }
+        }
+    }
+}
