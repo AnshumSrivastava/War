@@ -4,16 +4,66 @@ ROLE: The "Inspector" (Properties & Hierarchy).
 
 DESCRIPTION:
 This file creates the "Layers" panel you see on the left or right side of the screen.
-It works like Photoshop or GIMP:
-1. Scene Hierarchy: Shows a list (Tree) of everything on the map (Zones, Units, Borders).
-2. Property Editor: When you click an item in the list, its 'Properties' 
-   (like Name, Color, HP, or Elevation) appear in a form for you to edit.
-3. Visibility Toggles: Has buttons to show/hide certain map features.
 """
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFormLayout, QLineEdit, QSpinBox, QComboBox, QSlider, QFrame, QProgressBar, QToolButton, QSizePolicy, QScrollArea, QPushButton)
 from PyQt5.QtCore import Qt, pyqtSignal, QSize
 from engine.state.global_state import GlobalState
 from ui.styles.theme import Theme
+
+# --- UI CONFIGURATION ---
+# Titles & Headers
+STR_TITLE_INSPECTOR = "OBJECT INSPECTOR"
+STR_TITLE_PROPERTIES = "PROPERTIES"
+STR_TITLE_WORLD_EDITOR = "WORLD EDITOR"
+STR_TITLE_SCENARIO_SETUP = "SCENARIO SETUP"
+STR_TITLE_HEX_FMT = "HEX {coords}"
+
+# Group Headers
+STR_GRP_TERRAIN = "Terrain Data"
+STR_GRP_DIMENSIONS = "Map Dimensions"
+STR_GRP_IDENTITY = "Identity"
+STR_GRP_COMMAND = "Command"
+STR_GRP_VITALS = "Vitals"
+STR_GRP_CONFIG = "Configuration"
+
+# Labels
+STR_LBL_TYPE = "Type"
+STR_LBL_ELEVATION = "Elevation"
+STR_LBL_WIDTH = "Width"
+STR_LBL_HEIGHT = "Height"
+STR_LBL_NAME = "Name"
+STR_LBL_AGENT_TYPE = "Agent Type"
+STR_LBL_AFFILIATION = "Affiliation"
+STR_LBL_HIERARCHY = "Hierarchy"
+STR_LBL_PERSONNEL = "Personnel"
+STR_LBL_ZONE_NAME = "Zone Name"
+STR_LBL_AURA_COLOR = "Aura Color"
+STR_LBL_PATH_NAME = "Path Name"
+STR_LBL_VECTOR_COLOR = "Vector Color"
+
+# Tips & Instructional Text
+STR_TIP_TERRAIN = "Select a hex to modify its terrain properties. Use the left toolbar for painting tools."
+STR_TIP_SCENARIO = "Deploy agents and define strategic zones. Change side filtering via the top tabs."
+STR_TIP_DEFAULT = "Select an object to view and edit its properties."
+
+# Button Texts
+STR_BTN_DELETE = "Delete Object"
+
+# Data Lists
+LIST_TERRAIN_TYPES = ["plains", "forest", "water", "mountain", "urban"]
+LIST_SIDES = ["Attacker", "Defender", "Neutral"]
+LIST_HIERARCHY = ["Squad", "Platoon", "Company", "Battalion"]
+DICT_HIERARCHY_HP = {"Squad": 12, "Platoon": 40, "Company": 150, "Battalion": 600}
+DICT_ZONE_COLORS = {"Red": "#FF0000", "Blue": "#0000FF", "Orange": "#FFA500", "Green": "#00FF00", "Cyan": "#00FFFF"}
+DICT_PATH_COLORS = {"Red": "#FF0000", "Blue": "#0000FF", "Orange": "#FFA500", "Green": "#00FF00", "Cyan": "#00FFFF", "Brown": "#8B4513"}
+
+# Stylesheets
+STYLE_HEADER = f"color: {Theme.ACCENT_ALLY}; margin-bottom: 5px;"
+STYLE_SCROLL = "QScrollArea { background: transparent; }"
+STYLE_GRP_HEADER = f"color: {Theme.TEXT_DIM}; border-bottom: 1px solid {Theme.BORDER_STRONG}; padding-bottom: 4px; margin-top: 10px;"
+STYLE_TIP = f"color: {Theme.TEXT_DIM}; font-style: italic;"
+STYLE_DELETE_BTN = f"background-color: {Theme.ACCENT_ENEMY}; color: white; font-weight: bold; padding: 6px; border-radius: 4px;"
+# -------------------------
 
 class ObjectPropertiesWidget(QWidget):
     """
@@ -22,44 +72,29 @@ class ObjectPropertiesWidget(QWidget):
     property_changed = pyqtSignal()
     
     def __init__(self, parent_window, state=None):
-        """
-        Initializes the property inspector.
-        
-        Args:
-            parent_window: The main application window (used for reference).
-            state: The GlobalState object containing the current map and entities.
-        """
         super().__init__()
         self.parent_window = parent_window
         if state is None:
              raise ValueError("ObjectPropertiesWidget requires a 'state' object for initialization.")
         self.state = state
-        
-        # Tracks which hexagon is currently being inspected
         self.current_hex = None
         self.setup_ui()
         
     def setup_ui(self):
-        """
-        Builds the visual skeleton of the Property Inspector. 
-        Uses a vertical layout with a scrollable area for dynamic forms.
-        """
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(10)
         layout.setAlignment(Qt.AlignTop)
         
-        # Header title for the inspector panel
-        self.props_label = QLabel("OBJECT INSPECTOR")
+        self.props_label = QLabel(STR_TITLE_INSPECTOR)
         self.props_label.setFont(Theme.get_font(Theme.FONT_HEADER, 12, bold=True))
-        self.props_label.setStyleSheet(f"color: {Theme.ACCENT_ALLY}; margin-bottom: 5px;")
+        self.props_label.setStyleSheet(STYLE_HEADER)
         layout.addWidget(self.props_label)
         
-        # Scroll Area: Allows the properties list to be longer than the screen height
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
-        scroll.setStyleSheet("QScrollArea { background: transparent; }")
+        scroll.setStyleSheet(STYLE_SCROLL)
         
         self.scroll_content = QWidget()
         self.form_layout = QVBoxLayout(self.scroll_content)
@@ -71,20 +106,12 @@ class ObjectPropertiesWidget(QWidget):
         layout.addWidget(scroll)
 
     def _add_group_header(self, title, accent=None):
-        """
-        Adds a small, bold sub-header to separate different sections of properties 
-        (e.g., separating "Identity" from "Vitals").
-        """
         header = QLabel(title.upper())
         header.setFont(Theme.get_font(Theme.FONT_HEADER, 9, bold=True))
-        header.setStyleSheet(f"color: {Theme.TEXT_DIM}; border-bottom: 1px solid {Theme.BORDER_STRONG}; padding-bottom: 4px; margin-top: 10px;")
+        header.setStyleSheet(STYLE_GRP_HEADER)
         self.form_layout.addWidget(header)
 
     def _add_property_card(self, widgets_list, title=None, accent=None):
-        """
-        Groups a list of (Label, InputWidget) pairs into a clean block.
-        Perfect for grouping related inputs like X and Y coordinates.
-        """
         form_container = QWidget()
         form_layout = QFormLayout(form_container)
         form_layout.setContentsMargins(5, 5, 5, 5)
@@ -96,82 +123,60 @@ class ObjectPropertiesWidget(QWidget):
         self.form_layout.addWidget(form_container)
 
     def clear_content(self):
-        """
-        Wipes all input fields from the UI. 
-        Called before switching from inspecting a Unit to inspecting a Zone.
-        """
-        self.props_label.setText("PROPERTIES")
+        self.props_label.setText(STR_TITLE_PROPERTIES)
         for i in reversed(range(self.form_layout.count())):
             item = self.form_layout.itemAt(i)
             if item.widget():
                 item.widget().setParent(None)
 
     def show_default_mode_view(self, mode):
-        """
-        Shows helpful instructions when nothing specific is selected.
-        Changes based on whether you are in 'Terrain Painting' or 'Scenario Setup' mode.
-        """
         self.clear_content()
         self.current_hex = None
         
         tip_label = QLabel()
         tip_label.setWordWrap(True)
-        tip_label.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-style: italic;")
+        tip_label.setStyleSheet(STYLE_TIP)
         
         if mode == "terrain":
-            self.props_label.setText("WORLD EDITOR")
-            tip_label.setText("Select a hex to modify its terrain properties. Use the left toolbar for painting tools.")
+            self.props_label.setText(STR_TITLE_WORLD_EDITOR)
+            tip_label.setText(STR_TIP_TERRAIN)
         elif mode in ("area", "agents"):
-            self.props_label.setText("SCENARIO SETUP")
-            tip_label.setText("Deploy agents and define strategic zones. Change side filtering via the top tabs.")
+            self.props_label.setText(STR_TITLE_SCENARIO_SETUP)
+            tip_label.setText(STR_TIP_SCENARIO)
         else:
-            self.props_label.setText("INSPECTOR")
-            tip_label.setText("Select an object to view and edit its properties.")
+            self.props_label.setText(STR_TITLE_INSPECTOR)
+            tip_label.setText(STR_TIP_DEFAULT)
             
         self.form_layout.addWidget(tip_label)
 
     def show_properties(self, kind, ident):
-        """
-        THE MAIN LOGIC: Figures out WHAT you clicked and builds the relevant form.
-        
-        kind: "map" (hex), "entity" (unit), "zone" (colored area), or "path" (maneuver line).
-        ident: The unique ID of the object.
-        """
-        # Clear previous selection UI
         self.clear_content()
-        
-        if not kind:
-            return
+        if not kind: return
             
-        # CASE: User clicked a Map Hexagon
         if kind == "map":
             coords_str = f"[{self.current_hex.q}, {self.current_hex.r}]" if self.current_hex else "-"
-            self.props_label.setText(f"HEX {coords_str}")
+            self.props_label.setText(STR_TITLE_HEX_FMT.format(coords=coords_str))
             
             if self.current_hex:
                 t_data = self.state.map.get_terrain(self.current_hex)
-                self._add_group_header("Terrain Data")
+                self._add_group_header(STR_GRP_TERRAIN)
                 
-                # Selection for Terrain Type (Plains, Forest, etc.)
                 type_combo = QComboBox()
-                types = ["plains", "forest", "water", "mountain", "urban"]
-                type_combo.addItems(types)
+                type_combo.addItems(LIST_TERRAIN_TYPES)
                 type_combo.setCurrentText(t_data.get("type", "plains"))
                 type_combo.currentTextChanged.connect(lambda t: self.update_terrain(self.current_hex, {"type": t}))
                 
-                # Spinner for Elevation (0-5)
                 elev_spin = QSpinBox()
                 elev_spin.setRange(0, 5)
                 elev_spin.setValue(t_data.get("elevation", 0))
                 elev_spin.valueChanged.connect(lambda v: self.update_terrain(self.current_hex, {"elevation": v}))
                 
                 self._add_property_card([
-                    ("Type", type_combo),
-                    ("Elevation", elev_spin)
+                    (STR_LBL_TYPE, type_combo),
+                    (STR_LBL_ELEVATION, elev_spin)
                 ])
             
-            # CASE: Global Map Settings (Visible when Map is clicked)
-            self._add_group_header("Map Dimensions")
+            self._add_group_header(STR_GRP_DIMENSIONS)
             w_spin = QSpinBox()
             w_spin.setRange(10, 500)
             w_spin.setValue(self.state.map.width)
@@ -183,22 +188,19 @@ class ObjectPropertiesWidget(QWidget):
             h_spin.valueChanged.connect(lambda v: setattr(self.state.map, 'height', v) or self.parent_window.hex_widget.update())
             
             self._add_property_card([
-                ("Width", w_spin),
-                ("Height", h_spin)
+                (STR_LBL_WIDTH, w_spin),
+                (STR_LBL_HEIGHT, h_spin)
             ])
             
-        # CASE: User clicked a Unit (Entity)
         elif kind == "entity":
             ent = self.state.entity_manager.get_entity(ident)
             if not ent: return
             self.props_label.setText(ent.name)
             
-            self._add_group_header("Identity")
-            # Text box for Name
+            self._add_group_header(STR_GRP_IDENTITY)
             name_edit = QLineEdit(ent.name)
             name_edit.textChanged.connect(lambda t: self.update_entity(ent, t))
             
-            # Selection for Unit Type (Inferred from data controller)
             type_combo = QComboBox()
             side_str = ent.get_attribute("side", "Attacker")
             if hasattr(self.state, 'data_controller') and self.state.data_controller:
@@ -208,108 +210,90 @@ class ObjectPropertiesWidget(QWidget):
             type_combo.currentTextChanged.connect(lambda t: ent.set_attribute("type", t))
             
             self._add_property_card([
-                ("Name", name_edit),
-                ("Agent Type", type_combo)
+                (STR_LBL_NAME, name_edit),
+                (STR_LBL_AGENT_TYPE, type_combo)
             ])
             
-            self._add_group_header("Command")
-            # Side (Attacker, Defender, Neutral)
+            self._add_group_header(STR_GRP_COMMAND)
             side_combo = QComboBox()
-            side_combo.addItems(["Attacker", "Defender", "Neutral"])
+            side_combo.addItems(LIST_SIDES)
             side_combo.setCurrentText(side_str)
             side_combo.currentTextChanged.connect(lambda t: ent.set_attribute("side", t) or self.parent_window.hex_widget.update())
             
-            # Hierarchy Scale (Squad -> Battalion)
             hier_combo = QComboBox()
-            hier_combo.addItems(["Squad", "Platoon", "Company", "Battalion"])
+            hier_combo.addItems(LIST_HIERARCHY)
             hier_combo.setCurrentText(ent.get_attribute("hierarchy", "Squad"))
             
             self._add_property_card([
-                ("Affiliation", side_combo),
-                ("Hierarchy", hier_combo)
+                (STR_LBL_AFFILIATION, side_combo),
+                (STR_LBL_HIERARCHY, hier_combo)
             ])
             
-            self._add_group_header("Vitals")
-            # Personnel Count (Health/Size)
+            self._add_group_header(STR_GRP_VITALS)
             hp_spin = QSpinBox()
             hp_spin.setRange(0, 1000)
             hp_spin.setValue(int(ent.get_attribute("personnel", 100)))
             hp_spin.valueChanged.connect(lambda v: ent.set_attribute("personnel", v))
             
-            self._add_property_card([("Personnel", hp_spin)])
+            self._add_property_card([(STR_LBL_PERSONNEL, hp_spin)])
 
-            # HELPER: Changing Hierarchy automatically estimates Personnel strength
             def set_derived_health(hier_text):
                 ent.set_attribute("hierarchy", hier_text)
-                health_map = {"Squad": 12, "Platoon": 40, "Company": 150, "Battalion": 600}
-                new_hp = health_map.get(hier_text, 100)
+                new_hp = DICT_HIERARCHY_HP.get(hier_text, 100)
                 hp_spin.setValue(new_hp)
                 ent.set_attribute("personnel", new_hp)
 
             hier_combo.currentTextChanged.connect(set_derived_health)
-            
-            # Delete Button
             self._add_delete_button(lambda: self._trigger_delete("entity", ident))
 
-        # CASE: User clicked a Zone
         elif kind == "zone":
             zdata = self.state.map.get_zones().get(ident)
             if not zdata: return
             self.props_label.setText(zdata.get("name"))
             
-            self._add_group_header("Configuration")
+            self._add_group_header(STR_GRP_CONFIG)
             name_edit = QLineEdit(zdata.get("name", ""))
             name_edit.textChanged.connect(lambda t: self.update_zone(ident, {"name": t}))
             
-            # Color Selector for the Zone Aura
             color_combo = QComboBox()
-            colors = {"Red": "#FF0000", "Blue": "#0000FF", "Orange": "#FFA500", "Green": "#00FF00", "Cyan": "#00FFFF"}
-            for cname in colors: color_combo.addItem(cname, colors[cname])
+            for cname, ccode in DICT_ZONE_COLORS.items(): color_combo.addItem(cname, ccode)
             idx = color_combo.findData(zdata.get("color"))
             if idx >= 0: color_combo.setCurrentIndex(idx)
             color_combo.currentIndexChanged.connect(lambda i: self.update_zone(ident, {"color": color_combo.currentData()}))
             
             self._add_property_card([
-                ("Zone Name", name_edit),
-                ("Aura Color", color_combo)
+                (STR_LBL_ZONE_NAME, name_edit),
+                (STR_LBL_AURA_COLOR, color_combo)
             ])
-            
-            # Delete Button
             self._add_delete_button(lambda: self._trigger_delete("zone", ident))
             
-        # CASE: User clicked a Path (Maneuver Vector)
         elif kind == "path":
             pdata = self.state.map.get_paths().get(ident)
             if not pdata: return
             self.props_label.setText(pdata.get('name', 'Path'))
             
-            self._add_group_header("Configuration")
+            self._add_group_header(STR_GRP_CONFIG)
             name_edit = QLineEdit(pdata.get("name", ""))
             name_edit.textChanged.connect(lambda t: self.update_path(ident, {"name": t}))
             
-            # Color Selector for the Path line
             color_combo = QComboBox()
-            colors = {"Red": "#FF0000", "Blue": "#0000FF", "Orange": "#FFA500", "Green": "#00FF00", "Cyan": "#00FFFF", "Brown": "#8B4513"}
-            for cname in colors: color_combo.addItem(cname, colors[cname])
+            for cname, ccode in DICT_PATH_COLORS.items(): color_combo.addItem(cname, ccode)
             idx = color_combo.findData(pdata.get("color"))
             if idx >= 0: color_combo.setCurrentIndex(idx)
             color_combo.currentIndexChanged.connect(lambda i: self.update_path(ident, {"color": color_combo.currentData()}))
             
             self._add_property_card([
-                ("Path Name", name_edit),
-                ("Vector Color", color_combo)
+                (STR_LBL_PATH_NAME, name_edit),
+                (STR_LBL_VECTOR_COLOR, color_combo)
             ])
 
-
     def _add_delete_button(self, callback):
-        """Adds a standard dangerous action button to delete the selected object."""
-        del_btn = QPushButton("Delete Object")
-        del_btn.setStyleSheet(f"background-color: {Theme.ACCENT_ENEMY}; color: white; font-weight: bold; padding: 6px; border-radius: 4px;")
+        del_btn = QPushButton(STR_BTN_DELETE)
+        del_btn.setStyleSheet(STYLE_DELETE_BTN)
         del_btn.clicked.connect(callback)
         self.form_layout.addWidget(del_btn)
 
     def _trigger_delete(self, kind, ident):
-        """Handles the deletion of an object from the UI button."""
         if kind == "entity":
             if hasattr(self.state, 'undo_stack'):
                 from engine.core.undo_system import DeleteEntityCommand
@@ -317,8 +301,6 @@ class ObjectPropertiesWidget(QWidget):
                 self.state.undo_stack.push(cmd)
             self.state.map.remove_entity(ident)
             self.state.entity_manager.unregister_entity(ident)
-            
-            # Clear UI selections
             mw = self.parent_window
             if hasattr(mw.hex_widget, 'active_tool') and mw.hex_widget.active_tool == mw.hex_widget.tools.get("cursor"):
                 mw.hex_widget.active_tool.selected_entity_id = None
@@ -337,8 +319,6 @@ class ObjectPropertiesWidget(QWidget):
                     cmd = RemoveZoneCommand(self.state.map, ident, copy.deepcopy(zdata))
                     self.state.undo_stack.push(cmd)
                 del zones[ident]
-                
-                # Clear UI selections
                 mw = self.parent_window
                 if hasattr(mw.hex_widget, 'active_tool') and mw.hex_widget.active_tool == mw.hex_widget.tools.get("cursor"):
                     mw.hex_widget.active_tool.selected_zone_id = None
@@ -349,43 +329,27 @@ class ObjectPropertiesWidget(QWidget):
                 self.show_default_mode_view(getattr(self.state, "app_mode", "terrain"))
 
     def update_entity(self, ent, name):
-        """Updates entity name and triggers a UI refresh list."""
         ent.name = name
         self.property_changed.emit()
 
     def update_path(self, pid, data):
-        """Applies configuration changes to a specific maneuver path."""
         scen = self.state.map.active_scenario
-        if pid in scen._paths:
-            scen._paths[pid].update(data)
+        if pid in scen._paths: scen._paths[pid].update(data)
         self.property_changed.emit()
         self.parent_window.hex_widget.update()
 
     def update_zone(self, zid, data):
-        """Applies configuration changes (Name/Color) to a strategic zone."""
         self.state.map.update_zone(zid, data)
         self.property_changed.emit()
         self.parent_window.hex_widget.update()        
 
     def update_terrain(self, hex_obj, data):
-        """
-        Update terrain properties with full Undo/Redo support.
-        Whenever you change terrain via the form, a 'Command' is added to the history.
-        """
         old_data = self.state.map.get_terrain(hex_obj)
-        
-        # Merge incoming changes with existing data
         new_data = old_data.copy()
         new_data.update(data)
-        
-        # Register the action in the Undo Stack if available
         if hasattr(self.state, "undo_stack"):
             from engine.core.undo_system import SetTerrainCommand
             cmd = SetTerrainCommand(self.state.map, hex_obj, new_data, old_data)
             self.state.undo_stack.push(cmd)
-            
-        # Apply change and redraw map
         self.state.map.set_terrain(hex_obj, new_data)
         self.parent_window.hex_widget.update()
-
-

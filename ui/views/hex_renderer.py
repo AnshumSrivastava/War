@@ -3,6 +3,12 @@ from PyQt5.QtCore import Qt, QPointF, QRectF
 from engine.core.hex_math import HexMath, Hex
 from engine.state.global_state import GlobalState
 
+# --- UI CONFIGURATION ---
+# Default colors used when rendering thumbnails and map snapshots.
+COLOR_VOID_DEFAULT = QColor(20, 20, 25)
+COLOR_GRID_DEFAULT = QColor(60, 60, 65)
+# ------------------------
+
 class HexRenderer:
     """
     Static utility class to render Map data to an image (QPixmap).
@@ -16,7 +22,7 @@ class HexRenderer:
         Automatically scales the grid to fit the bounds.
         """
         pixmap = QPixmap(width, height)
-        pixmap.fill(QColor(20, 20, 25)) # Void Color background
+        pixmap.fill(COLOR_VOID_DEFAULT) # Void Color background
         
         if not map_instance:
             return pixmap
@@ -57,7 +63,7 @@ class HexRenderer:
         controller = state.data_controller
         
         # 3. Draw Hexes
-        grid_color = QColor(60, 60, 65)
+        grid_color = COLOR_GRID_DEFAULT
         pen = QPen(grid_color)
         pen.setWidthF(1.0)
         

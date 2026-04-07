@@ -59,6 +59,181 @@ from ui.core.scenario_side_manager import ScenarioSideManager
 from ui.core.simulation_manager import SimulationManager
 from ui.core.shortcut_registry import ShortcutRegistry
 from ui.core.ui_settings_persistence import UISettingsPersistence
+# --- UI CONFIGURATION ---
+# Titles & General
+STR_WIN_TITLE_BASE = "Wargame Engine"
+STR_WIN_TITLE_FMT = "{base} - {project} / {map}"
+STR_TOC_TITLE = "MISSION CONTROL"
+STR_LOG_TITLE = "MISSION LOG"
+STR_TIMELINE_TITLE = "Mission Control"
+
+# Status Bar Messages
+MSG_SYSTEM_READY = "System Ready"
+MSG_READY = "Ready"
+MSG_SAVING = "Saving Project..."
+MSG_AUTOSAVING = "Autosaving..."
+MSG_SAVED_FMT = "Project Saved ({count} scenarios)"
+MSG_THEME_SWITCHED_FMT = "Theme switched to: <b>{mode}</b>"
+MSG_LOADED_MAP_FMT = "Loaded Map: <b>{name}</b> ({count} scenarios)"
+MSG_NEW_PROJ_CREATED_FMT = "New Project Created: {name}"
+MSG_MAP_CREATED_FMT = "Created map '{name}' in project '{project}'"
+MSG_CAMERA_RESET = "Camera Reset"
+MSG_REWARD_VIZ_FMT = "Reward Visualization: {state}"
+MSG_TOOL_SELECTED_FMT = "Tool selected: <b>{tool_id}</b>"
+MSG_SPLIT_MAP_FMT = "Auto-Split Map: {direction} Border created."
+MSG_UNDO = "<i>Undo Performed</i>"
+MSG_REDO = "<i>Redo Performed</i>"
+MSG_DEEP_LINK_LOADED_FMT = "Deep Link Loaded: {project}/{map}"
+MSG_DEEP_LINK_LOADED_MONO_FMT = "Deep Link Loaded (monolithic): {project}"
+MSG_PROJ_DELETED_FMT = "Project '{name}' deleted."
+MSG_OBJECTIVE_GEN_FMT = "Generated Objective at {coords}."
+MSG_ATTACK_GEN_FMT = "Generated Initial Attack Area at {coords}."
+MSG_MINES_SCATTERED_FMT = "Scattered {count} mines across the theater."
+MSG_RL_SAVED = "<b>RL Knowledge Saved</b> to models/q_table.npy"
+MSG_RESET_DESIGN = "Simulation <b>Reset</b> to original design."
+MSG_SYNC_DISK_FMT = "Phase synchronized via disk: <b>{name}</b>"
+MSG_SCENARIO_FINALIZED_FMT = "Scenario <b>'{name}'</b> Finalized and Disk-Synced."
+MSG_FINALIZING_PHASE_FMT = "Finalizing {phase} phase... Persistence active."
+MSG_STEP_BACK_FMT = "Stepping back from {mode}... Saving state."
+
+# Menu & Action Labels
+MENU_FILE = "File"
+MENU_EDIT = "Edit"
+MENU_VIEW = "View"
+MENU_SIM = "Simulation"
+MENU_HELP = "Help"
+
+ACT_NEW_PROJ = "New Project"
+ACT_LOAD_PROJ = "Open Project"
+ACT_NEW_MAP = "New Map"
+ACT_SAVE_MAP = "Save Map"
+ACT_LOAD_SCEN = "Load Scenario"
+ACT_SAVE_SCEN = "Save Scenario"
+ACT_EXIT = "Exit"
+ACT_RESTART = "Restart Application"
+ACT_RELOAD_DATA = "Reload Master Data"
+ACT_UNDO = "Undo"
+ACT_REDO = "Redo"
+ACT_RESIZE_MAP = "Resize Map"
+ACT_AGENT_ALLOC = "Agent Allocation"
+ACT_BORDER_SETUP = "Border Setup"
+ACT_CLEAR_MAP = "Clear Map"
+ACT_ZOOM_IN = "Zoom In"
+ACT_ZOOM_OUT = "Zoom Out"
+ACT_RESET_CAM = "Reset Camera"
+ACT_INF_GRID = "Infinite Grid"
+ACT_SHOW_COORDS = "Show Coordinates"
+ACT_THREAT_MAP = "Show Threat Map"
+ACT_SHOW_REWARDS = "Show Rewards Over Head"
+ACT_SWITCH_THEME = "Switch Theme"
+ACT_STEP = "Step"
+ACT_PLAY = "Play"
+ACT_PAUSE = "Pause"
+ACT_RESET_ENV = "Reset Environment"
+ACT_GEN_GOAL = "Generate Goal Area"
+ACT_GEN_ATTACK = "Generate Initial Attack Area"
+ACT_SCATTER_MINES = "Scatter Mines"
+ACT_MANUAL = "Manual"
+ACT_ABOUT = "About"
+
+# Tool Options & Dialogs
+STR_DLG_SUCCESS = "Success"
+STR_DLG_ERROR = "Error"
+STR_DLG_SAVE_ERR = "Save Error"
+STR_DLG_LOAD_ERR = "Load Error"
+STR_DLG_NO_PROJ = "No Project"
+STR_DLG_ABOUT_TITLE = "About"
+STR_DLG_ABOUT_MSG = "Wargame Engine v1.0"
+STR_DLG_MANUAL_TITLE = "User Manual"
+STR_DLG_RESIZE_TITLE = "Resize Map"
+STR_DLG_CLEAR_TITLE = "Clear Map"
+STR_DLG_CLEAR_MSG = "This will wipe all terrain and zones. Continue?"
+STR_DLG_NEW_PROJ_TITLE = "New Project"
+STR_DLG_NEW_PROJ_MSG = "Enter Project Name:"
+STR_DLG_NEW_MAP_TITLE = "New Map"
+STR_DLG_NEW_MAP_MSG = "Map Name:"
+STR_DLG_SAVE_SCEN_TITLE = "Save Scenario"
+STR_DLG_SAVE_SCEN_MSG = "Scenario Name:"
+STR_DLG_LOAD_SCEN_TITLE = "Load Scenario"
+STR_DLG_LOAD_PROJ_TITLE = "Open Project JSON"
+STR_DLG_NEW_PATH_TITLE = "New Path Type"
+STR_DLG_NEW_TERRAIN_TITLE = "New Terrain Type"
+STR_DLG_ALLOC_TITLE = "Agent Allocation"
+STR_DLG_DELETE_PROJ_TITLE = "Delete Project"
+STR_DLG_DELETE_PROJ_MSG_FMT = "Are you sure you want to delete '{name}'?\nThis action is irreversible."
+STR_DLG_FINALIZE_MAP_TITLE = "Finalize Map"
+STR_DLG_FINALIZE_MAP_MSG = "Enter Map Name:"
+
+# Filters & Messages
+STR_FILTER_SCENARIO = "Scenario (*.json)"
+STR_FILTER_PROJECT = "Project Files (*.json)"
+MSG_PROJ_SAVED_SUCCESS = "Project saved successfully."
+MSG_SCEN_ADDED_FMT = "Scenario '{name}' added to Project."
+MSG_DATA_RELOADED_SUCCESS = "Master Data Reloaded Successfully."
+MSG_NO_PROJ_ACTIVE = "No project is currently active. Please create or load a project first."
+MSG_MAP_EXISTS_FMT = "Map '{name}' already exists in this project."
+MSG_LOADED_SCEN_FMT = "Loaded scenario: {name}"
+MSG_PROJ_LOADED_FMT = "Project Loaded: {name}"
+
+# Logic UI Strings
+STR_TOOL_OPTIONS_TITLE = "Tool Options"
+STR_ZONE_CONFIG_HEADER = "ZONE CONFIGURATION"
+STR_ZONE_CONFIG_INSTR = "Define clickable regions on the map."
+STR_ZONE_NAME_LABEL = "Zone Name"
+STR_ZONE_TYPE_LABEL = "Zone Type"
+STR_ZONE_SUBTYPE_LABEL = "Sub-Type Selection"
+STR_RIGHT_CLICK_COMMIT = "<i>Right Click to Commit</i>"
+STR_PATH_CONFIG_HEADER = "<b>PATH CONFIGURATION</b>"
+STR_PATH_CONFIG_INSTR = "Draw tactical lines, roads, or borders."
+STR_AGENT_DEPLOY_HEADER = "<b>AGENT DEPLOYMENT</b>"
+STR_AGENT_DEPLOY_INSTR = "Place individual units on the battlefield."
+LABEL_BTN_CLOSE = "Close"
+LABEL_WIDTH = "Width:"
+LABEL_HEIGHT = "Height:"
+# ------------------------
+STR_DEFAULT_PROJECT = "Default"
+STR_DEFAULT_SCENARIO = "Default"
+STR_PHASE_TERRAIN = "terrain"
+STR_PHASE_RULES = "rules"
+STR_PHASE_PLAY = "play"
+STR_PHASE_ATK_AGENTS = "atk_agents"
+STR_ROLE_ATTACKER = "Attacker"
+STR_ROLE_DEFENDER = "Defender"
+
+# Stylesheets
+STYLE_CLOCK = f"color: {Theme.TEXT_DIM}; font-family: 'Consolas', monospace; font-size: 13px; padding-right: 10px;"
+STYLE_INSPECTOR_LABEL = "InspectorLabel" # ObjectName
+STYLE_TOOL_TIP_INFO = f"color: {Theme.TEXT_DIM}; font-size: 11px; margin-bottom: 10px;"
+STYLE_PATH_HEADER = f"color: {Theme.ACCENT_ALLY}; font-size: 14px; margin-bottom: 2px;"
+STYLE_AGENT_HEADER = f"color: {Theme.ACCENT_ALLY}; font-size: 14px; margin-bottom: 2px;"
+STYLE_DIALOG_BASE = f"""
+    QDialog {{
+        background-color: {Theme.BG_SURFACE};
+        color: {Theme.TEXT_PRIMARY};
+    }}
+    QLabel {{
+        color: {Theme.TEXT_PRIMARY};
+        font-size: 13px;
+    }}
+    QComboBox {{
+        background-color: {Theme.BG_INPUT};
+        color: {Theme.TEXT_PRIMARY};
+        border: 1px solid {Theme.BORDER_SUBTLE};
+        padding: 4px;
+        border-radius: 4px;
+    }}
+    QPushButton {{
+        background-color: {Theme.BG_INPUT};
+        color: {Theme.TEXT_PRIMARY};
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+    }}
+    QPushButton:hover {{
+        background-color: {Theme.BORDER_SUBTLE};
+    }}
+"""
+# -------------------------
 
 class MainWindow(QMainWindow):
     """
@@ -149,10 +324,10 @@ class MainWindow(QMainWindow):
             self._load_default_project()
         
         # --- STATUS & TIME ---
-        self.statusBar().showMessage("System Ready")
+        self.statusBar().showMessage(MSG_SYSTEM_READY)
         
         self.clock_label = QLabel()
-        self.clock_label.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-family: 'Consolas', monospace; font-size: 13px; padding-right: 10px;")
+        self.clock_label.setStyleSheet(STYLE_CLOCK)
         self.statusBar().addPermanentWidget(self.clock_label)
         
         self.clock_timer = QTimer(self)
@@ -226,7 +401,7 @@ class MainWindow(QMainWindow):
         self.setup_right_panel()
         
         from ui.components.tactical_side_panel import TacticalSidePanel
-        self.toc_dock = QDockWidget("MISSION CONTROL", self)
+        self.toc_dock = QDockWidget(STR_TOC_TITLE, self)
         self.tac_panel = TacticalSidePanel(self, self.state)
         self.toc_dock.setWidget(self.tac_panel)
         self.addDockWidget(Qt.RightDockWidgetArea, self.toc_dock)
@@ -241,13 +416,13 @@ class MainWindow(QMainWindow):
         # Connect map clicks to inspector logic
         self.hex_widget.hex_clicked.connect(self.on_hex_clicked)
         self.final_episode_events = []
-
+ 
         # --- PERSISTENCE RESTORATION ---
         # Restore sidebars and window size to exactly where they were last time.
         UISettingsPersistence.restore(self)
         self.apply_theme(self.state.theme_mode)
-
-        self.statusBar().showMessage("Ready")
+ 
+        self.statusBar().showMessage(MSG_READY)
         self.setup_menu_bar()
         
 
@@ -262,163 +437,163 @@ class MainWindow(QMainWindow):
         menubar.clear()
         
         # --- File Menu ---
-        file_menu = menubar.addMenu("File")
+        file_menu = menubar.addMenu(MENU_FILE)
         
         # Projects
-        a_new_proj = file_menu.addAction(VectorIconPainter.create_icon("new_file"), "New Project")
+        a_new_proj = file_menu.addAction(VectorIconPainter.create_icon("new_file"), ACT_NEW_PROJ)
         a_new_proj.setShortcut("Ctrl+Shift+N")
         a_new_proj.triggered.connect(self.action_new_project)
         
-        a_load_proj = file_menu.addAction(VectorIconPainter.create_icon("load"), "Open Project")
+        a_load_proj = file_menu.addAction(VectorIconPainter.create_icon("load"), ACT_LOAD_PROJ)
         a_load_proj.setShortcut("Ctrl+Shift+O")
         a_load_proj.triggered.connect(self.action_load_project)
         
         file_menu.addSeparator()
         
         # Maps
-        a_new_map = file_menu.addAction(VectorIconPainter.create_icon("edit"), "New Map")
+        a_new_map = file_menu.addAction(VectorIconPainter.create_icon("edit"), ACT_NEW_MAP)
         a_new_map.setShortcut("Ctrl+N")
         a_new_map.triggered.connect(self.action_create_new_map)
         
-        a_save = file_menu.addAction(VectorIconPainter.create_icon("save"), "Save Map")
+        a_save = file_menu.addAction(VectorIconPainter.create_icon("save"), ACT_SAVE_MAP)
         a_save.setShortcut("Ctrl+S")
         a_save.triggered.connect(self.action_save_project)
         
         file_menu.addSeparator()
         
         # Scenarios
-        a_load_scen = file_menu.addAction("Load Scenario")
+        a_load_scen = file_menu.addAction(ACT_LOAD_SCEN)
         a_load_scen.triggered.connect(self.action_load_scenario)
         
-        a_save_scen = file_menu.addAction("Save Scenario")
+        a_save_scen = file_menu.addAction(ACT_SAVE_SCEN)
         a_save_scen.triggered.connect(self.action_save_scenario)
         
         file_menu.addSeparator()
         
-        a_exit = file_menu.addAction("Exit")
+        a_exit = file_menu.addAction(ACT_EXIT)
         a_exit.setShortcut("Ctrl+Q")
         a_exit.triggered.connect(self.close)
         
-        a_restart = file_menu.addAction("Restart Application")
+        a_restart = file_menu.addAction(ACT_RESTART)
         a_restart.setShortcut("Ctrl+R")
         a_restart.triggered.connect(self.restart_app)
         
-        a_reload_data = file_menu.addAction("Reload Master Data")
+        a_reload_data = file_menu.addAction(ACT_RELOAD_DATA)
         a_reload_data.setToolTip("Reload JSON configuration files without restarting.")
         a_reload_data.triggered.connect(self.action_reload_master_data)
         
         # --- Edit Menu ---
-        edit_menu = menubar.addMenu("Edit")
+        edit_menu = menubar.addMenu(MENU_EDIT)
         
-        a_undo = edit_menu.addAction(VectorIconPainter.create_icon("undo"), "Undo")
+        a_undo = edit_menu.addAction(VectorIconPainter.create_icon("undo"), ACT_UNDO)
         a_undo.setShortcut("Ctrl+Z")
         a_undo.triggered.connect(self.undo_action)
         
-        a_redo = edit_menu.addAction(VectorIconPainter.create_icon("redo"), "Redo")
+        a_redo = edit_menu.addAction(VectorIconPainter.create_icon("redo"), ACT_REDO)
         a_redo.setShortcut("Ctrl+Y")
         a_redo.triggered.connect(self.redo_action)
         
         edit_menu.addSeparator()
         
-        a_resize = edit_menu.addAction(VectorIconPainter.create_icon("settings"), "Resize Map")
+        a_resize = edit_menu.addAction(VectorIconPainter.create_icon("settings"), ACT_RESIZE_MAP)
         a_resize.triggered.connect(self.action_resize_map)
         
-        a_alloc = edit_menu.addAction(VectorIconPainter.create_icon("place_agent"), "Agent Allocation")
+        a_alloc = edit_menu.addAction(VectorIconPainter.create_icon("place_agent"), ACT_AGENT_ALLOC)
         a_alloc.triggered.connect(self.prompt_agent_allocation)
         
         edit_menu.addSeparator()
         
-        a_border = edit_menu.addAction(VectorIconPainter.create_icon("draw_zone"), "Border Setup")
+        a_border = edit_menu.addAction(VectorIconPainter.create_icon("draw_zone"), ACT_BORDER_SETUP)
         a_border.triggered.connect(self.action_add_border)
         
         edit_menu.addSeparator()
         
-        a_clear = edit_menu.addAction(VectorIconPainter.create_icon("trash"), "Clear Map")
+        a_clear = edit_menu.addAction(VectorIconPainter.create_icon("trash"), ACT_CLEAR_MAP)
         a_clear.triggered.connect(self.action_clear_map)
         
         # --- View Menu ---
-        view_menu = menubar.addMenu("View")
+        view_menu = menubar.addMenu(MENU_VIEW)
         
-        a_zoom_in = view_menu.addAction("Zoom In")
+        a_zoom_in = view_menu.addAction(ACT_ZOOM_IN)
         a_zoom_in.setShortcut("Ctrl++")
         a_zoom_in.triggered.connect(self.action_zoom_in)
         
-        a_zoom_out = view_menu.addAction("Zoom Out")
+        a_zoom_out = view_menu.addAction(ACT_ZOOM_OUT)
         a_zoom_out.setShortcut("Ctrl+-")
         a_zoom_out.triggered.connect(self.action_zoom_out)
         
-        a_reset_cam = view_menu.addAction("Reset Camera")
+        a_reset_cam = view_menu.addAction(ACT_RESET_CAM)
         a_reset_cam.setShortcut("Ctrl+0")
         a_reset_cam.triggered.connect(self.action_reset_camera)
         
         view_menu.addSeparator()
         
         # Toggles
-        self.a_inf = view_menu.addAction("Infinite Grid")
+        self.a_inf = view_menu.addAction(ACT_INF_GRID)
         self.a_inf.setCheckable(True)
         self.a_inf.setChecked(self.state.grid_mode == "infinite")
         self.a_inf.triggered.connect(lambda: self.toggle_infinite_menu(self.a_inf.isChecked()))
         
-        self.a_coords = view_menu.addAction("Show Coordinates")
+        self.a_coords = view_menu.addAction(ACT_SHOW_COORDS)
         self.a_coords.setCheckable(True)
         self.a_coords.setChecked(False)
         self.a_coords.triggered.connect(lambda: self.toggle_coords_menu(self.a_coords.isChecked()))
         
         view_menu.addSeparator()
         
-        self.a_threat_map = view_menu.addAction("Show Threat Map")
+        self.a_threat_map = view_menu.addAction(ACT_THREAT_MAP)
         self.a_threat_map.setToolTip("Displays AI-calculated danger zones on the map.")
         self.a_threat_map.setCheckable(True)
         self.a_threat_map.setChecked(getattr(self.state, "show_threat_map", False))
         self.a_threat_map.triggered.connect(lambda: self.toggle_threat_map(self.a_threat_map.isChecked()))
         
-        self.a_show_rewards = view_menu.addAction("Show Rewards Over Head")
+        self.a_show_rewards = view_menu.addAction(ACT_SHOW_REWARDS)
         self.a_show_rewards.setCheckable(True)
         self.a_show_rewards.setChecked(False)
         self.a_show_rewards.triggered.connect(lambda: self.toggle_rewards(self.a_show_rewards.isChecked()))
         
         view_menu.addSeparator()
         
-        a_theme = view_menu.addAction("Switch Theme")
+        a_theme = view_menu.addAction(ACT_SWITCH_THEME)
         a_theme.triggered.connect(self.toggle_theme_ribbon) # Reusing existing logic
         
         # --- Simulation Menu ---
-        sim_menu = menubar.addMenu("Simulation")
+        sim_menu = menubar.addMenu(MENU_SIM)
         
-        a_step = sim_menu.addAction(VectorIconPainter.create_icon("redo"), "Step")
+        a_step = sim_menu.addAction(VectorIconPainter.create_icon("redo"), ACT_STEP)
         a_step.setShortcut("F10")
         a_step.triggered.connect(self.advance_simulation)
         
-        a_play = sim_menu.addAction(VectorIconPainter.create_icon("play"), "Play")
+        a_play = sim_menu.addAction(VectorIconPainter.create_icon("play"), ACT_PLAY)
         a_play.setShortcut("F5")
         a_play.triggered.connect(self.start_simulation_loop)
         
-        a_pause = sim_menu.addAction(VectorIconPainter.create_icon("pause"), "Pause")
+        a_pause = sim_menu.addAction(VectorIconPainter.create_icon("pause"), ACT_PAUSE)
         a_pause.setShortcut("F6")
         a_pause.triggered.connect(self.pause_simulation)
         
-        a_reset = sim_menu.addAction(VectorIconPainter.create_icon("refresh"), "Reset Environment")
+        a_reset = sim_menu.addAction(VectorIconPainter.create_icon("refresh"), ACT_RESET_ENV)
         a_reset.triggered.connect(self.action_reset_env)
         
         sim_menu.addSeparator()
         
-        a_gen_goal = sim_menu.addAction("Generate Goal Area")
+        a_gen_goal = sim_menu.addAction(ACT_GEN_GOAL)
         a_gen_goal.triggered.connect(lambda: self.action_generate_goal_area(self.hex_widget.hovered_hex))
         
-        a_gen_attack = sim_menu.addAction("Generate Initial Attack Area")
+        a_gen_attack = sim_menu.addAction(ACT_GEN_ATTACK)
         a_gen_attack.triggered.connect(lambda: self.action_generate_attack_area(self.hex_widget.hovered_hex))
         
-        a_scatter_mines = sim_menu.addAction("Scatter Mines")
+        a_scatter_mines = sim_menu.addAction(ACT_SCATTER_MINES)
         a_scatter_mines.triggered.connect(self.action_scatter_mines)
         
         # --- Help Menu ---
-        help_menu = menubar.addMenu("Help")
+        help_menu = menubar.addMenu(MENU_HELP)
         
-        a_manual = help_menu.addAction(VectorIconPainter.create_icon("help"), "Manual")
+        a_manual = help_menu.addAction(VectorIconPainter.create_icon("help"), ACT_MANUAL)
         a_manual.triggered.connect(self.show_user_manual)
         
-        a_about = help_menu.addAction(VectorIconPainter.create_icon("info"), "About")
-        a_about.triggered.connect(lambda: ThemedMessageBox.information(self, "About", "Wargame Engine v1.0"))
+        a_about = help_menu.addAction(VectorIconPainter.create_icon("info"), ACT_ABOUT)
+        a_about.triggered.connect(lambda: ThemedMessageBox.information(self, STR_DLG_ABOUT_TITLE, STR_DLG_ABOUT_MSG))
         
 
 
@@ -441,14 +616,13 @@ class MainWindow(QMainWindow):
             with open(map_path, 'w') as f:
                 json.dump(data, f, indent=2)
                 
-            # log.debug(f"Autosaved to {map_path}") # Spammy?
         except Exception as e:
             log.error(f"Autosave failed: {e}")
 
     def show_user_manual(self):
         """Display the User Manual in a dialog."""
         dialog = QDialog(self)
-        dialog.setWindowTitle("User Manual")
+        dialog.setWindowTitle(STR_DLG_MANUAL_TITLE)
         dialog.resize(800, 600)
         layout = QVBoxLayout(dialog)
         
@@ -466,7 +640,7 @@ class MainWindow(QMainWindow):
             
         layout.addWidget(text_edit)
         
-        btn_close = QPushButton("Close")
+        btn_close = QPushButton(LABEL_BTN_CLOSE)
         btn_close.clicked.connect(dialog.accept)
         layout.addWidget(btn_close)
         
@@ -480,7 +654,7 @@ class MainWindow(QMainWindow):
         """Sets the active theme and applies it across the UI."""
         self.state.theme_mode = mode
         self.apply_theme(mode)
-        self.log_info(f"Theme switched to: <b>{mode.upper()}</b>")
+        self.log_info(MSG_THEME_SWITCHED_FMT.format(mode=mode.upper()))
     
     def apply_theme(self, mode):
         """Applies QSS and notifies widgets to update their internal colors."""
@@ -535,7 +709,8 @@ class MainWindow(QMainWindow):
             self.action_model.reinit_models()
             self.hex_widget.refresh_map()
             
-            self.log_info(f"Loaded Map: <b>{map_name}</b> ({result.data['scenarios_loaded']} scenarios)")
+            self.log_info(MSG_LOADED_MAP_FMT.format(name=map_name, count=result.data['scenarios_loaded']))
+            self.setWindowTitle(STR_WIN_TITLE_FMT.format(base=STR_WIN_TITLE_BASE, project=project, map=map_name))
         else:
             ThemedMessageBox.critical(self, "Load Error", result.error)
 
@@ -672,7 +847,7 @@ class MainWindow(QMainWindow):
         }
         self.state.map.add_path(path_id, path_data)
         
-        self.log_info(f"Auto-Split Map: {direction} Border created.")
+        self.log_info(MSG_SPLIT_MAP_FMT.format(direction=direction))
         self.hex_widget.update()
         
         # 4. ENFORCE OWNERSHIP: Automatically assign all hexagons to either 
@@ -684,9 +859,9 @@ class MainWindow(QMainWindow):
     def action_save_project(self, silent=False):
         """Standard project save: Map + all Scenarios."""
         if not silent:
-            self.statusBar().showMessage("Saving Project...")
+            self.statusBar().showMessage(MSG_SAVING)
         else:
-            self.statusBar().showMessage("Autosaving...", 3000)
+            self.statusBar().showMessage(MSG_AUTOSAVING, 3000)
 
         if not self.current_project_path:
             if silent: return
@@ -705,8 +880,8 @@ class MainWindow(QMainWindow):
             self.generate_map_thumbnail(terrain_path)
             
             if not silent:
-                self.statusBar().showMessage(f"Project Saved ({res_scen.data['saved_count']} scenarios)", 5000)
-                ThemedMessageBox.information(self, "Success", "Project saved successfully.")
+                self.statusBar().showMessage(MSG_SAVED_FMT.format(count=res_scen.data['saved_count']), 5000)
+                ThemedMessageBox.information(self, STR_DLG_SUCCESS, MSG_PROJ_SAVED_SUCCESS)
             
             if hasattr(self, 'maps_widget'):
                 self.maps_widget.refresh_list()
@@ -714,7 +889,7 @@ class MainWindow(QMainWindow):
         else:
             if not silent:
                 error = res_map.error or res_scen.error
-                ThemedMessageBox.critical(self, "Save Error", f"Failed to save project: {error}")
+                ThemedMessageBox.critical(self, STR_DLG_SAVE_ERR, f"Failed to save project: {error}")
 
     def generate_map_thumbnail(self, terrain_path):
         """UI-Specific logic to generate a gallery thumbnail."""
@@ -733,39 +908,39 @@ class MainWindow(QMainWindow):
     def action_save_scenario(self):
         """Save the active scenario as a new file in the project."""
         if not self.current_project_path:
-            ThemedMessageBox.warning(self, "No Project", "Please load a project first.")
+            ThemedMessageBox.warning(self, STR_DLG_NO_PROJ, MSG_NO_PROJ_ACTIVE)
             return
-
-        name, ok = QInputDialog.getText(self, "Save Scenario", "Scenario Name:")
+ 
+        name, ok = QInputDialog.getText(self, STR_DLG_SAVE_SCEN_TITLE, STR_DLG_SAVE_SCEN_MSG)
         if ok and name:
             # We use scenario_svc for saving
             result = scenario_svc.save_scenario() # This saves current active
             if result.ok:
                 # For now, let's keep it simple and use the service-wrapped save_all for the project
                 self.action_save_project(silent=True)
-                ThemedMessageBox.information(self, "Success", f"Scenario '{name}' added to Project.")
+                ThemedMessageBox.information(self, STR_DLG_SUCCESS, MSG_SCEN_ADDED_FMT.format(name=name))
             else:
-                 ThemedMessageBox.critical(self, "Error", result.error)
+                 ThemedMessageBox.critical(self, STR_DLG_ERROR, result.error)
 
     def action_load_scenario(self):
         """Load a single scenario JSON into the active map world."""
         base = os.path.join(self.current_project_path, "Scenarios") if self.current_project_path else self.data_loader.content_root
         os.makedirs(base, exist_ok=True)
         
-        filename, _ = QFileDialog.getOpenFileName(self, "Load Scenario", base, "Scenario (*.json)")
+        filename, _ = QFileDialog.getOpenFileName(self, STR_DLG_LOAD_SCEN_TITLE, base, STR_FILTER_SCENARIO)
         if filename:
             result = scenario_svc.load_scenario(filename)
             if result.ok:
                 self.hex_widget.refresh_map()
-                self.log_info(f"Loaded scenario: {result.data['name']}")
+                self.log_info(MSG_LOADED_SCEN_FMT.format(name=result.data['name'])) 
             else:
-                ThemedMessageBox.critical(self, "Error", result.error)
+                ThemedMessageBox.critical(self, STR_DLG_ERROR, result.error)
 
     def action_load_project(self):
         """Manual prompt to load a monolithic project JSON."""
         from PyQt5.QtWidgets import QFileDialog
         root = self.data_loader.content_root
-        path, _ = QFileDialog.getOpenFileName(self, "Open Project JSON", root, "Project Files (*.json)")
+        path, _ = QFileDialog.getOpenFileName(self, STR_DLG_LOAD_PROJ_TITLE, root, STR_FILTER_PROJECT)
         
         if path:
             res = project_svc.load_project(path)
@@ -774,9 +949,9 @@ class MainWindow(QMainWindow):
                 self.state.project_path = path
                 self.switch_mode(1) # Start at Terrain
                 self.hex_widget.refresh_map()
-                self.log_info(f"Project Loaded: {res.data['name']}")
+                self.log_info(MSG_PROJ_LOADED_FMT.format(name=res.data['name']))
             else:
-                ThemedMessageBox.critical(self, "Load Error", f"Failed to load project: {res.error}")
+                ThemedMessageBox.critical(self, STR_DLG_LOAD_ERR, f"Failed to load project: {res.error}")
 
     def action_reload_master_data(self):
          """Hot-reloads Master Data JSON files without a full app restart.""" # Docstring for the function.
@@ -787,15 +962,15 @@ class MainWindow(QMainWindow):
              if hasattr(self, 'master_data_widget'): # Check if the master data widget exists.
                  self.master_data_widget.refresh_tree() # Refresh its tree view.
                  
-             ThemedMessageBox.information(self, "Success", "Master Data Reloaded Successfully.") # Show a success message.
+             ThemedMessageBox.information(self, STR_DLG_SUCCESS, MSG_DATA_RELOADED_SUCCESS) # Show a success message.
          except Exception as e: # Catch any exceptions during data reloading.
-             ThemedMessageBox.critical(self, "Error", f"Failed to reload JSON configs: {e}") # Show a critical error message.
+             ThemedMessageBox.critical(self, STR_DLG_ERROR, f"Failed to reload JSON configs: {e}") # Show a critical error message.
 
     def action_new_project(self, reset_map=True):
         """Initializes a brand new monolithic project."""
         from PyQt5.QtWidgets import QInputDialog, QFileDialog
         
-        name, ok = QInputDialog.getText(self, "New Project", "Enter Project Name:")
+        name, ok = QInputDialog.getText(self, STR_DLG_NEW_PROJ_TITLE, STR_DLG_NEW_PROJ_MSG)
         if not ok or not name: return
         
         root = self.data_loader.content_root
@@ -817,23 +992,23 @@ class MainWindow(QMainWindow):
         
         self.switch_mode(1) # Start at Terrain
         self.hex_widget.refresh_map()
-        self.log_info(f"New Project Created: {name}")
+        self.log_info(MSG_NEW_PROJ_CREATED_FMT.format(name=name))
         return True
 
     def action_create_new_map(self):
         """Creates a new map within the CURRENT project."""
         if not self.state.current_project or not self.current_project_path:
-            ThemedMessageBox.warning(self, "No Project", "No project is currently active. Please create or load a project first.")
+            ThemedMessageBox.warning(self, STR_DLG_NO_PROJ, MSG_NO_PROJ_ACTIVE)
             return
 
-        name, ok = QInputDialog.getText(self, "New Map", "Map Name:")
+        name, ok = QInputDialog.getText(self, STR_DLG_NEW_MAP_TITLE, STR_DLG_NEW_MAP_MSG)
         if ok and name:
             # Structure: [ProjectRoot]/Maps/[name]/Terrain.json
             project_root = os.path.dirname(os.path.dirname(self.current_project_path))
             map_dir = os.path.join(project_root, "Maps", name)
             
             if os.path.exists(map_dir):
-                ThemedMessageBox.warning(self, "Error", f"Map '{name}' already exists in this project.")
+                ThemedMessageBox.warning(self, STR_DLG_ERROR, MSG_MAP_EXISTS_FMT.format(name=name))
                 return
 
             try:
@@ -857,19 +1032,19 @@ class MainWindow(QMainWindow):
                 self.action_model.reinit_models()
                 self.hex_widget.refresh_map()
                 
-                ThemedMessageBox.information(self, "Success", f"Created map '{name}' in project '{self.state.current_project}'")
-                self.setWindowTitle(f"Wargame Engine - {self.state.current_project} / {name}")
+                ThemedMessageBox.information(self, STR_DLG_SUCCESS, MSG_MAP_CREATED_FMT.format(name=name, project=self.state.current_project))
+                self.setWindowTitle(STR_WIN_TITLE_FMT.format(base=STR_WIN_TITLE_BASE, project=self.state.current_project, map=name))
                 
                 if hasattr(self, 'maps_widget'):
                     self.maps_widget.refresh_list()
             except Exception as e:
-                ThemedMessageBox.critical(self, "Error", f"Failed to create map: {e}")
+                ThemedMessageBox.critical(self, STR_DLG_ERROR, f"Failed to create map: {e}")
 
     def action_resize_map(self):
         """THE CIVIL ENGINEER: Change the dimensions of the world.""" # Docstring for the function.
         # Pop up a small form to ask for Width and Height.
         d = QDialog(self) # Create a new QDialog.
-        d.setWindowTitle("Resize Map") # Set the dialog window title.
+        d.setWindowTitle(STR_DLG_RESIZE_TITLE) # Set the dialog window title.
         l = QFormLayout(d) # Create a QFormLayout for the dialog.
         
         w_spin = QSpinBox() # Create a QSpinBox for width input.
@@ -880,8 +1055,8 @@ class MainWindow(QMainWindow):
         h_spin.setRange(10, 10000) # Set the valid range for height.
         h_spin.setValue(self.state.map.height) # Set the initial value to the current map height.
         
-        l.addRow("Width:", w_spin) # Add the width spin box to the form layout.
-        l.addRow("Height:", h_spin) # Add the height spin box to the form layout.
+        l.addRow(LABEL_WIDTH, w_spin) # Add the width spin box to the form layout.
+        l.addRow(LABEL_HEIGHT, h_spin) # Add the height spin box to the form layout.
         
         bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel) # Create OK and Cancel buttons.
         bb.accepted.connect(d.accept) # Connect the accepted signal to the dialog's accept slot.
@@ -896,7 +1071,7 @@ class MainWindow(QMainWindow):
 
     def action_clear_map(self):
         """THE BULLDOZER: Wipe everything clean.""" # Docstring for the function.
-        res = ThemedMessageBox.warning(self, "Clear Map", "This will wipe all terrain and zones. Continue?", QMessageBox.Yes | QMessageBox.No) # Show a warning message box.
+        res = ThemedMessageBox.warning(self, STR_DLG_CLEAR_TITLE, STR_DLG_CLEAR_MSG, QMessageBox.Yes | QMessageBox.No) # Show a warning message box.
         if res == QMessageBox.Yes: # If the user confirms to clear the map.
             self.state.map._terrain = {} # Clear all terrain data.
             self.state.map.active_scenario._zones = {} # Clear all mission zones from the active scenario.
@@ -915,7 +1090,7 @@ class MainWindow(QMainWindow):
     def toggle_rewards(self, checked):
         self.hex_widget.show_rewards = checked
         self.hex_widget.update()
-        self.statusBar().showMessage(f"Reward Visualization: {'ON' if checked else 'OFF'}")
+        self.statusBar().showMessage(MSG_REWARD_VIZ_FMT.format(state='ON' if checked else 'OFF'))
 
     def toggle_threat_map(self, checked):
         self.state.show_threat_map = checked
@@ -936,7 +1111,7 @@ class MainWindow(QMainWindow):
         self.hex_widget.offset_x = 0
         self.hex_widget.offset_y = 0
         self.hex_widget.update()
-        self.log_info("Camera Reset")
+        self.log_info(MSG_CAMERA_RESET)
 
     def action_add_border(self):
         self.auto_split_map()
@@ -961,8 +1136,8 @@ class MainWindow(QMainWindow):
         active_side = getattr(self.state, "active_scenario_side", "Attacker") # Get the active scenario side.
 
         # 🚫 Disable Assign Goal for BLUE (Defender)
-        if tool_id == "assign_goal" and active_side.lower() == "defender": # If trying to assign goal as defender.
-            self.log_info("<span style='color:red;'>Assign Goal is disabled for BLUE side.</span>") # Log a warning.
+        if tool_id == "assign_goal" and active_side.lower() == STR_ROLE_DEFENDER.lower(): # If trying to assign goal as defender.
+            self.log_info(f"<span style='color:red;'>Assign Goal is disabled for {STR_ROLE_DEFENDER.upper()} side.</span>") # Log a warning.
             return # Exit the function.
 
         # Update state
@@ -980,7 +1155,7 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'hex_widget'):
             self.hex_widget.set_tool(tool_id)
 
-        self.log_info(f"Tool selected: <b>{tool_id}</b>") # Log the selected tool.
+        self.log_info(MSG_TOOL_SELECTED_FMT.format(tool_id=tool_id)) # Log the selected tool.
         self.update_tool_options() # Update the tool options panel to reflect the new tool.
 
     def update_tool_options(self):
@@ -1001,11 +1176,11 @@ class MainWindow(QMainWindow):
             self.tool_opts_layout.setContentsMargins(5, 5, 5, 5)
             
             # Header Label for Intuition (ID for Special Styling)
-            header = QLabel("ZONE CONFIGURATION")
+            header = QLabel(STR_ZONE_CONFIG_HEADER)
             header.setObjectName("InspectorLabel")
             self.tool_opts_layout.addRow(header)
 
-            label_instr = QLabel("Define clickable regions on the map.")
+            label_instr = QLabel(STR_ZONE_CONFIG_INSTR)
             label_instr.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-size: 11px; margin-bottom: 10px;")
             self.tool_opts_layout.addRow(label_instr)
             
@@ -1016,7 +1191,7 @@ class MainWindow(QMainWindow):
             name_edit.textChanged.connect(lambda t: setattr(self.state, 'zone_opt_name', t))
             
             # Add label for Name
-            name_label = QLabel("Zone Name")
+            name_label = QLabel(STR_ZONE_NAME_LABEL)
             name_label.setObjectName("InspectorLabel")
             self.tool_opts_layout.addRow(name_label, name_edit)
 
@@ -1078,12 +1253,12 @@ class MainWindow(QMainWindow):
             update_subtypes(0) # Call update_subtypes once to initialize.
             
             # Add labels for remaining fields
-            type_label = QLabel("Zone Type")
+            type_label = QLabel(STR_ZONE_TYPE_LABEL)
             type_label.setObjectName("InspectorLabel")
             self.tool_opts_layout.addRow(type_label, type_combo)
             
             # Subtype Label
-            subtype_label = QLabel("Sub-Type Selection")
+            subtype_label = QLabel(STR_ZONE_SUBTYPE_LABEL)
             subtype_label.setObjectName("InspectorLabel")
             self.tool_opts_layout.addRow(subtype_label, subtype_combo)
             
@@ -1099,7 +1274,7 @@ class MainWindow(QMainWindow):
             else: # For other modes.
                 self.tool_opts_layout.addRow("Subtype/ID:", subtype_combo) # Add subtype combo box directly.
                 
-            self.tool_opts_layout.addRow(QLabel("<i>Right Click to Commit</i>")) # Add an instructional label.
+            self.tool_opts_layout.addRow(QLabel(STR_RIGHT_CLICK_COMMIT)) # Add an instructional label.
             
         elif tool == "draw_path":
             self.tool_opts_group.show()
@@ -1168,7 +1343,7 @@ class MainWindow(QMainWindow):
             
             self.tool_opts_layout.addRow("Path Type:", h_path) # Add horizontal layout to form layout.
             self.tool_opts_layout.addRow("Draw Mode:", path_mode_combo) # Add path mode combo box to layout.
-            self.tool_opts_layout.addRow(QLabel("<i>Right Click to Commit</i>")) # Add instructional label.
+            self.tool_opts_layout.addRow(QLabel(STR_RIGHT_CLICK_COMMIT)) # Add instructional label.
             
         elif tool == "place_agent":
             self.tool_opts_group.show()
@@ -1360,6 +1535,8 @@ class MainWindow(QMainWindow):
             self.state.custom_path_types.append(name)
             self.state.custom_path_colors[name] = color_hex
             
+            self.state.custom_path_colors[name] = color_hex
+            
             self.log_info(f"Created new path type: <b>{name}</b>")
             self.update_tool_options()
 
@@ -1463,7 +1640,7 @@ class MainWindow(QMainWindow):
         from ui.components.event_log_widget import EventLogWidget
         
         # 1. Mission Control Dock (Right)
-        self.timeline_dock = QDockWidget("Mission Control", self)
+        self.timeline_dock = QDockWidget(STR_TIMELINE_TITLE, self)
         self.timeline_dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
         self.timeline_panel = TimelinePanel(self, self.state)
         self.timeline_dock.setWidget(self.timeline_panel)
@@ -1471,7 +1648,7 @@ class MainWindow(QMainWindow):
         self.timeline_dock.hide() # Hidden by default
         
         # 2. Tactical Log Console (Bottom)
-        self.terminal_dock = QDockWidget("MISSION LOG", self)
+        self.terminal_dock = QDockWidget(STR_LOG_TITLE, self)
         self.terminal_dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
         self.event_log_widget = EventLogWidget()
         self.event_log_widget.popout_requested.connect(self.popout_log)
@@ -1537,7 +1714,7 @@ class MainWindow(QMainWindow):
         from ui.dialogs.themed_dialogs import ThemedMessageBox
         res_z = zone_svc.add_objective(goal_hex)
         if res_z.ok:
-            self.log_info(f"Generated Objective at {goal_hex}.")
+            self.log_info(MSG_OBJECTIVE_GEN_FMT.format(coords=goal_hex))
             self.hex_widget.refresh_map()
         else:
             ThemedMessageBox.critical(self, "Error", res_z.error)
@@ -1547,7 +1724,7 @@ class MainWindow(QMainWindow):
         from ui.dialogs.themed_dialogs import ThemedMessageBox
         res_z = zone_svc.add_attack_area(attack_hex)
         if res_z.ok:
-            self.log_info(f"Generated Initial Attack Area at {attack_hex}.")
+            self.log_info(MSG_ATTACK_GEN_FMT.format(coords=attack_hex))
             self.hex_widget.refresh_map()
         else:
             ThemedMessageBox.critical(self, "Error", res_z.error)
@@ -1557,7 +1734,7 @@ class MainWindow(QMainWindow):
         from ui.dialogs.themed_dialogs import ThemedMessageBox
         res = zone_svc.scatter_mines()
         if res.ok:
-            self.log_info(f"Scattered {res.data['count']} mines across the theater.")
+            self.log_info(MSG_MINES_SCATTERED_FMT.format(count=res.data['count']))
             self.hex_widget.refresh_map()
         else:
             ThemedMessageBox.critical(self, "Error", res.error)
@@ -1567,7 +1744,7 @@ class MainWindow(QMainWindow):
         from ui.dialogs.themed_dialogs import ThemedMessageBox
         res = sim_svc.save_knowledge()
         if res.ok:
-            self.log_info("<b>RL Knowledge Saved</b> to models/q_table.npy")
+            self.log_info(MSG_RL_SAVED)
             ThemedMessageBox.information(self, "Saved", "Learned Q-Table saved successfully.")
         else:
             ThemedMessageBox.critical(self, "Error", res.error)
@@ -1581,7 +1758,7 @@ class MainWindow(QMainWindow):
             self.hex_widget.refresh_map()
             if hasattr(self, 'scene_hierarchy_widget'):
                 self.scene_hierarchy_widget.refresh_tree()
-            self.log_info("Simulation <b>Reset</b> to original design.")
+            self.log_info(MSG_RESET_DESIGN)
 
     # Methods moved to ScenarioManagerWidget
 
@@ -1592,36 +1769,10 @@ class MainWindow(QMainWindow):
     def prompt_agent_allocation(self):
         """Dialog to configure Side Roles (Attacker/Defender)."""
         dialog = QDialog(self)
-        dialog.setWindowTitle("Agent Allocation")
+        dialog.setWindowTitle(ACT_AGENT_ALLOC)
         
         # Apply Dark Theme
-        dialog.setStyleSheet(f"""
-            QDialog {{
-                background-color: {Theme.BG_SURFACE};
-                color: {Theme.TEXT_PRIMARY};
-            }}
-            QLabel {{
-                color: {Theme.TEXT_PRIMARY};
-                font-size: 13px;
-            }}
-            QComboBox {{
-                background-color: {Theme.BG_INPUT};
-                color: {Theme.TEXT_PRIMARY};
-                border: 1px solid {Theme.BORDER_SUBTLE};
-                padding: 4px;
-                border-radius: 4px;
-            }}
-            QPushButton {{
-                background-color: {Theme.BG_INPUT};
-                color: {Theme.TEXT_PRIMARY};
-                border: none;
-                padding: 6px 12px;
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{
-                background-color: {Theme.BORDER_SUBTLE};
-            }}
-        """)
+        dialog.setStyleSheet(STYLE_DIALOG_BASE)
         
         layout = QFormLayout(dialog)
         
@@ -1689,7 +1840,7 @@ class MainWindow(QMainWindow):
                         if result.ok:
                             self.current_project_path = path
                             self.state.project_path = path
-                            self.setWindowTitle(f"Wargame Engine - {result.data['name']}")
+                            self.setWindowTitle(STR_WIN_TITLE_FMT.format(base=STR_WIN_TITLE_BASE, project=result.data['name'], map=result.data['name']))
                             self.action_model.reinit_models()
                             
                             # Standard Auto-Entry: Switch directly to Landing Page (Gallery)
@@ -1783,13 +1934,13 @@ class MainWindow(QMainWindow):
         """DELETION COMMAND: Removes a project folder from the disk."""
         import shutil
         from ui.dialogs.themed_dialogs import ThemedMessageBox
-        res = ThemedMessageBox.warning(self, "Delete Project", f"Are you sure you want to delete '{project_name}'?\nThis action is irreversible.", QMessageBox.Yes | QMessageBox.No)
+        res = ThemedMessageBox.warning(self, STR_DLG_DELETE_PROJ_TITLE, STR_DLG_DELETE_PROJ_MSG_FMT.format(name=project_name), QMessageBox.Yes | QMessageBox.No)
         if res == QMessageBox.Yes:
             proj_path = os.path.join(self.data_loader.content_root, "Projects", project_name)
             if os.path.exists(proj_path):
                 try:
                     shutil.rmtree(proj_path)
-                    self.log_info(f"Project '{project_name}' deleted.")
+                    self.log_info(MSG_PROJ_DELETED_FMT.format(name=project_name))
                     # Refresh the dashboard
                     if hasattr(self, 'maps_widget'):
                         self.maps_widget.refresh_list()
@@ -1817,7 +1968,7 @@ class MainWindow(QMainWindow):
              return # Already in a real project
              
         # Standard: content/Projects/[Proj]/Maps/[Map]
-        proj_name = "Default"
+        proj_name = STR_DEFAULT_PROJECT
         proj_path = os.path.join(self.data_loader.content_root, "Projects", proj_name)
         map_path = os.path.join(proj_path, "Maps", proj_name)
         
@@ -1864,10 +2015,10 @@ class MainWindow(QMainWindow):
             self.state.current_project = proj_name
             self.switch_mode(1) # Go directly to Tactical Theater
             self.state.current_map = proj_name
-            self.setWindowTitle(f"Wargame Engine - {proj_name} / {proj_name}")
+            self.setWindowTitle(STR_WIN_TITLE_FMT.format(base=STR_WIN_TITLE_BASE, project=proj_name, map=proj_name))
             self.action_model.reinit_models()
             self.state.current_map = proj_name
-            self.setWindowTitle(f"Wargame Engine - {proj_name} / {proj_name}")
+            self.setWindowTitle(STR_WIN_TITLE_FMT.format(base=STR_WIN_TITLE_BASE, project=proj_name, map=proj_name))
             self.action_model.reinit_models()
             self._save_last_project(map_path)
 
@@ -1893,7 +2044,7 @@ class MainWindow(QMainWindow):
         self.action_save_project(silent=True)
         
         # 2. Identify the active scenario file
-        cur_scen_name = getattr(self.state, 'current_scenario_name', "Default")
+        cur_scen_name = getattr(self.state, 'current_scenario_name', STR_DEFAULT_SCENARIO)
         scen_path = os.path.join(self.current_project_path, "Scenarios", f"{cur_scen_name}.json")
         
         # 3. Reload from JSON (Hard Sync)
@@ -1904,7 +2055,7 @@ class MainWindow(QMainWindow):
                 if self.state.map.active_scenario:
                     self.state.map.active_scenario.capture_state(self.state.entity_manager)
                 
-                self.log_info(f"Phase synchronized via disk: <b>{cur_scen_name}</b>")
+                self.log_info(MSG_SYNC_DISK_FMT.format(name=cur_scen_name))
                 if hasattr(self, 'hex_widget'):
                     self.hex_widget.refresh_map()
                 if hasattr(self, 'scene_hierarchy_widget'):
@@ -1917,20 +2068,20 @@ class MainWindow(QMainWindow):
         """Handles the 'Done' click, moving to the next logical phase."""
         mode = self.state.app_mode
         
-        if mode == "terrain":
+        if mode == STR_PHASE_TERRAIN:
             # Terrain → Rules
             from PyQt5.QtWidgets import QInputDialog
-            if self.state.current_map == "Default":
-                name, ok = QInputDialog.getText(self, "Finalize Map", "Enter Map Name:")
+            if self.state.current_map == STR_DEFAULT_PROJECT:
+                name, ok = QInputDialog.getText(self, STR_DLG_FINALIZE_MAP_TITLE, STR_DLG_FINALIZE_MAP_MSG)
                 if ok and name:
                     self.action_save_project()
                     self.switch_mode(2)  # → Rules
             else:
                 self.action_save_project(silent=True)
                 self.switch_mode(2)  # → Rules
-        elif mode in ["rules", "def_areas", "def_agents", "atk_areas"]:
+        elif mode in [STR_PHASE_RULES, "def_areas", "def_agents", "atk_areas"]:
             # All intermediate phases: Save monolithic → Load monolithic → Switch
-            self.log_info(f"Finalizing {mode.upper()} phase... Persistence active.")
+            self.log_info(MSG_FINALIZING_PHASE_FMT.format(phase=mode.upper()))
             project_svc.auto_persist()
             project_svc.load_project(self.state.project_path)
             
@@ -1938,7 +2089,7 @@ class MainWindow(QMainWindow):
             next_idx = self.mode_machine.current_mode_index + 1
             self.switch_mode(next_idx)
             
-        elif mode == "atk_agents":
+        elif mode == STR_PHASE_ATK_AGENTS:
             # Atk Agents → Play: Finalize scenario, capture golden state, start simulation
             from PyQt5.QtWidgets import QInputDialog
             import services.scenario_service as scenario_svc
@@ -1973,7 +2124,7 @@ class MainWindow(QMainWindow):
                         self.maps_widget.refresh_list()
                         
                     self.switch_mode(7)  # → Play/Simulation
-                    self.log_info(f"Scenario <b>'{name}'</b> Finalized and Disk-Synced.")
+                    self.log_info(MSG_SCENARIO_FINALIZED_FMT.format(name=name))
 
                 else:
                     from ui.dialogs.themed_dialogs import ThemedMessageBox
@@ -1982,16 +2133,16 @@ class MainWindow(QMainWindow):
     def _on_back_clicked(self):
         """Handles the 'Back' click, returning to the previous logical phase."""
         mode = self.state.app_mode
-        self.log_info(f"Stepping back from {mode.upper()}... Saving state.")
+        self.log_info(MSG_STEP_BACK_FMT.format(mode=mode.upper()))
         
         # 1. Save current progress before retreating
         if self.state.project_path:
             project_svc.auto_persist()
             
         # 2. Sequential Logic
-        if mode == "play":
+        if mode == STR_PHASE_PLAY:
             self.switch_mode(6) # Back to Atk Agents
-        elif mode == "atk_agents":
+        elif mode == STR_PHASE_ATK_AGENTS:
             self.switch_mode(5) # Back to Atk Areas
         elif mode == "atk_areas":
             self.switch_mode(4) # Back to Def Agents
@@ -1999,7 +2150,7 @@ class MainWindow(QMainWindow):
             self.switch_mode(3) # Back to Def Areas
         elif mode == "def_areas":
             self.switch_mode(2) # Back to Rules
-        elif mode in ["rules", "terrain"]:
+        elif mode in [STR_PHASE_RULES, STR_PHASE_TERRAIN]:
             self.switch_mode(0) # Back to Dashboard
             
         # 3. DISK-FIRST: Re-load state from disk to ensure RAM matches the "Truth"
@@ -2012,14 +2163,14 @@ class MainWindow(QMainWindow):
             self.state.undo_stack.undo()
             self.hex_widget.refresh_map()
             if hasattr(self, 'scene_hierarchy_widget'): self.scene_hierarchy_widget.refresh_tree()
-            self.log_info("<i>Undo Performed</i>")
+            self.log_info(MSG_UNDO)
 
     def redo_action(self):
         if hasattr(self.state, "undo_stack"):
             self.state.undo_stack.redo()
             self.hex_widget.refresh_map()
             if hasattr(self, 'scene_hierarchy_widget'): self.scene_hierarchy_widget.refresh_tree()
-            self.log_info("<i>Redo Performed</i>")
+            self.log_info(MSG_REDO)
 
     def resizeEvent(self, event):
         """Standard resize handling."""

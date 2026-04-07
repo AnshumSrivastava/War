@@ -9,6 +9,36 @@ from PyQt5.QtCore import Qt
 from ui.styles.theme import Theme
 from ui.components.themed_widgets import TacticalCard, TacticalHeader
 
+# --- UI CONFIGURATION ---
+# Titles & Headings
+STR_TITLE_AAR = "AFTER-ACTION REPORT (AAR)"
+STR_LBL_CASUALTIES = "CASUALTIES"
+STR_LBL_AMMO_SPENT = "AMMO SPENT"
+STR_LBL_OBJECTIVE = "OBJECTIVE"
+
+# Result & Status Texts
+STR_STATUS_COMPLETED = "COMPLETED"
+STR_STATUS_INVOLVED = "INVOLVED"
+STR_STATUS_NA = "N/A"
+STR_STATUS_ZERO = "0"
+STR_STATUS_INITIALIZE = "INITIALIZE MISSION TO GENERATE TACTICAL REPORT"
+STR_FOOTER_END = "/// END OF REPORT ///"
+
+# Card Titles
+STR_CARD_ATK_LOG = "ATTACKER PERFORMANCE LOG"
+STR_CARD_DEF_LOG = "DEFENDER PERFORMANCE LOG"
+
+# Formatting Templates
+STR_LOG_ENTRY_FMT = "• UNIT {agent_id}: {type} AT {location}"
+
+# Stylesheets
+STYLE_RIBBON_FRAME = f"background-color: {Theme.BG_SURFACE}; border: 1px solid {Theme.BORDER_STRONG}; border-left: 4px solid {Theme.ACCENT_WARN};"
+STYLE_RIBBON_LABEL = f"color: {Theme.TEXT_DIM}; font-family: '{Theme.FONT_HEADER}'; font-size: 10px; letter-spacing: 1px;"
+STYLE_RIBBON_VALUE = f"color: {Theme.ACCENT_ALLY}; font-family: '{Theme.FONT_MONO}'; font-size: 18px; font-weight: bold;"
+STYLE_PLACEHOLDER = f"color: {Theme.TEXT_DIM}; font-style: italic; font-size: 11px;"
+STYLE_LOG_LABEL = f"color: {Theme.TEXT_PRIMARY}; font-family: '{Theme.FONT_MONO}'; font-size: 10px;"
+# -------------------------
+
 class ReportWidget(QWidget):
     """
     Military-style After Action Report (AAR) Viewer.
@@ -22,18 +52,18 @@ class ReportWidget(QWidget):
         self.setStyleSheet(f"background-color: {Theme.BG_DEEP};")
         
         # 1. Header
-        self.header = TacticalHeader("AFTER-ACTION REPORT (AAR)")
+        self.header = TacticalHeader(STR_TITLE_AAR)
         self.layout.addWidget(self.header)
         
         # 2. Summary Ribbon (High-Visibility Stats)
         self.ribbon_frame = QFrame()
-        self.ribbon_frame.setStyleSheet(f"background-color: {Theme.BG_SURFACE}; border: 1px solid {Theme.BORDER_STRONG}; border-left: 4px solid {Theme.ACCENT_WARN};")
+        self.ribbon_frame.setStyleSheet(STYLE_RIBBON_FRAME)
         self.ribbon_layout = QHBoxLayout(self.ribbon_frame)
         self.ribbon_layout.setContentsMargins(20, 10, 20, 10)
         
-        self.ribbon_stat_cas = self._create_ribbon_stat("CASUALTIES", "0")
-        self.ribbon_stat_ammo = self._create_ribbon_stat("AMMO SPENT", "0")
-        self.ribbon_stat_obj = self._create_ribbon_stat("OBJECTIVE", "N/A")
+        self.ribbon_stat_cas = self._create_ribbon_stat(STR_LBL_CASUALTIES, STR_STATUS_ZERO)
+        self.ribbon_stat_ammo = self._create_ribbon_stat(STR_LBL_AMMO_SPENT, STR_STATUS_ZERO)
+        self.ribbon_stat_obj = self._create_ribbon_stat(STR_LBL_OBJECTIVE, STR_STATUS_NA)
         
         self.ribbon_layout.addWidget(self.ribbon_stat_cas)
         self.ribbon_layout.addStretch()
@@ -64,13 +94,12 @@ class ReportWidget(QWidget):
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         lvl = QLabel(label)
-        lvl.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-family: '{Theme.FONT_HEADER}'; font-size: 10px; letter-spacing: 1px;")
+        lvl.setStyleSheet(STYLE_RIBBON_LABEL)
         vvl = QLabel(value)
-        vvl.setStyleSheet(f"color: {Theme.ACCENT_ALLY}; font-family: '{Theme.FONT_MONO}'; font-size: 18px; font-weight: bold;")
+        vvl.setStyleSheet(STYLE_RIBBON_VALUE)
         layout.addWidget(lvl)
         layout.addWidget(vvl)
         
-        # Save reference for updates
         if not hasattr(self, 'value_labels'): self.value_labels = {}
         self.value_labels[label] = vvl
         
@@ -83,8 +112,8 @@ class ReportWidget(QWidget):
             if item.widget():
                 item.widget().deleteLater()
         
-        placeholder = QLabel("INITIALIZE MISSION TO GENERATE TACTICAL REPORT")
-        placeholder.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-style: italic; font-size: 11px;")
+        placeholder = QLabel(STR_STATUS_INITIALIZE)
+        placeholder.setStyleSheet(STYLE_PLACEHOLDER)
         placeholder.setAlignment(Qt.AlignCenter)
         self.report_layout.insertWidget(0, placeholder)
 
@@ -107,31 +136,40 @@ class ReportWidget(QWidget):
                 if evt.get('hit'):
                     casualties += 1 # Rough estimate for report
             
-            # Simple sorting by agent_id for now (usually defined in state)
             aid = str(evt.get('agent_id', ''))
             if 'attacker' in aid.lower(): attacker_events.append(evt)
             else: defender_events.append(evt)
 
         # Update Ribbon
-        self.value_labels["CASUALTIES"].setText(str(casualties))
-        self.value_labels["AMMO SPENT"].setText(str(ammo_spent * 25)) # Assuming 25 rounds/shot
-        self.value_labels["OBJECTIVE"].setText("COMPLETED" if casualties > 0 else "INVOLVED")
+        self.value_labels[STR_LBL_CASUALTIES].setText(str(casualties))
+        self.value_labels[STR_LBL_AMMO_SPENT].setText(str(ammo_spent * 25)) # Assuming 25 rounds/shot
+        self.value_labels[STR_LBL_OBJECTIVE].setText(STR_STATUS_COMPLETED if casualties > 0 else STR_STATUS_INVOLVED)
         
         # Add Segmented Cards
         if attacker_events:
-            a_card = TacticalCard("ATTACKER PERFORMANCE LOG", accent_color=Theme.ACCENT_ALLY)
+            a_card = TacticalCard(STR_CARD_ATK_LOG, accent_color=Theme.ACCENT_ALLY)
             for ev in attacker_events[:20]: # Cap at 20 for readability
-                lbl = QLabel(f"• UNIT {ev.get('agent_id')}: {ev.get('type','ACTION').upper()} AT {ev.get('to') or ev.get('source_hex')}")
-                lbl.setStyleSheet(f"color: {Theme.TEXT_PRIMARY}; font-family: '{Theme.FONT_MONO}'; font-size: 10px;")
+                loc = ev.get('to') or ev.get('source_hex')
+                lbl = QLabel(STR_LOG_ENTRY_FMT.format(
+                    agent_id=ev.get('agent_id'), 
+                    type=ev.get('type','ACTION').upper(), 
+                    location=loc
+                ))
+                lbl.setStyleSheet(STYLE_LOG_LABEL)
                 a_card.addWidget(lbl)
             self.report_layout.insertWidget(0, a_card)
             
         if defender_events:
-            d_card = TacticalCard("DEFENDER PERFORMANCE LOG", accent_color=Theme.ACCENT_ENEMY)
+            d_card = TacticalCard(STR_CARD_DEF_LOG, accent_color=Theme.ACCENT_ENEMY)
             for ev in defender_events[:20]:
-                lbl = QLabel(f"• UNIT {ev.get('agent_id')}: {ev.get('type','ACTION').upper()} AT {ev.get('to') or ev.get('source_hex')}")
-                lbl.setStyleSheet(f"color: {Theme.TEXT_PRIMARY}; font-family: '{Theme.FONT_MONO}'; font-size: 10px;")
+                loc = ev.get('to') or ev.get('source_hex')
+                lbl = QLabel(STR_LOG_ENTRY_FMT.format(
+                    agent_id=ev.get('agent_id'), 
+                    type=ev.get('type','ACTION').upper(), 
+                    location=loc
+                ))
+                lbl.setStyleSheet(STYLE_LOG_LABEL)
                 d_card.addWidget(lbl)
             self.report_layout.insertWidget(1, d_card)
 
-        self.report_layout.insertWidget(self.report_layout.count() - 1, QLabel("/// END OF REPORT ///"))
+        self.report_layout.insertWidget(self.report_layout.count() - 1, QLabel(STR_FOOTER_END))

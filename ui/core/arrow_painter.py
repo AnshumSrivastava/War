@@ -16,7 +16,7 @@ class TacticalArrowPainter:
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing)
         
-        pen = QPen(color, width, style)
+        pen = QPen(QColor(color), width, style)
         pen.setCapStyle(Qt.RoundCap)
         pen.setJoinStyle(Qt.RoundJoin)
         painter.setPen(pen)
@@ -46,7 +46,7 @@ class TacticalArrowPainter:
         
         poly = QPolygonF([p1, p2, p3])
         
-        painter.setBrush(QBrush(color))
+        painter.setBrush(QBrush(QColor(color)))
         painter.setPen(Qt.NoPen)
         painter.drawPolygon(poly)
 

@@ -9,6 +9,27 @@ from ui.styles.theme import Theme
 from engine.state.global_state import GlobalState
 import services.map_service as map_service
 
+# --- UI CONFIGURATION ---
+# Section Headers
+LABEL_MAPS_SECTION = "MAPS & TERRAIN"
+LABEL_SCEN_SECTION = "OPERATIONAL MISSIONS"
+LABEL_MODEL_SECTION = "INTELLIGENCE VARIANTS"
+
+# Button Labels
+LABEL_BTN_DELETE = "DELETE"
+LABEL_BTN_NEW = "+ NEW MISSION"
+LABEL_BTN_DB = "DATABASE"
+
+# Symbols
+SYM_DELETE = "×"
+
+# Dialog & System Messages
+TITLE_DELETE_CONFIRM = "TACTICAL DELETION"
+MSG_DELETE_CONFIRM_FMT = "Permanently remove this {kind} ({name})?"
+MSG_DELETE_SUCCESS_FMT = "<b>DELETED</b> {kind}: {name}"
+MSG_DELETE_FAIL_FMT = "Deletion failed: Path not found {path}"
+MSG_DELETE_ERR_FMT = "Error during deletion: {error}"
+# ------------------------
 class ProjectCard(QFrame):
     """A visual card representing a Map or Scenario with a premium tactical aesthetic."""
     clicked = pyqtSignal(dict) 
@@ -90,7 +111,7 @@ class ProjectCard(QFrame):
         # --- DELETE BUTTON (X) ---
         # Data registries are protected from direct deletion here for safety
         if kind != "data":
-            self.btn_del = QPushButton("×", self)
+            self.btn_del = QPushButton(SYM_DELETE, self)
             self.btn_del.setFixedSize(24, 24)
             self.btn_del.move(170, 5)
             self.btn_del.setCursor(Qt.PointingHandCursor)
@@ -184,7 +205,7 @@ class MapsWidget(QWidget):
         self.project_combo.currentTextChanged.connect(self._on_project_changed)
         h_layout.addWidget(self.project_combo)
         
-        btn_delete = QPushButton("DELETE")
+        btn_delete = QPushButton(LABEL_BTN_DELETE)
         btn_delete.setFixedSize(80, 45)
         btn_delete.setStyleSheet(f"background-color: {Theme.BG_DEEP}; border: 1px solid {Theme.ACCENT_ENEMY}; color: {Theme.ACCENT_ENEMY}; font-weight: bold; font-size: 10px;")
         btn_delete.clicked.connect(lambda: self.mw.action_delete_project(self.project_combo.currentText()) if self.mw else None)
@@ -192,13 +213,13 @@ class MapsWidget(QWidget):
         
         h_layout.addStretch()
         
-        btn_create = QPushButton("+ NEW MISSION")
+        btn_create = QPushButton(LABEL_BTN_NEW)
         btn_create.setFixedSize(140, 40)
         btn_create.setStyleSheet(f"background-color: {Theme.BG_DEEP}; border: 1px solid {Theme.ACCENT_ALLY}; color: {Theme.ACCENT_ALLY}; font-weight: bold;")
         btn_create.clicked.connect(self.mw.action_save_scenario if self.mw else lambda: None)
         h_layout.addWidget(btn_create)
         
-        btn_database = QPushButton("DATABASE")
+        btn_database = QPushButton(LABEL_BTN_DB)
         btn_database.setFixedSize(140, 40)
         btn_database.setStyleSheet(f"background-color: {Theme.BG_DEEP}; border: 1px solid {Theme.ACCENT_GOOD}; color: {Theme.ACCENT_GOOD}; font-weight: bold;")
         btn_database.clicked.connect(lambda: self.mw.switch_mode(8) if self.mw else None)
@@ -217,9 +238,9 @@ class MapsWidget(QWidget):
         self.grid_layout.setSpacing(40)
         
         # Sections
-        self.maps_grid = self._setup_section("MAPS & TERRAIN")
-        self.scen_grid = self._setup_section("OPERATIONAL MISSIONS", color=Theme.ACCENT_WARN)
-        self.model_grid = self._setup_section("INTELLIGENCE VARIANTS", color=Theme.ACCENT_GOOD)
+        self.maps_grid = self._setup_section(LABEL_MAPS_SECTION)
+        self.scen_grid = self._setup_section(LABEL_SCEN_SECTION, color=Theme.ACCENT_WARN)
+        self.model_grid = self._setup_section(LABEL_MODEL_SECTION, color=Theme.ACCENT_GOOD)
         
         self.scroll.setWidget(self.grid_container)
         self.layout.addWidget(self.scroll, 1)
@@ -346,8 +367,8 @@ class MapsWidget(QWidget):
         
         # 1. CONFIRMATION
         from ui.components.themed_widgets import ThemedMessageBox
-        confirm = ThemedMessageBox.question(self, "TACTICAL DELETION", 
-                                            f"Permanently remove this {kind.upper()} ({extra if extra else map_name})?")
+        confirm = ThemedMessageBox.question(self, TITLE_DELETE_CONFIRM, 
+                                            MSG_DELETE_CONFIRM_FMT.format(kind=kind.upper(), name=extra if extra else map_name))
         if not confirm:
             return
             
@@ -373,7 +394,7 @@ class MapsWidget(QWidget):
                 else:
                     os.remove(target_path)
                     
-                self.mw.log_info(f"<b>DELETED</b> {kind.upper()}: {extra or map_name}")
+                self.mw.log_info(MSG_DELETE_SUCCESS_FMT.format(kind=kind.upper(), name=extra or map_name))
                 
                 # Update current state if we deleted the active item
                 if self.active_map == map_name and kind == "map":
@@ -383,9 +404,9 @@ class MapsWidget(QWidget):
                 
                 self.refresh_list()
             else:
-                self.mw.log_error(f"Deletion failed: Path not found {target_path}")
+                self.mw.log_error(MSG_DELETE_FAIL_FMT.format(path=target_path))
         except Exception as e:
-            self.mw.log_error(f"Error during deletion: {str(e)}")
+            self.mw.log_error(MSG_DELETE_ERR_FMT.format(error=str(e)))
 
     def _launch_active(self, payload):
         load_type = payload["kind"]

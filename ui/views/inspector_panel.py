@@ -15,6 +15,11 @@ It allows you to:
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QFrame, QFormLayout, QDockWidget
 from PyQt5.QtCore import Qt
 
+# --- UI CONFIGURATION ---
+# Identifier for the main control container (used for CSS/Theme styling)
+ID_GROUP_BOX = "InspectorGroup"
+# ------------------------
+
 class InspectorPanel(QWidget):
     """
     The panel that displays details for selected map elements.
@@ -33,7 +38,7 @@ class InspectorPanel(QWidget):
         # --- TOOL OPTIONS GROUP ---
         # This part changes depending on which tool you have selected (Paint, Place, etc.).
         self.tool_opts_group = QFrame()
-        self.tool_opts_group.setObjectName("InspectorGroup")
+        self.tool_opts_group.setObjectName(ID_GROUP_BOX)
         self.tool_opts_group.setFrameShape(QFrame.StyledPanel)
         self.tool_opts_layout = QFormLayout(self.tool_opts_group)
         layout.addWidget(self.tool_opts_group)

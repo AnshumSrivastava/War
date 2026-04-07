@@ -3,10 +3,43 @@ FILE: ui/components/scenario_manager_widget.py
 ROLE: Scenario & Mission Setup.
 DESCRIPTION: Interface for selecting which agents are available, choosing the map, and defining win/loss conditions.
 """
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QListWidget, QPushButton, QLabel, QGroupBox, QInputDialog, QMessageBox)
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QListWidget, QPushButton, QLabel, QGroupBox, QInputDialog, QMessageBox, QToolButton, QSizePolicy, QFrame)
+from PyQt5.QtCore import Qt, QSize
 from engine.core.map import Scenario
 from engine.state.global_state import GlobalState
+from ui.styles.theme import Theme
+from ui.components.themed_widgets import TacticalCard, TacticalHeader
+
+# --- UI CONFIGURATION ---
+STR_HEADER = "MISSION OPERATIONS"
+STR_CARD_TITLE = "MISSION PROFILES"
+STR_LIST_TOOLTIP = "Mission Profiles\nClick a scenario to load it.\nThe active scenario determines which units and zones are visible."
+STR_INTEL_HEADER = "TACTICAL INTEL SUMMARY"
+STR_INTEL_UNIT_DEFAULT = "DEPLOYED ASSETS: 0"
+STR_THEATER_DEFAULT = "OP THEATER: [UNASSIGNED]"
+STR_BTN_NEW = "INITIALIZE NEW MISSION"
+STR_BTN_NEW_TOOLTIP = "Create New Mission\nInitializes a fresh scenario with no units,\nthen prompts you to define the map border."
+STR_NEW_SCENARIO_TITLE = "New Scenario"
+STR_NEW_SCENARIO_LABEL = "Scenario Name:"
+STR_ERROR_TITLE = "Error"
+STR_ERROR_EXISTS = "Scenario name already exists."
+
+# Style Templates
+STYLE_LIST_WIDGET = f"""
+    QListWidget {{ background: transparent; color: {Theme.TEXT_PRIMARY}; font-family: '{Theme.FONT_HEADER}'; font-size: 11px; }}
+    QListWidget::item {{ 
+        padding: 10px; border-bottom: 1px solid {Theme.BORDER_STRONG}; 
+        background-color: {Theme.BG_DEEP}; margin-bottom: 2px;
+    }}
+    QListWidget::item:selected {{ 
+        background-color: {Theme.BG_INPUT}; color: {Theme.ACCENT_ALLY}; border-left: 3px solid {Theme.ACCENT_ALLY}; 
+    }}
+"""
+STYLE_INTEL_GROUP = f"background-color: {Theme.BG_DEEP}; border-top: 1px solid {Theme.BORDER_STRONG}; margin-top: 10px; padding: 10px;"
+STYLE_INTEL_HEADER = f"color: {Theme.TEXT_DIM}; font-family: '{Theme.FONT_HEADER}'; font-size: 10px; font-weight: bold; margin-bottom: 5px;"
+STYLE_INTEL_LABEL = f"color: {Theme.TEXT_PRIMARY}; font-family: '{Theme.FONT_MONO}'; font-size: 10px;"
+STYLE_BTN_NEW = f"background: {Theme.BG_INPUT}; color: {Theme.ACCENT_ALLY}; padding: 10px; font-weight: bold; border-radius: 4px;"
+# -------------------------
 
 class ScenarioManagerWidget(QWidget):
     def __init__(self, parent_window, state=None):
@@ -19,52 +52,37 @@ class ScenarioManagerWidget(QWidget):
         self.refresh_list()
 
     def setup_ui(self):
-        from ui.styles.theme import Theme
-        from ui.core.icon_painter import VectorIconPainter
-        from PyQt5.QtWidgets import QToolButton, QSizePolicy, QFrame
-        from PyQt5.QtCore import QSize
-        from ui.components.themed_widgets import TacticalCard, TacticalHeader
-        
         layout = QVBoxLayout(self)
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(15)
         
         # Header
-        header = TacticalHeader("MISSION OPERATIONS")
+        header = TacticalHeader(STR_HEADER)
         layout.addWidget(header)
         
         # Scenario Container
-        self.card = TacticalCard(title="MISSION PROFILES")
+        self.card = TacticalCard(title=STR_CARD_TITLE)
         self.scen_list = QListWidget()
         self.scen_list.setFrameShape(QFrame.NoFrame)
-        self.scen_list.setStyleSheet(f"""
-            QListWidget {{ background: transparent; color: {Theme.TEXT_PRIMARY}; font-family: '{Theme.FONT_HEADER}'; font-size: 11px; }}
-            QListWidget::item {{ 
-                padding: 10px; border-bottom: 1px solid {Theme.BORDER_STRONG}; 
-                background-color: {Theme.BG_DEEP}; margin-bottom: 2px;
-            }}
-            QListWidget::item:selected {{ 
-                background-color: {Theme.BG_INPUT}; color: {Theme.ACCENT_ALLY}; border-left: 3px solid {Theme.ACCENT_ALLY}; 
-            }}
-        """)
+        self.scen_list.setStyleSheet(STYLE_LIST_WIDGET)
         self.scen_list.itemClicked.connect(self.on_scenario_selected)
-        self.scen_list.setToolTip("Mission Profiles\nClick a scenario to load it.\nThe active scenario determines which units and zones are visible.")
+        self.scen_list.setToolTip(STR_LIST_TOOLTIP)
         self.card.addWidget(self.scen_list)
         
         # --- Mission Intel Section (Restored) ---
         self.intel_group = QFrame()
-        self.intel_group.setStyleSheet(f"background-color: {Theme.BG_DEEP}; border-top: 1px solid {Theme.BORDER_STRONG}; margin-top: 10px; padding: 10px;")
+        self.intel_group.setStyleSheet(STYLE_INTEL_GROUP)
         intel_layout = QVBoxLayout(self.intel_group)
         
-        self.lbl_intel_header = QLabel("TACTICAL INTEL SUMMARY")
-        self.lbl_intel_header.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-family: '{Theme.FONT_HEADER}'; font-size: 10px; font-weight: bold; margin-bottom: 5px;")
+        self.lbl_intel_header = QLabel(STR_INTEL_HEADER)
+        self.lbl_intel_header.setStyleSheet(STYLE_INTEL_HEADER)
         intel_layout.addWidget(self.lbl_intel_header)
         
-        self.lbl_intel_units = QLabel("DEPLOYED ASSETS: 0")
-        self.lbl_intel_theater = QLabel("OP THEATER: [UNASSIGNED]")
+        self.lbl_intel_units = QLabel(STR_INTEL_UNIT_DEFAULT)
+        self.lbl_intel_theater = QLabel(STR_THEATER_DEFAULT)
         
         for lbl in [self.lbl_intel_units, self.lbl_intel_theater]:
-            lbl.setStyleSheet(f"color: {Theme.TEXT_PRIMARY}; font-family: '{Theme.FONT_MONO}'; font-size: 10px;")
+            lbl.setStyleSheet(STYLE_INTEL_LABEL)
             intel_layout.addWidget(lbl)
             
         self.card.addWidget(self.intel_group)
@@ -75,9 +93,9 @@ class ScenarioManagerWidget(QWidget):
         btn_row.setSpacing(5)
         
         self.btn_new = QToolButton()
-        self.btn_new.setText("INITIALIZE NEW MISSION")
-        self.btn_new.setToolTip("Create New Mission\nInitializes a fresh scenario with no units,\nthen prompts you to define the map border.")
-        self.btn_new.setStyleSheet(f"background: {Theme.BG_INPUT}; color: {Theme.ACCENT_ALLY}; padding: 10px; font-weight: bold; border-radius: 4px;")
+        self.btn_new.setText(STR_BTN_NEW)
+        self.btn_new.setToolTip(STR_BTN_NEW_TOOLTIP)
+        self.btn_new.setStyleSheet(STYLE_BTN_NEW)
         self.btn_new.clicked.connect(self.new_scenario_dialog)
         
         btn_row.addWidget(self.btn_new)
@@ -151,10 +169,10 @@ class ScenarioManagerWidget(QWidget):
         self.lbl_intel_theater.setText(f"OP THEATER: {theater.upper()}")
                 
     def new_scenario_dialog(self):
-        name, ok = QInputDialog.getText(self, "New Scenario", "Scenario Name:")
+        name, ok = QInputDialog.getText(self, STR_NEW_SCENARIO_TITLE, STR_NEW_SCENARIO_LABEL)
         if ok and name:
             if name in self.state.map.scenarios:
-                QMessageBox.warning(self, "Error", "Scenario name already exists.")
+                QMessageBox.warning(self, STR_ERROR_TITLE, STR_ERROR_EXISTS)
                 return
             new_scen = Scenario(name)
             self.state.map.scenarios[name] = new_scen

@@ -5,17 +5,11 @@ ROLE: The "Mission Control" (Analytics & Intelligence).
 DESCRIPTION:
 This file creates the side panel that shows you what's happening 'under the hood' 
 during a simulation. It's like a stock market ticker and medical monitor for your agents.
-
-Key Sections:
-1. Analytics: Bar charts showing which actions (Move vs Fire) are most common.
-2. Agent Brain: A 'White Box' view that shows exactly what the AI is thinking (Q-values).
-3. Logistics: Real-time progress bars for unit ammo and personnel.
-4. Cheat Sheet: A quick reference for the math (RL formulas) used in the engine.
 """
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTabWidget, 
                              QGridLayout, QFrame, QScrollArea, QProgressBar, QTextEdit, 
                              QListWidget, QComboBox, QGroupBox, QTableWidget, QTableWidgetItem, QHeaderView,
-                             QSplitter, QSizePolicy)
+                             QSplitter, QSizePolicy, QFormLayout)
 from PyQt5.QtCore import Qt, QTimer, QRectF, QSize
 from PyQt5.QtGui import QPainter, QColor, QBrush, QFont, QPen
 
@@ -23,6 +17,110 @@ import markdown
 import os
 from ui.styles.theme import Theme
 from ui.components.themed_widgets import TacticalCard, TacticalHeader, TacticalTable, TacticalLogItem
+
+# --- UI CONFIGURATION ---
+# Tab Titles
+STR_TAB_ANALYTICS = "Analytics"
+STR_TAB_BRAIN = "Agent Brain (Live)"
+STR_TAB_FEED = "Live Feed"
+STR_TAB_LOGISTICS = "Logistics (Ammo)"
+STR_TAB_REFERENCE = "Cheat Sheet"
+
+# Card Titles
+STR_CARD_ACTION_DIST = "ACTION DISTRIBUTION (TOTAL STEPS)"
+STR_CARD_DECISION_MODE = "DECISION MODE (EXPLOIT VS EXPLORE)"
+STR_CARD_TELEMETRY = "UNIT TELEMETRY"
+STR_CARD_COGNITIVE = "COGNITIVE DESCRIPTOR"
+STR_CARD_VAL_MATRIX = "ACTION VALUE MATRIX (EXPECTED UTILITY)"
+
+# Labels & Form Fields
+STR_LBL_ASSET_MONITOR = "ACTIVE ASSET MONITORING"
+STR_LBL_PERSONNEL = "Personnel: {val}"
+STR_LBL_HARDWARE = "Hardware: {val}"
+STR_LBL_GRID_POS = "Grid Pos: {val}"
+STR_LBL_OP_MODE = "Op Mode: {val}"
+STR_LBL_ENV_STATE = "Env State: {val}"
+STR_LBL_EFFICIENCY = "Efficiency: {val}"
+STR_LBL_TYPE = "TYPE:"
+STR_LBL_HULL = "HULL:"
+STR_LBL_STATUS = "STATUS:"
+STR_LBL_AMMO = "AMMO:"
+STR_LBL_NO_DATA = "No Data Available"
+
+# Table Columns
+COLS_BRAIN = ["VECTOR", "SCORE", "TYPE"]
+
+# Stylesheets
+STYLE_TABS = f"""
+    QTabWidget::pane {{ border: 1px solid {Theme.BORDER_STRONG}; background: {Theme.BG_SURFACE}; top: -1px; }}
+    QTabBar::tab {{
+        background: {Theme.BG_DEEP};
+        color: {Theme.TEXT_DIM};
+        padding: 10px 15px;
+        border: 1px solid {Theme.BORDER_STRONG};
+        border-bottom: none;
+        margin-right: 2px;
+        font-family: '{Theme.FONT_HEADER}';
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }}
+    QTabBar::tab:selected {{
+        background: {Theme.BG_SURFACE};
+        color: {Theme.ACCENT_ALLY};
+        border-top: 2px solid {Theme.ACCENT_ALLY};
+    }}
+    QTabBar::tab:hover:!selected {{
+        background: rgba(255, 255, 255, 0.05);
+    }}
+"""
+STYLE_SCROLL = "QScrollArea { border: none; background: transparent; }"
+STYLE_PROGRESS_BAR = "QProgressBar {{ background: {bg}; border: 1px solid {border}; }} QProgressBar::chunk {{ background: {accent}; }}"
+STYLE_MONO_LBL = f"color: {Theme.TEXT_PRIMARY}; font-family: '{Theme.FONT_MONO}'; font-size: 10px;"
+STYLE_COMBO = f"""
+    QComboBox {{ 
+        background-color: {Theme.BG_SURFACE}; color: white; border: 1px solid {Theme.BORDER_STRONG}; 
+        padding: 8px; border-radius: 2px; font-family: '{Theme.FONT_HEADER}';
+    }}
+    QComboBox::drop-down {{ border: none; width: 24px; }}
+"""
+STYLE_ASSET_LBL = f"color: {Theme.ACCENT_ALLY}; font-weight: bold; letter-spacing: 1.5px; font-size: 11px;"
+STYLE_MONO_VITALS = f"color: {Theme.TEXT_PRIMARY}; font-family: '{Theme.FONT_MONO}'; font-size: 10px; padding: 2px;"
+STYLE_FEED_SCROLL = f"QScrollArea {{ border: 1px solid {Theme.BORDER_STRONG}; background: {Theme.BG_DEEP}; }}"
+
+# HTML Content
+HTML_REFERENCE = f"""
+<h2>RL Cheatsheet</h2>
+<hr>
+<h3>1. Bellman Equation (Q-Learning)</h3>
+<p style='font-family: monospace; font-size: 14px; background-color: #222; padding: 10px;'>
+Q(s,a) = (1-α)Q(s,a) + α[R + γ * max Q(s',a')]
+</p>
+<ul>
+    <li><b>α (Alpha)</b>: Learning Rate (0.1) - How much new info overrides old.</li>
+    <li><b>γ (Gamma)</b>: Discount Factor (0.9) - Importance of future rewards.</li>
+    <li><b>R</b>: Immediate Reward.</li>
+</ul>
+
+<h3>2. State Space (Encoded)</h3>
+<p>State = (Grid_Index * 12) + (Casualty_State * 3) + Reward_State</p>
+<ul>
+    <li><b>Grid Index</b>: Flat index of hex (Row * Cols + Col).</li>
+    <li><b>Casualty State</b>: 0 (>75%), 1 (>50%), 2 (>25%), 3 (<25%).</li>
+    <li><b>Reward State</b>: 0 (Negative), 1 (Neutral), 2 (Positive).</li>
+</ul>
+
+<h3>3. Rewards</h3>
+<ul>
+    <li><b>Fire Hit</b>: +200</li>
+    <li><b>Kill</b>: +500</li>
+    <li><b>Casualty Dealt</b>: +10 per unit</li>
+    <li><b>Closing Distance</b>: +5</li>
+    <li><b>Penalty (Miss)</b>: -5</li>
+    <li><b>Penalty (Unit Lost)</b>: -200</li>
+</ul>
+"""
+# -------------------------
 
 class DashboardWidget(QWidget):
     """THE MISSION CONTROL HUB: Organizes the different data tabs."""
@@ -34,34 +132,12 @@ class DashboardWidget(QWidget):
         
         # --- TAB NAVIGATION ---
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet(f"""
-            QTabWidget::pane {{ border: 1px solid {Theme.BORDER_STRONG}; background: {Theme.BG_SURFACE}; top: -1px; }}
-            QTabBar::tab {{
-                background: {Theme.BG_DEEP};
-                color: {Theme.TEXT_DIM};
-                padding: 10px 15px;
-                border: 1px solid {Theme.BORDER_STRONG};
-                border-bottom: none;
-                margin-right: 2px;
-                font-family: '{Theme.FONT_HEADER}';
-                font-weight: bold;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-            }}
-            QTabBar::tab:selected {{
-                background: {Theme.BG_SURFACE};
-                color: {Theme.ACCENT_ALLY};
-                border-top: 2px solid {Theme.ACCENT_ALLY};
-            }}
-            QTabBar::tab:hover:!selected {{
-                background: rgba(255, 255, 255, 0.05);
-            }}
-        """)
-        self.tabs.addTab(AnalyticsTab(), "Analytics")            # Charts & Graphs
-        self.tabs.addTab(AgentBrainTab(), "Agent Brain (Live)") # AI Thought Process
-        self.tabs.addTab(LiveFeedTab(), "Live Feed")               # Event Log
-        self.tabs.addTab(LogisticsTab(state), "Logistics (Ammo)") # Resource Bars
-        self.tabs.addTab(ReferenceTab(), "Cheat Sheet")           # RL Documentation
+        self.tabs.setStyleSheet(STYLE_TABS)
+        self.tabs.addTab(AnalyticsTab(), STR_TAB_ANALYTICS)            # Charts & Graphs
+        self.tabs.addTab(AgentBrainTab(), STR_TAB_BRAIN)               # AI Thought Process
+        self.tabs.addTab(LiveFeedTab(), STR_TAB_FEED)                  # Event Log
+        self.tabs.addTab(LogisticsTab(state), STR_TAB_LOGISTICS)       # Resource Bars
+        self.tabs.addTab(ReferenceTab(), STR_TAB_REFERENCE)           # RL Documentation
         
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
@@ -97,13 +173,13 @@ class AnalyticsTab(QWidget):
         self.setStyleSheet(f"background-color: {Theme.BG_DEEP};")
         
         # 1. Action Distribution Module
-        self.action_module = TacticalCard("ACTION DISTRIBUTION (TOTAL STEPS)", accent_color=Theme.ACCENT_ALLY)
+        self.action_module = TacticalCard(STR_CARD_ACTION_DIST, accent_color=Theme.ACCENT_ALLY)
         self.action_chart = BarChart()
         self.action_module.addWidget(self.action_chart)
         self.layout.addWidget(self.action_module, 1)
         
         # 2. Decision Mode Module
-        self.mode_module = TacticalCard("DECISION MODE (EXPLOIT VS EXPLORE)", accent_color=Theme.ACCENT_ENEMY)
+        self.mode_module = TacticalCard(STR_CARD_DECISION_MODE, accent_color=Theme.ACCENT_ENEMY)
         self.mode_chart = BarChart(horizontal=True)
         self.mode_module.addWidget(self.mode_chart)
         self.layout.addWidget(self.mode_module, 1)
@@ -123,10 +199,9 @@ class LogisticsTab(QWidget):
         
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        scroll.setStyleSheet(STYLE_SCROLL)
         
         self.container = QWidget()
-        # Use a flow-like layout or grid
         self.grid = QGridLayout(self.container)
         self.grid.setSpacing(10)
         self.grid.setAlignment(Qt.AlignTop)
@@ -165,7 +240,8 @@ class LogisticsTab(QWidget):
                 p_bar.setRange(0, 100)
                 p_bar.setFixedHeight(12)
                 p_bar.setTextVisible(False)
-                p_bar.setStyleSheet(f"QProgressBar {{ background: {Theme.BG_DEEP}; border: 1px solid {Theme.BORDER_STRONG}; }} QProgressBar::chunk {{ background: {accent}; }}")
+                p_bar.setStyleSheet(STYLE_PROGRESS_BAR.format(
+                    bg=Theme.BG_DEEP, border=Theme.BORDER_STRONG, accent=accent))
                 
                 self.cards[aid] = {
                     'card': card,
@@ -177,12 +253,12 @@ class LogisticsTab(QWidget):
                 
                 # Style font
                 for k in ['p_lbl', 'ammo_lbl', 'type_lbl']:
-                    self.cards[aid][k].setStyleSheet(f"color: {Theme.TEXT_PRIMARY}; font-family: '{Theme.FONT_MONO}'; font-size: 10px;")
+                    self.cards[aid][k].setStyleSheet(STYLE_MONO_LBL)
                 
-                vitals_layout.addRow("TYPE:", self.cards[aid]['type_lbl'])
-                vitals_layout.addRow("HULL:", p_bar)
-                vitals_layout.addRow("STATUS:", self.cards[aid]['p_lbl'])
-                vitals_layout.addRow("AMMO:", self.cards[aid]['ammo_lbl'])
+                vitals_layout.addRow(STR_LBL_TYPE, self.cards[aid]['type_lbl'])
+                vitals_layout.addRow(STR_LBL_HULL, p_bar)
+                vitals_layout.addRow(STR_LBL_STATUS, self.cards[aid]['p_lbl'])
+                vitals_layout.addRow(STR_LBL_AMMO, self.cards[aid]['ammo_lbl'])
                 
                 card.addLayout(vitals_layout)
                 self.grid.addWidget(card, row, col)
@@ -191,8 +267,6 @@ class LogisticsTab(QWidget):
                 if col >= max_cols:
                     col = 0
                     row += 1
-            
-        #         pass
 
 class ReferenceTab(QWidget):
     def __init__(self):
@@ -200,37 +274,7 @@ class ReferenceTab(QWidget):
         layout = QVBoxLayout()
         text = QTextEdit()
         text.setReadOnly(True)
-        text.setHtml("""
-        <h2>RL Cheatsheet</h2>
-        <hr>
-        <h3>1. Bellman Equation (Q-Learning)</h3>
-        <p style='font-family: monospace; font-size: 14px; background-color: #222; padding: 10px;'>
-        Q(s,a) = (1-α)Q(s,a) + α[R + γ * max Q(s',a')]
-        </p>
-        <ul>
-            <li><b>α (Alpha)</b>: Learning Rate (0.1) - How much new info overrides old.</li>
-            <li><b>γ (Gamma)</b>: Discount Factor (0.9) - Importance of future rewards.</li>
-            <li><b>R</b>: Immediate Reward.</li>
-        </ul>
-        
-        <h3>2. State Space (Encoded)</h3>
-        <p>State = (Grid_Index * 12) + (Casualty_State * 3) + Reward_State</p>
-        <ul>
-            <li><b>Grid Index</b>: Flat index of hex (Row * Cols + Col).</li>
-            <li><b>Casualty State</b>: 0 (>75%), 1 (>50%), 2 (>25%), 3 (<25%).</li>
-            <li><b>Reward State</b>: 0 (Negative), 1 (Neutral), 2 (Positive).</li>
-        </ul>
-        
-        <h3>3. Rewards</h3>
-        <ul>
-            <li><b>Fire Hit</b>: +200</li>
-            <li><b>Kill</b>: +500</li>
-            <li><b>Casualty Dealt</b>: +10 per unit</li>
-            <li><b>Closing Distance</b>: +5</li>
-            <li><b>Penalty (Miss)</b>: -5</li>
-            <li><b>Penalty (Unit Lost)</b>: -200</li>
-        </ul>
-        """)
+        text.setHtml(HTML_REFERENCE)
         layout.addWidget(text)
         self.setLayout(layout)
 
@@ -252,7 +296,7 @@ class BarChart(QWidget):
         
         if not self.data:
             painter.setPen(QColor("#777"))
-            painter.drawText(self.rect(), Qt.AlignCenter, "No Data Available")
+            painter.drawText(self.rect(), Qt.AlignCenter, STR_LBL_NO_DATA)
             return
             
         rect = self.rect()
@@ -335,18 +379,12 @@ class AgentBrainTab(QWidget):
         
         # --- Asset Selection ---
         top_bar = QHBoxLayout()
-        lbl_asset = QLabel("ACTIVE ASSET MONITORING")
-        lbl_asset.setStyleSheet(f"color: {Theme.ACCENT_ALLY}; font-weight: bold; letter-spacing: 1.5px; font-size: 11px;")
+        lbl_asset = QLabel(STR_LBL_ASSET_MONITOR)
+        lbl_asset.setStyleSheet(STYLE_ASSET_LBL)
         top_bar.addWidget(lbl_asset)
         
         self.combo_agent = QComboBox()
-        self.combo_agent.setStyleSheet(f"""
-            QComboBox {{ 
-                background-color: {Theme.BG_SURFACE}; color: white; border: 1px solid {Theme.BORDER_STRONG}; 
-                padding: 8px; border-radius: 2px; font-family: '{Theme.FONT_HEADER}';
-            }}
-            QComboBox::drop-down {{ border: none; width: 24px; }}
-        """)
+        self.combo_agent.setStyleSheet(STYLE_COMBO)
         self.combo_agent.currentIndexChanged.connect(self.refresh_view)
         top_bar.addWidget(self.combo_agent, 1)
         self.layout.addLayout(top_bar)
@@ -356,23 +394,23 @@ class AgentBrainTab(QWidget):
         mid_layout.setSpacing(15)
         
         # 1. Tactical Vitals
-        self.card_vitals = TacticalCard(title="UNIT TELEMETRY", accent_color=Theme.ACCENT_ALLY)
-        self.lbl_pers = QLabel("Personnel: -")
-        self.lbl_ammo = QLabel("Hardware: -")
-        self.lbl_pos = QLabel("Grid Pos: -")
+        self.card_vitals = TacticalCard(title=STR_CARD_TELEMETRY, accent_color=Theme.ACCENT_ALLY)
+        self.lbl_pers = QLabel(STR_LBL_PERSONNEL.format(val="-"))
+        self.lbl_ammo = QLabel(STR_LBL_HARDWARE.format(val="-"))
+        self.lbl_pos = QLabel(STR_LBL_GRID_POS.format(val="-"))
         
         for lbl in [self.lbl_pers, self.lbl_ammo, self.lbl_pos]:
-            lbl.setStyleSheet(f"color: {Theme.TEXT_PRIMARY}; font-family: '{Theme.FONT_MONO}'; font-size: 10px; padding: 2px;")
+            lbl.setStyleSheet(STYLE_MONO_VITALS)
             self.card_vitals.addWidget(lbl)
         
         # 2. Decision Brain
-        self.card_brain = TacticalCard(title="COGNITIVE DESCRIPTOR", accent_color=Theme.ACCENT_WARN)
-        self.lbl_mode = QLabel("Op Mode: -")
-        self.lbl_state_desc = QLabel("Env State: -")
-        self.lbl_last_reward = QLabel("Efficiency: -")
+        self.card_brain = TacticalCard(title=STR_CARD_COGNITIVE, accent_color=Theme.ACCENT_WARN)
+        self.lbl_mode = QLabel(STR_LBL_OP_MODE.format(val="-"))
+        self.lbl_state_desc = QLabel(STR_LBL_ENV_STATE.format(val="-"))
+        self.lbl_last_reward = QLabel(STR_LBL_EFFICIENCY.format(val="-"))
         
         for lbl in [self.lbl_mode, self.lbl_state_desc, self.lbl_last_reward]:
-            lbl.setStyleSheet(f"color: {Theme.TEXT_PRIMARY}; font-family: '{Theme.FONT_MONO}'; font-size: 10px; padding: 2px;")
+            lbl.setStyleSheet(STYLE_MONO_VITALS)
             self.card_brain.addWidget(lbl)
             
         mid_layout.addWidget(self.card_vitals)
@@ -381,9 +419,9 @@ class AgentBrainTab(QWidget):
 
         # --- Action Value Matrix ---
         self.layout.addSpacing(10)
-        self.card_table = TacticalCard(title="ACTION VALUE MATRIX (EXPECTED UTILITY)")
+        self.card_table = TacticalCard(title=STR_CARD_VAL_MATRIX)
         
-        self.table = TacticalTable(["VECTOR", "SCORE", "TYPE"])
+        self.table = TacticalTable(COLS_BRAIN)
         self.card_table.addWidget(self.table)
         self.layout.addWidget(self.card_table, 1)
         
@@ -417,8 +455,8 @@ class AgentBrainTab(QWidget):
         info = self.current_data[agent]
         
         # Vitals
-        self.lbl_pers.setText(f"Personnel: {info.get('personnel', '?')}")
-        self.lbl_pos.setText(f"Pos: {info.get('last_pos', '?')}")
+        self.lbl_pers.setText(STR_LBL_PERSONNEL.format(val=info.get('personnel', '?')))
+        self.lbl_pos.setText(STR_LBL_GRID_POS.format(val=info.get('last_pos', '?')))
         
         # New: Inventory
         inv = info.get('inventory', {})
@@ -428,12 +466,12 @@ class AgentBrainTab(QWidget):
         res_list = [f"{k}: {v}" for k, v in inv.get('resources', {}).items()]
         res_str = " | ".join(res_list) if res_list else "Empty"
         
-        self.lbl_ammo.setText(f"Weapons: {w_str}<br>Resources: {res_str}")
+        self.lbl_ammo.setText(STR_LBL_HARDWARE.format(val=f"{w_str}<br>Resources: {res_str}"))
         
         # Brain
-        self.lbl_mode.setText(f"Mode: <b>{info.get('mode', '?')}</b>")
-        self.lbl_state_desc.setText(f"{info.get('state', '?')}")
-        self.lbl_last_reward.setText(f"Last Reward: {info.get('reward', 0):.2f}")
+        self.lbl_mode.setText(STR_LBL_OP_MODE.format(val=f"<b>{info.get('mode', '?')}</b>"))
+        self.lbl_state_desc.setText(STR_LBL_ENV_STATE.format(val=info.get('state', '?')))
+        self.lbl_last_reward.setText(STR_LBL_EFFICIENCY.format(val=f"{info.get('reward', 0):.2f}"))
         
         # Table
         q_vals = info.get('q_values', {})
@@ -445,40 +483,25 @@ class AgentBrainTab(QWidget):
         from engine.data.definitions.constants import RL_ACTION_MAP
         
         for row, (action_id, val) in enumerate(sorted_q):
-            # Name
-            # Convert int ID to String Name
             action_name = str(action_id)
-            
             try:
                 action_id_int = int(action_id)
-                # Map ID to Name Tuple -> String
                 if action_id_int in RL_ACTION_MAP:
                     act_tuple = RL_ACTION_MAP[action_id_int]
                     base_name = f"{act_tuple[0]}"
-                    if act_tuple[1]:
-                        base_name += f"_{act_tuple[1]}"
+                    if act_tuple[1]: base_name += f"_{act_tuple[1]}"
                     action_name = f"[{action_id}] {base_name}"
-                else:
-                    action_name = f"[{action_id}] UNKNOWN"
-            except ValueError:
-                pass
+                else: action_name = f"[{action_id}] UNKNOWN"
+            except ValueError: pass
             
             item_name = QTableWidgetItem(action_name)
-            
-            # Highlight if matches chosen
-            # chosen_action is likely a detailed string like "MOVE NORTHEAST"
-            # action_name might be "MOVE_northeast"
-            # Normalize for comparison
             
             is_chosen = False
             norm_name = action_name.replace("_", " ").upper()
             norm_chosen = str(chosen_action).upper()
             
-            if str(action_id) == str(chosen_action): 
-                is_chosen = True 
-            elif norm_name in norm_chosen:
-                is_chosen = True # Match by name inclusion (e.g. "MOVE NORTH" in "MOVE NORTH")
-            # Also try reverse incase chosen is short? Unlikely.
+            if str(action_id) == str(chosen_action): is_chosen = True 
+            elif norm_name in norm_chosen: is_chosen = True 
             
             if is_chosen:
                 item_name.setBackground(QBrush(QColor(Theme.BG_INPUT)))
@@ -486,13 +509,7 @@ class AgentBrainTab(QWidget):
                 item_name.setText(f"{action_name} 🎯")
             
             self.table.setItem(row, 0, item_name)
-            
-            # Value
-            val_str = f"{val:.4f}"
-            self.table.setItem(row, 1, QTableWidgetItem(val_str))
-            
-            # Type
-            # action_name is constructed above, safe to use
+            self.table.setItem(row, 1, QTableWidgetItem(f"{val:.4f}"))
             atype = "FIRE" if "FIRE" in action_name else "MOVE" if "MOVE" in action_name else "ENGAGEMENT"
             self.table.setItem(row, 2, QTableWidgetItem(atype))
 
@@ -504,7 +521,7 @@ class LiveFeedTab(QWidget):
         
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
-        self.scroll.setStyleSheet(f"QScrollArea {{ border: 1px solid {Theme.BORDER_STRONG}; background: {Theme.BG_DEEP}; }}")
+        self.scroll.setStyleSheet(STYLE_FEED_SCROLL)
         
         self.container = QWidget()
         self.feed_layout = QVBoxLayout(self.container)
@@ -516,17 +533,12 @@ class LiveFeedTab(QWidget):
         self.layout.addWidget(self.scroll)
         
     def update_log(self, events):
-        # We only update if length changed to keep it light
-        if len(events) == self.feed_layout.count() - 1:
-            return
+        if len(events) == self.feed_layout.count() - 1: return
             
-        # Clear (inefficient but simple for now, can be optimized later)
         while self.feed_layout.count() > 1:
             item = self.feed_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            if item.widget(): item.widget().deleteLater()
                 
-        # Add new items (reversed to show latest at top or bottom? User usually likes latest at bottom for log)
         import time
         now_str = time.strftime("%H:%M:%S")
         
@@ -539,7 +551,4 @@ class LiveFeedTab(QWidget):
             log_item = TacticalLogItem(now_str, ev, color)
             self.feed_layout.insertWidget(self.feed_layout.count() - 1, log_item)
         
-        # Auto-scroll to bottom
         QTimer.singleShot(50, lambda: self.scroll.verticalScrollBar().setValue(self.scroll.verticalScrollBar().maximum()))
-
-

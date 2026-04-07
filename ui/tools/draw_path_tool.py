@@ -19,6 +19,32 @@ from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QMessageBox
 from engine.core.hex_math import HexMath
+import uuid
+
+# --- UI CONFIGURATION ---
+STR_DLG_BORDER_TITLE = "Border Defined"
+STR_DLG_BORDER_MSG = "Do you want to finalize the border and assign sides now?"
+MSG_PATH_COMMITTED_FMT = "Path committed: <b>{path_id}</b> ({p_type})"
+
+# Path Types & Modes
+STR_TYPE_ROAD = "Road"
+STR_TYPE_BORDER = "Border"
+STR_TYPE_CANAL = "Canal"
+STR_TYPE_SUPPLY = "Supply Line"
+
+STR_MODE_CENTER = "Center-to-Center"
+STR_MODE_EDGE = "Edge-Aligned"
+STR_SIDE_NEUTRAL = "Neutral"
+
+# Visuals
+COLOR_PREVIEW = "#FFFF00"
+DICT_PATH_COLORS = {
+    STR_TYPE_CANAL: "#00FFFF",
+    STR_TYPE_ROAD: "#8B4513",
+    STR_TYPE_BORDER: "#FF0000",
+    STR_TYPE_SUPPLY: "#00FF00"
+}
+# -------------------------
 
 class DrawPathTool(MapTool):
     """
@@ -54,13 +80,12 @@ class DrawPathTool(MapTool):
         """
         # We need at least 2 points to make a path (a start and an end).
         if len(self.current_path) > 1:
-            import uuid
             path_id = str(uuid.uuid4())[:8] # Unique tracking ID for this specific road/border.
             
             # Check if we are building a Road (Terrain mode) or a Border (Scenario mode).
             app_mode = getattr(self.state, "app_mode", "terrain")
-            p_type = getattr(self.state, 'path_opt_type', "Road" if app_mode == "terrain" else "Border")
-            p_mode = getattr(self.state, 'path_mode', "Center-to-Center")
+            p_type = getattr(self.state, 'path_opt_type', STR_TYPE_ROAD if app_mode == "terrain" else STR_TYPE_BORDER)
+            p_mode = getattr(self.state, 'path_mode', STR_MODE_CENTER)
             
             # Use the custom name if the user typed one in the sidebar.
             custom_name = getattr(self.state, 'path_opt_name', "").strip()
@@ -70,13 +95,7 @@ class DrawPathTool(MapTool):
                 p_name = f"{p_type} {path_id}"
             
             # COLOR CODING: Assign a color based on the type of path.
-            default_colors = {
-                "Canal": "#00FFFF",      # Bright Blue
-                "Road": "#8B4513",       # Brown
-                "Border": "#FF0000",     # Red
-                "Supply Line": "#00FF00" # Green
-            }
-            fallback_col = default_colors.get(p_type, "#FFA500")
+            fallback_col = DICT_PATH_COLORS.get(p_type, "#FFA500")
             p_color = getattr(self.state, 'path_opt_color', fallback_col)
             
             # --- THE PATH DATA PACKAGE ---
@@ -87,7 +106,7 @@ class DrawPathTool(MapTool):
                 "mode": p_mode,
                 "type": p_type,
                 "app_mode": app_mode,
-                "side": getattr(self.state, "active_scenario_side", "Neutral") if app_mode == "area" else "Neutral"
+                "side": getattr(self.state, "active_scenario_side", STR_SIDE_NEUTRAL) if app_mode == "area" else STR_SIDE_NEUTRAL
             }
             
             # Save this action in the 'Undo' history so the user can delete it if they messed up.
@@ -98,19 +117,19 @@ class DrawPathTool(MapTool):
             
             # Register the new path in the map's permanent record.
             self.state.map.add_path(path_id, path_data)
-            self.log(f"Path committed: <b>{path_id}</b> ({p_type})")
+            self.log(MSG_PATH_COMMITTED_FMT.format(path_id=path_id, p_type=p_type))
             
             # --- SPECIAL BORDER LOGIC ---
             # If the user just drew a 'Border', we might want to automatically 
             # start assigning territory to Red or Blue teams.
-            if p_type == "Border":
+            if p_type == STR_TYPE_BORDER:
                 self.state.map.border_path = self.current_path
                 mw = self.widget.window()
                 
                 # Ask a popup question: "Ready to assign sides?"
                 try:
-                    res = QMessageBox.question(mw, "Border Defined", 
-                        "Do you want to finalize the border and assign sides now?", 
+                    res = QMessageBox.question(mw, STR_DLG_BORDER_TITLE, 
+                        STR_DLG_BORDER_MSG, 
                         QMessageBox.Yes | QMessageBox.No)
                         
                     if res == QMessageBox.Yes:
@@ -141,17 +160,17 @@ class DrawPathTool(MapTool):
         if not self.current_path or len(self.current_path) == 0:
             return
             
-        path_mode = getattr(self.state, 'path_mode', "Center-to-Center")
+        path_mode = getattr(self.state, 'path_mode', STR_MODE_CENTER)
         cx = self.widget.width() / 2
         cy = self.widget.height() / 2
         
-        pen = QPen(QColor("#FFFF00"), 3, Qt.DashLine) # A bright Yellow dashed line.
+        pen = QPen(QColor(COLOR_PREVIEW), 3, Qt.DashLine) # A bright Yellow dashed line.
         painter.setPen(pen)
         
         # We have two ways of drawing paths: 
         # 1. Straight through the middle of hexes (Center-to-Center).
         # 2. Hugging the edges of hexes (Edge-Aligned).
-        if path_mode == "Edge-Aligned":
+        if path_mode == STR_MODE_EDGE:
             self._draw_edge_aligned(painter, cx, cy)
         else:
             self._draw_center_to_center(painter, cx, cy)

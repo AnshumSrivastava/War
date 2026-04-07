@@ -15,6 +15,20 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWid
 from ui.styles.theme import Theme
 import json
 
+# --- UI CONFIGURATION ---
+STR_INSTR_DEPLOY = "DRAG & DROP DEPLOYMENT\nDrag a unit's card onto the map."
+STR_GRP_AWAITING = "Awaiting Deployment"
+LABEL_BTN_SYNC = "Sync Roster"
+LABEL_BTN_RECALL = "Recall All Units"
+LABEL_BTN_SEED = "SEED DEFAULT UNITS"
+
+MSG_RECALLED_FMT = "Recalled all <b>{side}</b> units to roster."
+MSG_ROSTER_EMPTY = "Roster Empty.\n(Use Phase 2: Rules or SEED below)"
+LBL_AGENT_ITEM_FMT = "{name}\n{type_disp} | Personnel: {personnel}"
+
+MIME_TYPE_AGENT = "application/x-war-agent"
+# -------------------------
+
 class DraggableRosterList(QListWidget):
     """Custom ListWidget that handles the tactical drag payload."""
     def __init__(self, parent=None, state=None):
@@ -31,7 +45,7 @@ class DraggableRosterList(QListWidget):
         
         payload_str = item.data(Qt.UserRole)
         mimeData = QMimeData()
-        mimeData.setData("application/x-war-agent", QByteArray(payload_str.encode('utf-8')))
+        mimeData.setData(MIME_TYPE_AGENT, QByteArray(payload_str.encode('utf-8')))
         
         from PyQt5.QtGui import QDrag
         drag = QDrag(self)
@@ -60,13 +74,13 @@ class PlaceAgentTool(MapTool):
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         
-        info_lbl = QLabel("DRAG & DROP DEPLOYMENT\nDrag a unit's card onto the map.")
+        info_lbl = QLabel(STR_INSTR_DEPLOY)
         info_lbl.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-style: italic; font-size: 11px;")
         layout.addWidget(info_lbl)
         
         # --- SYNC BUTTON ---
         btn_layout = QHBoxLayout()
-        btn_sync = QPushButton("Sync Roster")
+        btn_sync = QPushButton(LABEL_BTN_SYNC)
         btn_sync.clicked.connect(self.refresh_roster)
         btn_sync.setStyleSheet(f"""
             QPushButton {{
@@ -82,7 +96,7 @@ class PlaceAgentTool(MapTool):
         """)
         btn_layout.addStretch()
         
-        btn_recall = QPushButton("Recall All Units")
+        btn_recall = QPushButton(LABEL_BTN_RECALL)
         btn_recall.clicked.connect(self.reset_side_roster)
         btn_recall.setStyleSheet(f"""
             QPushButton {{
@@ -100,7 +114,7 @@ class PlaceAgentTool(MapTool):
         """)
         btn_layout.addWidget(btn_recall)
         
-        btn_sync = QPushButton("Sync Roster")
+        btn_sync = QPushButton(LABEL_BTN_SYNC)
         btn_sync.clicked.connect(self.refresh_roster)
         # ... existing sync style ...
         btn_sync.setStyleSheet(f"background: {Theme.BG_INPUT}; color: {Theme.TEXT_PRIMARY}; font-size: 10px; padding: 4px;")
@@ -109,7 +123,7 @@ class PlaceAgentTool(MapTool):
         layout.addLayout(btn_layout)
         
         # --- ROSTER LIST ---
-        roster_group = QGroupBox("Awaiting Deployment")
+        roster_group = QGroupBox(STR_GRP_AWAITING)
         roster_group.setStyleSheet(f"QGroupBox {{ font-weight: bold; padding-top: 10px; color: {Theme.ACCENT_WARN}; border: none; }}")
         r_layout = QVBoxLayout()
         
@@ -134,7 +148,7 @@ class PlaceAgentTool(MapTool):
         widget.setLayout(layout)
         QTimer.singleShot(100, self.refresh_roster)
         
-        btn_seed = QPushButton("SEED DEFAULT UNITS")
+        btn_seed = QPushButton(LABEL_BTN_SEED)
         btn_seed.setStyleSheet(f"background-color: {Theme.BG_DEEP}; color: {Theme.ACCENT_GOOD}; border: 1px solid {Theme.ACCENT_GOOD}; font-weight: bold; margin-top: 10px;")
         btn_seed.clicked.connect(self.seed_default_units)
         layout.addWidget(btn_seed)
@@ -173,7 +187,7 @@ class PlaceAgentTool(MapTool):
         
         mw = self.widget.window()
         if hasattr(mw, 'log_info'):
-            mw.log_info(f"Recalled all <b>{side}</b> units to roster.")
+            mw.log_info(MSG_RECALLED_FMT.format(side=side))
 
     def seed_default_units(self):
 
@@ -254,7 +268,7 @@ class PlaceAgentTool(MapTool):
         print(f"DEBUG: side_roster found {len(side_roster)} units")
         
         if not side_roster:
-            item = QListWidgetItem("Roster Empty.\n(Use Phase 2: Rules or SEED below)")
+            item = QListWidgetItem(MSG_ROSTER_EMPTY)
             item.setFlags(Qt.NoItemFlags)
             item.setForeground(Theme.ACCENT_WARN)
             self.list_widget.addItem(item)
@@ -272,7 +286,7 @@ class PlaceAgentTool(MapTool):
                 personnel = agent_data.get("personnel", 10)
                 
                 # Form display string
-                display_text = f"{name}\n{type_disp} | Personnel: {personnel}"
+                display_text = LBL_AGENT_ITEM_FMT.format(name=name, type_disp=type_disp, personnel=personnel)
                 item = QListWidgetItem(display_text)
                 
                 # --- NATO SYMBOL MAPPING ---
