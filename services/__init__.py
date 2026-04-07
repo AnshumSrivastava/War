@@ -4,7 +4,7 @@ LAYER:   Middle-End
 ROLE:    Public API of the services layer — the only import target for the UI.
 
 DESCRIPTION:
-    The services/ package is the ONLY interface between the UI (ui/, web_ui/)
+    The services/ package is the ONLY interface between the UI (ui/, ui/)
     and the engine (engine/). The UI must import from here exclusively.
 
     Service responsibilities:
@@ -22,7 +22,7 @@ DESCRIPTION:
 
 DEPENDENCY RULE:
     - May import from engine/ (it orchestrates the backend).
-    - Must NOT import from ui/ or web_ui/.
+    - Must NOT import from ui/ or ui/.
     - Must NOT import PyQt5 or Flask.
     - Must NEVER raise exceptions to the caller — always return ServiceResult.
 """

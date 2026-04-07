@@ -8,7 +8,7 @@ DESCRIPTION:
     The UI never calls DataManager directly.
 
 DOES NOT IMPORT FROM:
-    - ui/ or web_ui/
+    - ui/ or ui/
     - PyQt5 / Flask
 """
 

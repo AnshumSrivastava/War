@@ -17,6 +17,7 @@ import os
 import glob
 from typing import Any, Dict, List, Optional
 from .base_db import BaseDB
+from engine.core.naming_utils import NamingUtils
 
 class JSONDatabase(BaseDB):
     """
@@ -32,7 +33,7 @@ class JSONDatabase(BaseDB):
         CONVERTER: Turns a database key into a windows/linux file path.
         If the key is already an absolute path, it respects it.
         """
-        safe_key = key.replace("\\", "/")
+        safe_key = NamingUtils.sanitize_path(key)
         
         # If the key is already absolute, don't join with root_dir
         if os.path.isabs(safe_key):
@@ -65,8 +66,7 @@ class JSONDatabase(BaseDB):
         os.makedirs(os.path.dirname(path), exist_ok=True)
         try:
             with open(path, 'w') as f:
-                # Use compact serialization (no indents/spaces) for efficiency
-                json.dump(value, f, indent=None, separators=(',', ':'))
+                json.dump(value, f, indent=4)
             return True
         except IOError as e:
             print(f"JSONDatabase Error: Failed to write {key} - {e}")

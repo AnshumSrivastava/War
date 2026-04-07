@@ -32,6 +32,10 @@ class RLDataService:
         """INTERNAL: Generates a unique label for a specific situation and action."""
         return f"q_val:{state}:{action}"
 
+    # OPTIMISTIC INIT: New state-action pairs start at a positive value (not 0)
+    # so the agent is motivated to try all actions at least once, including FIRE.
+    Q_INIT_VALUE = 2.0
+
     def get_q_value(self, state: Any, action: int) -> float:
         """
         READ: Finds the 'Score' for a specific action in a specific situation.
@@ -42,11 +46,11 @@ class RLDataService:
             total = 0.0
             for tile in state:
                 val = self.db.get(self._get_q_key(tile, action))
-                total += float(val) if val is not None else 0.0
-            return total / len(state) if state else 0.0
+                total += float(val) if val is not None else self.Q_INIT_VALUE
+            return total / len(state) if state else self.Q_INIT_VALUE
             
         val = self.db.get(self._get_q_key(state, action))
-        return float(val) if val is not None else 0.0
+        return float(val) if val is not None else self.Q_INIT_VALUE
 
     def set_q_value(self, state: Any, action: int, value: float) -> bool:
         """
@@ -159,7 +163,7 @@ class RLDataService:
         EXPORT: Converts the entire brain database into a giant grid of numbers (a Numpy Table).
         This is perfect for saving the brain to a file.
         """
-        table = np.zeros((state_size, action_size))
+        table = np.ones((state_size, action_size))
         
         for s in range(state_size):
             for a in range(action_size):

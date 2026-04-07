@@ -1,0 +1,7 @@
+PyQt5==5.15.10
+PyQtWebEngine==5.15.6
+numpy>=1.26.0
+pygame>=2.5.2
+gymnasium>=0.29.1
+markdown>=3.5.2
+pytest>=7.4.4

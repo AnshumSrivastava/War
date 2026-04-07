@@ -23,21 +23,30 @@ class RewardModel:
     """
     
     def __init__(self):
+        # We will use the config loader if available, otherwise fallback to these
+        from engine.ai.config_loader import ConfigLoader
+
+        
         # --- REWARD SYSTEM ---
-        # NOTE: Fire hit/kill rewards are hardcoded constants in calculate_reward()
-        # (150 per hit, 400 for elimination) rather than instance attributes, to keep
-        # them close to the logic that uses them.
-        self.REWARD_EVASION_SUCCESS = 5.0  # Moving while under fire.
-        self.REWARD_CLOSING = 30.0         # Moving toward objective or enemy.
-        self.REWARD_GOAL_COMPLETED = 400   # Arriving at a strategic objective.
-        self.REWARD_ACTION_INCENTIVE = 0.0 # DISABLED: Don't reward jitter.
+        rl_conf = ConfigLoader.get("rl_config", "rewards", {})
+        
+        self.REWARD_EVASION_SUCCESS = rl_conf.get("evasion_success", 5.0)
+        self.REWARD_CLOSING = rl_conf.get("closing", 30.0)
+        self.REWARD_GOAL_COMPLETED = rl_conf.get("goal_reached", 400.0)
+        self.REWARD_ACTION_INCENTIVE = 0.0
+        
+        # --- FIRE REWARDS (tunable via config/rl_config.json) ---
+        self.FIRE_HIT_REWARD   = rl_conf.get("fire_hit", 120.0)
+        self.FIRE_KILL_REWARD  = rl_conf.get("fire_kill", 400.0)
+        self.FIRE_DAMAGE_MULT  = rl_conf.get("fire_damage_mult", 10.0)
+        self.FIRE_MISS_PENALTY = rl_conf.get("fire_miss", -5.0)
         
         # --- PENALTY SYSTEM ---
-        self.PENALTY_UNIT_LOST = -400    # Normalized to match goal.
-        self.PENALTY_DAMAGE_TAKEN = -2   # Reduced penalty.
-        self.PENALTY_PER_STEP = -1.0     # Reduced step penalty.
-        self.PENALTY_RETREATING = -40.0  # Heavy penalty for moving away.
-        self.PENALTY_REVISITING_HEX = -10.0 # Discourage circular movement.
+        self.PENALTY_UNIT_LOST = rl_conf.get("eliminated", -400.0)
+        self.PENALTY_DAMAGE_TAKEN = rl_conf.get("damage_taken", -2.0)
+        self.PENALTY_PER_STEP = rl_conf.get("step_penalty", -1.0)
+        self.PENALTY_RETREATING = rl_conf.get("retreat_penalty", -40.0)
+        self.PENALTY_REVISITING_HEX = rl_conf.get("revisit_penalty", -10.0)
 
     def calculate_reward(self, entity, action_type, combat_result=None, previous_personnel=None, distance_delta=0, command_dist_delta=0, command_dist=float('inf'), terrain_cost=0.0, step_number=1, max_steps=50, is_revisit=False):
         """
@@ -66,19 +75,19 @@ class RewardModel:
             # --- MOVING TO A HEX ---
             if cmd.command_type == "MOVE":
                 if command_dist_delta < 0:
-                    reward += abs(command_dist_delta) * self.REWARD_CLOSING * 1.5 # Normalized bonus
+                    reward += abs(command_dist_delta) * self.REWARD_CLOSING * 1.5 
                 elif command_dist_delta > 0:
-                    reward -= abs(command_dist_delta) * self.REWARD_CLOSING * 1.5 # Normalized penalty
+                    reward -= abs(command_dist_delta) * self.REWARD_CLOSING * 1.5 
 
-                # Massive bonus for actually arriving at the target hex!
-                if command_dist == 0 and action_type == "HOLD / END TURN":
+                # Target reached - REMOVED the "Hold / End Turn" restriction so they get rewarded purely for arriving
+                if command_dist == 0:
                     reward += decayed_goal_reward 
 
             # --- CAPTURING A ZONE ---
             elif cmd.command_type == "CAPTURE":
                 if command_dist_delta < 0:
                     reward += self.REWARD_CLOSING
-                if command_dist == 0 and action_type == "HOLD / END TURN":
+                if command_dist == 0:
                     reward += decayed_goal_reward * 1.5
 
             # --- DEFENDING A POSITION ---
@@ -86,33 +95,32 @@ class RewardModel:
                 obj_type = getattr(cmd, "objective_type", "DEFAULT")
                 
                 if obj_type == "HOLD_POST":
-                    # Defenders should stay at their domain_hex (Home)
-                    dist_to_home = command_dist # target_hex is home in HOLD_POST
+                    dist_to_home = command_dist
                     if dist_to_home == 0:
-                        reward += 50.0 # INCREASED: Bonus for staying strictly on post
+                        reward += 50.0
                         if action_type == "FIRE":
-                            reward += 40.0 # "Firing from cover/post" bonus
+                            reward += 40.0
                     else:
-                        # Penalty for being off-post without a specific MOVE order
-                        reward -= dist_to_home * 10.0 # Reduced: Don't paralyze defenders.
+                        reward -= dist_to_home * 10.0
                 
                 elif obj_type == "IDLE_PATROL":
                     if command_dist > 1 and command_dist_delta < 0:
-                        reward += self.REWARD_CLOSING # Get back to patrol area
+                        reward += self.REWARD_CLOSING
                     elif command_dist <= 1 and action_type == "FIRE":
-                        reward += 30.0 # INCREASED: "Holding the Line" bonus
-                    elif command_dist == 0 and action_type == "HOLD / END TURN":
-                        reward += decayed_goal_reward # Successfully reached defense post
+                        reward += 30.0
+                    elif command_dist == 0:
+                        reward += decayed_goal_reward
 
         # 4. COMBAT: Did the unit engage an enemy?
         if action_type == "FIRE" and combat_result:
             casualties = combat_result.get("casualties", 0)
             remaining = combat_result.get("remaining", 1)
 
-            FIRE_HIT_REWARD  = 50   # Normalized reward (was 150)
-            FIRE_DAMAGE_MULT = 10   # Per-casualty multiplier (was 20)
-            FIRE_MISS_PENALTY = -5  # Penalty for a miss
-            FIRE_KILL_REWARD  = 150  # Bonus for full elimination (was 400)
+            # Pull from config (set in config/rl_config.json) via RewardModel.__init__
+            FIRE_HIT_REWARD   = getattr(self, 'FIRE_HIT_REWARD', 120.0)
+            FIRE_DAMAGE_MULT  = getattr(self, 'FIRE_DAMAGE_MULT', 10.0)
+            FIRE_MISS_PENALTY = getattr(self, 'FIRE_MISS_PENALTY', -5.0)
+            FIRE_KILL_REWARD  = getattr(self, 'FIRE_KILL_REWARD', 400.0)
 
             if casualties > 0:
                 reward += FIRE_HIT_REWARD + casualties * FIRE_DAMAGE_MULT

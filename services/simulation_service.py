@@ -16,7 +16,7 @@ DESCRIPTION:
     - "learning_complete" payload: {"episodes": int}
 
 DOES NOT IMPORT FROM:
-    - ui/ or web_ui/
+    - ui/ or ui/
     - PyQt5 / Flask
 """
 
@@ -124,8 +124,12 @@ def run_episodes(episodes: int, max_steps: int = 50,
         event_bus.emit("learning_started", {"episodes": episodes})
 
         for ep in range(1, episodes + 1):
+            if not getattr(_state, "is_learning", True):
+                break
             model.reset_episode()
             for step_num in range(1, max_steps + 1):
+                if not getattr(_state, "is_learning", True):
+                    break
                 model.step_all_agents(
                     step_number=step_num,
                     table_mode=False,

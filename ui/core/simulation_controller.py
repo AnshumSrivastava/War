@@ -59,6 +59,8 @@ class SimulationController(QObject):
             self.is_running = False
             self.sim_timer.stop()
             self.simulation_state_changed.emit(False)
+        if getattr(self, "is_learning", False):
+            self.is_learning = False
 
     def reset_episode(self, silent=False):
         """Resets the world via sim_svc."""
@@ -69,8 +71,13 @@ class SimulationController(QObject):
             self.episode_completed.emit(self.current_episode)
 
     def step(self):
-        """Manual single-step trigger."""
+        """Manual single-step trigger. Works even when simulation is paused."""
+        # Temporarily allow a single tick regardless of running state
+        was_running = self.is_running
+        self.is_running = True
         self.tick()
+        if not was_running:
+            self.is_running = False
 
     def tick(self):
         """A single 'heartbeat' triggered by the QTimer."""

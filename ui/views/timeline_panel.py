@@ -64,14 +64,11 @@ class TimelinePanel(QWidget):
     def _setup_ui(self):
         from ui.styles.theme import Theme
         
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(10)
         
-        # --- MISSION CONFIGURATION ---
-        group_params = QGroupBox(LABEL_GRP_MISSION)
-        param_layout = QFormLayout()
-        
+        # --- PARAMS ---
         self.spin_episodes = QSpinBox()
         self.spin_episodes.setRange(1, 10000)
         self.spin_episodes.setValue(getattr(self.main_window.sim_controller, 'max_episodes', 100))
@@ -82,100 +79,72 @@ class TimelinePanel(QWidget):
         self.spin_time_limit.setValue(500)
         self.spin_time_limit.valueChanged.connect(self._on_time_limit_changed)
         
-        self.lbl_step_calc = QLabel(MSG_STEP_CALC_FMT.format(steps=50))
-        self.lbl_step_calc.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-size: 11px;")
+        layout.addWidget(QLabel("Ep:"))
+        layout.addWidget(self.spin_episodes)
+        layout.addWidget(QLabel("Steps:"))
+        layout.addWidget(self.spin_time_limit)
         
-        self.combo_sim_mode = QComboBox()
-        self.combo_sim_mode.addItems(["Visual", "Batch"])
-        self.combo_sim_mode.currentIndexChanged.connect(lambda idx: setattr(self.main_window, 'is_batch_mode', idx == 1))
+        # Separator
+        line1 = QFrame()
+        line1.setFrameShape(QFrame.VLine)
+        line1.setFrameShadow(QFrame.Sunken)
+        layout.addWidget(line1)
         
-        param_layout.addRow(LABEL_MODE, self.combo_sim_mode)
-        param_layout.addRow(LABEL_EPISODES, self.spin_episodes)
-        param_layout.addRow(LABEL_TIME_LIMIT, self.spin_time_limit)
-        param_layout.addRow("", self.lbl_step_calc)
-        
-        group_params.setLayout(param_layout)
-        layout.addWidget(group_params)
-
-        # --- SIMULATION CONTROLS ---
-        group_commands = QGroupBox(LABEL_GRP_CONTROLS)
-        deck_layout = QVBoxLayout()
-        
-        row_actions = QHBoxLayout()
+        # --- BATCH ACTIONS ---
         self.btn_learn = QPushButton(LABEL_BTN_LEARN)
         self.btn_learn.clicked.connect(self.main_window.start_learning_phase)
-        self.btn_start = QPushButton(LABEL_BTN_RUN)
-        self.btn_start.clicked.connect(self.main_window.start_simulation_loop)
-        row_actions.addWidget(self.btn_learn)
-        row_actions.addWidget(self.btn_start)
-        deck_layout.addLayout(row_actions)
-
-        row_sec = QHBoxLayout()
-        self.btn_pause = QPushButton(LABEL_BTN_PAUSE)
-        self.btn_pause.clicked.connect(self.main_window.pause_simulation)
-        self.btn_reset_intel = QPushButton(LABEL_BTN_RESET_INTEL)
-        self.btn_reset_intel.clicked.connect(self._on_reset_intel)
-        row_sec.addWidget(self.btn_pause)
-        row_sec.addWidget(self.btn_reset_intel)
-        deck_layout.addLayout(row_sec)
+        layout.addWidget(self.btn_learn)
         
-        # Status & Progress
-        status_row = QHBoxLayout()
+        # Separator
+        line2 = QFrame()
+        line2.setFrameShape(QFrame.VLine)
+        line2.setFrameShadow(QFrame.Sunken)
+        layout.addWidget(line2)
+        
+        # --- STATUS & PROGRESS ---
         self.lbl_status = QLabel(f"[{STATUS_STANDBY}]")
         self.lbl_status.setStyleSheet(f"color: {Theme.ACCENT_NEUTRAL}; font-weight: bold;")
-        status_row.addWidget(self.lbl_status)
-        status_row.addStretch()
-        
         self.lbl_sim_time = QLabel(MSG_TIME_FMT.format(time="00m"))
         self.lbl_sim_time.setStyleSheet(f"color: {Theme.ACCENT_WARN}; font-family: '{Theme.FONT_MONO}'; font-weight: bold;")
-        status_row.addWidget(self.lbl_sim_time)
-        
         self.lbl_episode_count = QLabel(MSG_EPISODE_FMT.format(current=0, total=0))
-        self.lbl_episode_count.setStyleSheet(f"color: {Theme.TEXT_DIM}; font-size: 10px;")
-        status_row.addWidget(self.lbl_episode_count)
-        deck_layout.addLayout(status_row)
+        
+        layout.addWidget(self.lbl_status)
+        layout.addWidget(self.lbl_sim_time)
+        layout.addWidget(self.lbl_episode_count)
         
         self.progress_episodes = QProgressBar()
         self.progress_episodes.setTextVisible(False)
-        self.progress_episodes.setFixedHeight(4)
-        deck_layout.addWidget(self.progress_episodes)
+        self.progress_episodes.setFixedWidth(80)
+        layout.addWidget(self.progress_episodes)
         
-        # Operation Buttons (Compact)
-        btn_row = QHBoxLayout()
+        layout.addStretch() # Push everything else to the left and live actions to the right
+        
+        # --- LIVE ACTIONS ---
+        self.btn_start = QPushButton(LABEL_BTN_PLAY)
+        self.btn_start.clicked.connect(self.main_window.start_simulation_loop)
         self.btn_step = QPushButton(LABEL_BTN_STEP)
         self.btn_step.clicked.connect(self.main_window.advance_simulation)
-        self.btn_play = QPushButton(LABEL_BTN_PLAY)
-        self.btn_play.clicked.connect(self.main_window.start_simulation_loop)
-        self.btn_pause_sim = QPushButton(LABEL_BTN_PAUSE)
-        self.btn_pause_sim.clicked.connect(self.main_window.pause_simulation)
+        self.btn_pause = QPushButton(LABEL_BTN_PAUSE)
+        self.btn_pause.clicked.connect(self.main_window.pause_simulation)
         self.btn_reset = QPushButton(LABEL_BTN_RESET)
         self.btn_reset.clicked.connect(self.main_window.action_reset_env)
         
-        btn_row.addWidget(self.btn_step)
-        btn_row.addWidget(self.btn_play)
-        btn_row.addWidget(self.btn_pause_sim)
-        btn_row.addWidget(self.btn_reset)
-        deck_layout.addLayout(btn_row)
-
-        group_commands.setLayout(deck_layout)
-        layout.addWidget(group_commands)
+        layout.addWidget(self.btn_start)
+        layout.addWidget(self.btn_step)
+        layout.addWidget(self.btn_pause)
+        layout.addWidget(self.btn_reset)
 
         # --- MONITORING ---
-        group_layers = QGroupBox(LABEL_GRP_MONITOR)
-        layer_layout = QHBoxLayout()
         self.cb_moves = QCheckBox(LABEL_CB_TRAILS)
         self.cb_moves.setChecked(True)
         self.cb_moves.toggled.connect(lambda c: setattr(self.main_window.visualizer, 'show_trails', c) or self.main_window.hex_widget.update())
         self.cb_fire = QCheckBox(LABEL_CB_FX)
         self.cb_fire.setChecked(True)
         self.cb_fire.toggled.connect(lambda c: setattr(self.main_window.visualizer, 'show_fire', c) or self.main_window.hex_widget.update())
-        layer_layout.addWidget(self.cb_moves)
-        layer_layout.addWidget(self.cb_fire)
-        group_layers.setLayout(layer_layout)
-        layout.addWidget(group_layers)
         
-        # Give layout stretch so elements compactly align to the top
-        layout.addStretch()
+        layout.addWidget(self.cb_moves)
+        layout.addWidget(self.cb_fire)
+
 
     def _on_time_limit_changed(self, mins):
         steps = max(1, mins // 10)

@@ -13,5 +13,5 @@ PACKAGES:
 DEPENDENCY RULE:
     May import from engine.models (for TypedDicts).
     Must NOT import from engine.state, engine.simulation, engine.ai.
-    Must NOT import from services/, ui/, web_ui/, or PyQt5.
+    Must NOT import from services/, ui/, ui/, or PyQt5.
 """

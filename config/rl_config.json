@@ -1,0 +1,41 @@
+{
+    "training": {
+        "epsilon_start": 1.0,
+        "epsilon_min": 0.05,
+        "epsilon_decay": 0.98,
+        "learning_rate": 0.1,
+        "discount_factor": 0.99,
+        "batch_size": 32,
+        "replay_buffer_size": 5000,
+        "default_episodes": 100,
+        "max_steps_per_episode": 50
+    },
+    "rewards": {
+        "goal_reached": 400.0,
+        "goal_decay": true,
+        "closing": 30.0,
+        "evasion_success": 5.0,
+        "revisit_penalty": -10.0,
+        "retreat_penalty": -40.0,
+        "step_penalty": -1.0,
+        "damage_taken": -2.0,
+        "eliminated": -400.0,
+        "fire_hit": 120.0,
+        "fire_kill": 400.0,
+        "fire_miss": -5.0,
+        "fire_damage_mult": 10.0
+    },
+    "action_costs": {
+        "MOVE": 1.0,
+        "FIRE": 2.0,
+        "CLOSE_COMBAT": 2.0,
+        "HOLD": 0.5,
+        "COMMIT": 1.0
+    },
+    "state_encoding": {
+        "use_tile_coding": true,
+        "num_tilings": 8,
+        "bins_per_dim": 10,
+        "state_size": 4096
+    }
+}

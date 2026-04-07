@@ -9,7 +9,7 @@ DESCRIPTION:
     The UI never imports engine.ai directly.
 
 DOES NOT IMPORT FROM:
-    - ui/ or web_ui/
+    - ui/ or ui/
     - PyQt5 / Flask
 """
 

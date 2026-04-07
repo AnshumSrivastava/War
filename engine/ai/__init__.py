@@ -13,5 +13,5 @@ PACKAGES:
 
 DEPENDENCY RULE:
     May import from engine.core and engine.models.
-    Must NOT import from services/, ui/, web_ui/, or PyQt5.
+    Must NOT import from services/, ui/, ui/, or PyQt5.
 """

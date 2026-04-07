@@ -1,0 +1,14 @@
+{
+    "engine": {
+        "map_max_size": 200,
+        "time_per_step_minutes": 1,
+        "max_steps_per_episode": 200,
+        "suppression_decay_rate": 20.0
+    },
+    "combat": {
+        "base_hit_chance": 0.45,
+        "flank_bonus": 0.3,
+        "cover_reduction": 0.5,
+        "armor_reduction": 0.2
+    }
+}

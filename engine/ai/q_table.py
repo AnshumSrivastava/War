@@ -83,10 +83,15 @@ class QTableManager:
 
     def save_q_table(self, filename="data/training/q_table.npy"):
         """PERSISTENCE: Saves the AI's training to a file on the hard drive."""
+        from engine.core.naming_utils import NamingUtils
+        filename = NamingUtils.sanitize_path(filename)
+        
         table = self.service.dump_active_table(self.state_size, self.action_size)
         
         # Save as a fast computer-readable file (.npy).
         try:
+            # Ensure the directory exists
+            os.makedirs(os.path.dirname(os.path.abspath(filename)), exist_ok=True)
             np.save(filename, table)
         except Exception as e:
             print(f"Error saving Q-Table Binary: {e}")

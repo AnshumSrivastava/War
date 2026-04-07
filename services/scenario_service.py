@@ -13,7 +13,7 @@ DESCRIPTION:
     - "sides_updated"    payload: {"sides": dict}
 
 DOES NOT IMPORT FROM:
-    - ui/ or web_ui/
+    - ui/ or ui/
     - PyQt5 / Flask
 """
 

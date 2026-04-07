@@ -1,7 +1,4 @@
-{ pkgs ? import (fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/nixos-unstable.tar.gz";
-    sha256 = "03plivnr4cg0h8v7djf9g2jra09r45pmdiirmy4lvl2n1d4yb7ac";
-  }) {
+{ pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/nixos-unstable.tar.gz") {
     config.allowUnfree = true;
     config.permittedInsecurePackages = [
       "qtwebengine-5.15.19"
@@ -16,9 +13,7 @@ let
     numpy
     pygame
     gymnasium
-    supabase
     markdown
-    flask
     pytest
   ]);
 in

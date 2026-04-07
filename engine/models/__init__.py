@@ -9,7 +9,7 @@ DESCRIPTION:
     to keep imports stable as the model definitions evolve.
 
 DOES NOT IMPORT FROM:
-    - Any UI code (ui/, web_ui/)
+    - Any UI code (ui/, ui/)
     - services/
     - engine.state.global_state
 """

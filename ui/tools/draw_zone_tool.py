@@ -53,9 +53,13 @@ class DrawZoneTool(MapTool):
                 self.commit()
             else:
                 self.widget.update()
-        elif event.button() == Qt.RightButton:
-            # RIGHT CLICK ends the drawing and 'commits' the zone to the map.
+
+    def keyPressEvent(self, event):
+        """Use ENTER or SPACE to commit the drawing instead of right-click to avoid ContextMenu clashes"""
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_Space):
             self.commit()
+            return True # Event handled
+        return False
 
     def get_options_widget(self):
         """Builds the menu in the sidebar defined by ZoneOptionsWidget."""

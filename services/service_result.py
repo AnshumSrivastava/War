@@ -30,7 +30,7 @@ DESCRIPTION:
 
 DOES NOT IMPORT FROM:
     - engine/ (any)
-    - ui/ or web_ui/
+    - ui/ or ui/
     - PyQt5 / Flask
 """
 

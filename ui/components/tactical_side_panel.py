@@ -276,7 +276,7 @@ class TacticalSidePanel(QWidget):
             
         from ui.components.tool_options.zone_options_widget import ZoneOptionsWidget
         self.state.active_scenario_side = side.title()
-        opts = ZoneOptionsWidget(self, self.state)
+        opts = ZoneOptionsWidget(self.mw, self.state)
         # Strip header from ZoneOptionsWidget since the TOC card has its own
         for lbl in opts.findChildren(QLabel):
             if lbl.objectName() == "InspectorLabel" or "ZONE CONFIGURATION" in lbl.text():

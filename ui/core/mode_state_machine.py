@@ -49,7 +49,7 @@ class ModeStateMachine(QObject):
                 self.mw.maps_widget.refresh_list()
             
             self.mw.toc_dock.hide()
-            self.mw.timeline_dock.hide()
+            self.mw.timeline_panel.hide()
             if hasattr(self.mw, 'terminal_dock'): self.mw.terminal_dock.hide()
             self.mw.pause_simulation()
             
@@ -57,7 +57,7 @@ class ModeStateMachine(QObject):
         elif mode == "master_data":
             self.mw.content_stack.setCurrentWidget(self.mw.master_data_widget)
             self.mw.toc_dock.hide()
-            self.mw.timeline_dock.hide()
+            self.mw.timeline_panel.hide()
             if hasattr(self.mw, 'terminal_dock'): self.mw.terminal_dock.hide()
             if hasattr(self.mw, 'maps_widget'): self.mw.maps_widget.hide()
             self.mw.pause_simulation()
@@ -68,7 +68,7 @@ class ModeStateMachine(QObject):
             if hasattr(self.mw, 'rules_widget'):
                 self.mw.rules_widget.refresh()
             self.mw.toc_dock.hide()
-            self.mw.timeline_dock.hide()
+            self.mw.timeline_panel.hide()
             if hasattr(self.mw, 'terminal_dock'): self.mw.terminal_dock.hide()
             self.mw.pause_simulation()
         
@@ -84,10 +84,11 @@ class ModeStateMachine(QObject):
                 self.mw.tac_panel.sync_to_mode(index)
             
             if mode == "play":
-                self.mw.timeline_dock.show()
+                self.mw.timeline_panel.show()
+                self.mw.toc_dock.hide() # Hide deploy tools in simulation
                 if hasattr(self.mw, 'terminal_dock'): self.mw.terminal_dock.show()
             else:
-                self.mw.timeline_dock.hide()
+                self.mw.timeline_panel.hide()
                 if hasattr(self.mw, 'terminal_dock'): self.mw.terminal_dock.hide()
                 self.mw.pause_simulation()
                 

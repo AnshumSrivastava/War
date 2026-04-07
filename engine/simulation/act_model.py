@@ -16,12 +16,12 @@ This file bridges the gap between the static Map/Units and the AI Learning brain
 import random
 import datetime
 from typing import Optional, List, Dict, Callable
-from PyQt5.QtCore import QCoreApplication
+# NOTE: No PyQt5 imports here — engine must stay UI-agnostic.
+# processEvents is handled via the yield_callback parameter on step_all_agents().
 
 from engine.core.hex_math import Hex, HexMath, DIRECTION_MAP
 from engine.core.map import Map
 from engine.core.entity_manager import EntityManager
-from ui.styles.theme import Theme
 
 
 from engine.core.pathfinding import Pathfinder
@@ -182,7 +182,7 @@ class ActionModel:
         self.pathfinder = Pathfinder(self.map)
         print(f"ActionModel: Re-initialized models for map size {cols}x{rows}")
 
-    def step_all_agents(self, step_number: int = 1, log_func: Optional[Callable] = None, table_mode: bool = True, episode_number: int = 1, max_steps: int = 50):
+    def step_all_agents(self, step_number: int = 1, log_func: Optional[Callable] = None, table_mode: bool = True, episode_number: int = 1, max_steps: int = 50, yield_callback: Optional[Callable] = None):
         """
         THE SIMULATION STEP: This function runs one 'Tick' of the game for every unit at once.
         It is called repeatedly by the Main Window when you press 'Play'.
@@ -211,8 +211,9 @@ class ActionModel:
             terrain_cost = 0.0
             action_cost = 0.0
             
-            # Yield to Qt event loop to prevent UI hangs on heavy computation
-            QCoreApplication.processEvents()
+            # Yield to the caller's event loop to prevent UI hangs (see yield_callback param)
+            if yield_callback:
+                yield_callback()
             
             # 1. READINESS: Get the unit's configuration (how much personnel they should have).
             config = self.state.data_controller.resolve_unit_config(entity)
@@ -261,9 +262,9 @@ class ActionModel:
                 terrain_cost = 0.0
                 think_str = "HOLDING"
                 
-                # Yield to Qt event loop frequently for massive agent counts
-                if step_number % 1 == 0:
-                    QCoreApplication.processEvents()
+                # Always yield per-entity for large agent counts
+                if yield_callback:
+                    yield_callback()
 
                 config = self.state.data_controller.resolve_unit_config(entity)
             
@@ -367,11 +368,19 @@ class ActionModel:
                             direction_idx = HexMath.get_neighbor_direction(my_pos, actual_path[0])
                             direction_str = ["east", "northeast", "northwest", "west", "southwest", "southeast"][direction_idx]
                             
-                            # Deduct tokens all at once
-                            cost = float(len(actual_path))
-                            entity.tokens -= cost
+                            # Deduct tokens all at once and set location
+                            entity.tokens -= action_cost * len(actual_path)
+                            self._log(None, f"DEBUG: {entity.name} Pathfinding to {final_hex} ({len(actual_path)} steps, Cost {action_cost * len(actual_path)})")
                             
-                            self.map.place_entity(entity.id, final_hex)
+                            self.state.map.place_entity(entity.id, final_hex)
+                            # Let them move instantly
+                            goto_next_agent = True
+                            
+                            # Check if goal reached again
+                            if HexMath.distance(final_hex, cmd.target_hex) <= 0:
+                                StrategicCommander.assign_mission(entity, self.state)
+                                setattr(entity, 'mission_refreshed', True)
+                            
                             action_desc = f"FAST ADVANCE x{len(actual_path)}"
                             evt = {"type": "move", "agent_id": entity.id, "from": my_pos, "to": final_hex}
                             override_applied = True
@@ -457,8 +466,8 @@ class ActionModel:
                 if thinking.get("mode") == "Override": mode_label = "Operational Directive"
                 
                 # The 'Think Bubble' text shown in the Inspector panel.
-                think_str = f"<b style='color: {Theme.ACCENT_GOOD}'>{mode_label}</b><br>" + " | ".join(think_parts)
-                think_str += f"<br><span style='color: {Theme.TEXT_DIM}'>Confidence: {max(0, min(100, int(thinking.get('epsilon', 0)*100)))}% | Cost: {action_cost}</span>"
+                think_str = f"<b style='color: #4caf50'>{mode_label}</b><br>" + " | ".join(think_parts)
+                think_str += f"<br><span style='color: #888888'>Confidence: {max(0, min(100, int(thinking.get('epsilon', 0)*100)))}% | Cost: {action_cost}</span>"
 
                 
                 # STATS: Log whether the AI is 'Exploring' (guessing) or 'Exploiting' (using experience).
@@ -651,8 +660,9 @@ class ActionModel:
                     "Pos": str(pos_str),
                     "Action": action_desc,
                     "Reward": reward_str,
-                "Thinking": think_str
                 })
+                
+                entity.set_attribute("last_action", action_desc)
                 
                 # LOG ENTRY: A simple text line for the scrolling history feed.
                 sim_time_str = f"{(step_number * self.time_per_step):02d}m"
@@ -944,18 +954,19 @@ class ActionModel:
     def _get_allowed_actions(self, entity, target):
         """
         RULES: Limits what actions a unit is allowed to try based on the game rules.
-        For example:
-        - Units can't move into walls.
-        - Defenders are locked in place.
-        - You can't shoot if you don't have a target in range.
         """
         side = str(entity.get_attribute("side", "")).lower()
 
         # --------------------------------------------------
-        # 🔒 DEFENDER LOGIC: Units on defense are stuck in place!
+        # 🔒 DEFENDER LOGIC: Defenders can hold or shoot, or move a little!
         # --------------------------------------------------
         if side == "defender":
             allowed = [7]  # '7' is the code for 'HOLD/WAIT'
+            
+            # --- FIX: Defenders should be allowed to MOVE, just limited, so RL actually has something to learn ---
+            for idx, (atype, _) in RL_ACTION_MAP.items():
+                if atype == "MOVE":
+                     allowed.append(idx)
         
             # If an enemy is in line-of-fire, they are allowed to SHOOT back.
             fire_target = self._find_target_in_fire_range(entity)

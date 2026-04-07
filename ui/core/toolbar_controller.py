@@ -81,20 +81,6 @@ class ToolbarController(QObject):
             btn = self.tool_toolbar.widgetForAction(action)
             if btn: self.tool_group.addButton(btn)
             
-        self.tool_toolbar.addSeparator()
-        
-        a_border = QAction(VectorIconPainter.create_icon("draw_zone"), "Add Border", self.mw) 
-        a_border.setToolTip("Add/Setup Map Border") 
-        a_border.triggered.connect(self.mw.action_add_border) 
-        self.tool_toolbar.addAction(a_border) 
-        
-        self.tool_toolbar.addSeparator() 
-        
-        a_refresh = QAction(VectorIconPainter.create_icon("refresh"), "Reload App", self.mw) 
-        a_refresh.setToolTip("Restart the Engine to apply all code and master data changes.") 
-        a_refresh.triggered.connect(self.mw.restart_app) 
-        self.tool_toolbar.addAction(a_refresh) 
-            
         self.update_tools_visibility()
 
     def update_tools_visibility(self):
@@ -102,7 +88,7 @@ class ToolbarController(QObject):
         
         # Explicit mode → allowed tools mapping (no fragile string matching)
         MODE_TOOLS = {
-            "terrain":    ["cursor", "edit", "eraser", "paint_tool"],
+            "terrain":    ["cursor", "edit", "eraser", "paint_tool", "draw_zone"],
             "def_areas":  ["cursor", "edit", "eraser", "draw_zone", "draw_path"],
             "atk_areas":  ["cursor", "edit", "eraser", "draw_zone", "draw_path"],
             "def_agents": ["cursor", "eraser", "place_agent"],
@@ -126,3 +112,11 @@ class ToolbarController(QObject):
         if self.state.selected_tool not in allowed:
             self.mw.set_tool("cursor")
 
+    def sync_tool_state(self, tool_id: str):
+        """Syncs toolbar checked state to match the currently active tool.
+        
+        Call this whenever set_tool() is triggered programmatically (e.g., ESC key)
+        so the toolbar buttons visually reflect reality.
+        """
+        for tid, action in self.tool_actions.items():
+            action.setChecked(tid == tool_id)

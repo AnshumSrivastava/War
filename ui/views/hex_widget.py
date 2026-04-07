@@ -213,7 +213,7 @@ class HexWidget(QWidget):
         
         # 2. SMOOTH AGENT MOVEMENT:
         # Instead of units 'teleporting' to the next hex, they slide towards it.
-        delta = 1.0 # Current implementation is near-instant for tactical clarity
+        delta = 0.8 # Increased from 0.1 to 0.8 for snappier animation
         changed = False
         
         for aid, state in list(self.agent_anim_state.items()):
@@ -328,10 +328,40 @@ class HexWidget(QWidget):
     def keyPressEvent(self, event):
         """GLOBAL KEYBOARD SHORTCUTS: ESC to reset tool, Delete to remove objects, etc."""
         if event.key() == Qt.Key_Escape:
-             self.set_tool("cursor")
+             # 1. Cancel any partial draw operation (zone/path vertices)
+             if hasattr(self.active_tool, 'current_vertices'):
+                 self.active_tool.current_vertices = []
+             if hasattr(self.active_tool, 'current_path'):
+                 self.active_tool.current_path = []
+                 
+             # 2. Deselect any current entity/zone
+             if hasattr(self.active_tool, 'selected_entity_id'):
+                 self.active_tool.selected_entity_id = None
+             if hasattr(self.active_tool, 'selected_zone_id'):
+                 self.active_tool.selected_zone_id = None
+             
+             # 3. Clear stateful selection on global state
+             if hasattr(self._state, 'selected_entity_id'):
+                 self._state.selected_entity_id = None
+                 
+             # 4. Send a blank selection signal to clear Inspector
+             self.on_hex_selected(None)
+             
+             # 5. Clear object properties inspector
              mw = self.window()
-             if hasattr(mw, 'update_tools_visibility'):
+             if hasattr(mw, 'object_properties_widget'):
+                 mw.object_properties_widget.show_properties(None, None)
+             
+             # 6. Reset tool to cursor
+             self.set_tool("cursor")
+             
+             # 7. Sync toolbar checked state so old tool button un-highlights
+             if hasattr(mw, 'toolbar_controller') and hasattr(mw.toolbar_controller, 'sync_tool_state'):
+                 mw.toolbar_controller.sync_tool_state("cursor")
+             elif hasattr(mw, 'update_tools_visibility'):
                  mw.update_tools_visibility()
+                  
+             self.update()
         elif event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
              # Try to delete the currently selected entity/zone if using the cursor tool
              if self.active_tool == self.tools.get("cursor"):

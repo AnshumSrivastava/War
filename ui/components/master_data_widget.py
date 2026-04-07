@@ -231,8 +231,14 @@ class AgentCreationDialog(QDialog):
         form.addRow(STR_LBL_AGENT_NAME, self.name_edit)
         
         self.role_combo = QComboBox()
-        self.role_combo.addItems([self.mw.mw.STR_ROLE_ATTACKER if hasattr(self.mw, 'mw') else "Attacker", 
-                                  self.mw.mw.STR_ROLE_DEFENDER if hasattr(self.mw, 'mw') else "Defender"])
+        # Fix: self.mw.mw -> self.parent().mw if accessible, else fallback. The dialog parent is master_data_widget which has mw
+        attacker_str = "Attacker"
+        defender_str = "Defender"
+        if hasattr(parent, 'mw') and hasattr(parent.mw, 'STR_ROLE_ATTACKER'):
+            attacker_str = parent.mw.STR_ROLE_ATTACKER
+            defender_str = parent.mw.STR_ROLE_DEFENDER
+
+        self.role_combo.addItems([attacker_str, defender_str])
         self.role_combo.setCurrentText(default_role)
         form.addRow(STR_LBL_ROLE, self.role_combo)
         
@@ -428,6 +434,10 @@ class MasterDataWidget(QWidget):
                 
             self.pending_saves.clear()
             self.state.data_controller.reload_configs()
+            
+            # --- FIX: REFRESH TABLES AFTER SAVING ---
+            self.refresh()
+            
             self.log_info(STR_LOG_SYNC_SUCCESS)
             self.is_dirty = False
             self.update_save_visuals()
@@ -487,7 +497,7 @@ class MasterDataWidget(QWidget):
             catalog = data.get(role, {})
             table.setRowCount(len(catalog))
             
-            row = 0
+            table.blockSignals(True)   # Prevent phantom writes during population
             for uid, info in catalog.items():
                 cap = info.get("capabilities", {})
                 
@@ -529,6 +539,7 @@ class MasterDataWidget(QWidget):
                 
                 row += 1
             
+            table.blockSignals(False)  # Re-enable signals now that population is done
             table.itemChanged.connect(self.on_agent_item_changed)
             self.agent_tabs.addTab(table, role)
             
@@ -777,8 +788,14 @@ class MasterDataWidget(QWidget):
         role, uid, *keys = data
         new_val = item.text()
         path = PATH_AGENT_PATTERN.format(role=role, uid=uid)
-        db = self.state.data_controller._db
-        agent_data = db.get(path)
+        
+        # --- FIX: Fetch from pending_saves first to prevent overwriting other pending fields ---
+        if path in self.pending_saves:
+            agent_data = self.pending_saves[path]
+        else:
+            db = self.state.data_controller._db
+            agent_data = db.get(path)
+            
         if agent_data:
             if len(keys) > 1 and keys[0] == "capabilities":
                 if "capabilities" not in agent_data: agent_data["capabilities"] = {}
@@ -805,8 +822,13 @@ class MasterDataWidget(QWidget):
         uid, key = data
         new_val = item.text()
         path = PATH_TERRAIN_PATTERN.format(uid=uid)
-        db = self.state.data_controller._db
-        t_data = db.get(path)
+        
+        if path in self.pending_saves:
+             t_data = self.pending_saves[path]
+        else:
+             db = self.state.data_controller._db
+             t_data = db.get(path)
+             
         if t_data:
             try:
                 if "." in new_val: t_data[key] = float(new_val)

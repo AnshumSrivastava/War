@@ -91,6 +91,9 @@ class SimulationManager(QObject):
         self.mw.is_running = False
         self.sim_controller.reset_episode(silent=silent)
         self.mw.reset_to_scenario_start()
+        # Clear stale events from the previous episode
+        if hasattr(self.mw, 'event_log_widget') and hasattr(self.mw.event_log_widget, 'clear'):
+            self.mw.event_log_widget.clear()
         if not silent:
             self.mw.log_info("Simulation <b>Reset</b>.")
 
@@ -155,6 +158,15 @@ class SimulationManager(QObject):
             for log_msg in logs:
                 self.mw.log_info(log_msg)
             
+        if hasattr(self.mw, 'event_log_widget'):
+            if hasattr(self.mw.event_log_widget, 'update_live_data'):
+                agents = self.mw.state.entity_manager.get_all_entities()
+                self.mw.event_log_widget.update_live_data(agents, self.mw.state.map)
+            
+            # Update Episode Indicator
+            if hasattr(self.mw.event_log_widget, 'set_current_episode'):
+                self.mw.event_log_widget.set_current_episode(self.current_episode)
+
         self.mw.hex_widget.update()
 
     def on_sim_episode_completed(self, episode_number):

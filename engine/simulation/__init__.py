@@ -16,6 +16,6 @@ PACKAGES:
 
 DEPENDENCY RULE:
     May import from engine.core, engine.models, engine.ai, engine.combat.
-    Must NOT import from services/, ui/, web_ui/, or PyQt5.
+    Must NOT import from services/, ui/, ui/, or PyQt5.
     EXCEPTION: simulation_controller.py may import PyQt5 (it is the Qt shim).
 """

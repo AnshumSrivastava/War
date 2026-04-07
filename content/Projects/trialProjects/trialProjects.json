@@ -281,60 +281,72 @@
         "roster": {
           "Attacker": [
             {
-              "uid": "ba5eb0e5",
-              "name": "Alpha HQ",
-              "weapon_id": "INSAS",
-              "type_display": "Section (10)",
-              "personnel": 10,
-              "side": "Attacker",
-              "placed": true
-            },
-            {
-              "uid": "d5b2d06a",
-              "name": "Vanguard 1",
-              "weapon_id": "LMG",
-              "type_display": "Section (10)",
-              "personnel": 10,
-              "side": "Attacker",
-              "placed": true
-            },
-            {
-              "uid": "6cacc3db",
-              "name": "Attacker 3",
+              "uid": "870035e3",
+              "name": "A/Section1",
               "weapon_id": "Sniper_Rifle",
-              "type_display": "Section (10)",
+              "type_display": "Section",
               "personnel": 10,
+              "ammo_type": "NATO_762",
+              "total_ammo": "300",
               "side": "Attacker",
               "placed": false
             },
             {
-              "uid": "47e97601",
-              "name": "Attacker 4",
+              "uid": "2231af2c",
+              "name": "B/Section1",
               "weapon_id": "Sniper_Rifle",
-              "type_display": "Section (10)",
+              "type_display": "Section",
               "personnel": 10,
+              "ammo_type": "NATO_762",
+              "total_ammo": "300",
+              "side": "Attacker",
+              "placed": false
+            },
+            {
+              "uid": "b255b3b0",
+              "name": "C/Section1",
+              "weapon_id": "Sniper_Rifle",
+              "type_display": "Section",
+              "personnel": 10,
+              "ammo_type": "NATO_762",
+              "total_ammo": "300",
+              "side": "Attacker",
+              "placed": false
+            },
+            {
+              "uid": "3a15dacd",
+              "name": "D/Section1",
+              "weapon_id": "Sniper_Rifle",
+              "type_display": "Section",
+              "personnel": 10,
+              "ammo_type": "NATO_762",
+              "total_ammo": "300",
               "side": "Attacker",
               "placed": false
             }
           ],
           "Defender": [
             {
-              "uid": "99c892b2",
-              "name": "Static HQ",
-              "weapon_id": "INSAS",
-              "type_display": "Section (10)",
+              "uid": "5a923052",
+              "name": "A/Section1",
+              "weapon_id": "Sniper_Rifle",
+              "type_display": "Section",
               "personnel": 10,
+              "ammo_type": "NATO_762",
+              "total_ammo": "300",
               "side": "Defender",
-              "placed": true
+              "placed": false
             },
             {
-              "uid": "cfb7c7b3",
-              "name": "Defender 2",
-              "weapon_id": "INSAS",
-              "type_display": "Section (10)",
+              "uid": "cd650503",
+              "name": "B/Section1",
+              "weapon_id": "Sniper_Rifle",
+              "type_display": "Section",
               "personnel": 10,
+              "ammo_type": "NATO_762",
+              "total_ammo": "300",
               "side": "Defender",
-              "placed": true
+              "placed": false
             }
           ]
         }
@@ -515,23 +527,23 @@
           "vertices": [
             [
               28,
-              -179,
-              151
+              -249,
+              221
             ],
             [
               20,
-              -116,
-              96
+              -166,
+              146
             ],
             [
               28,
-              -171,
-              143
+              -241,
+              213
             ],
             [
               30,
-              -188,
-              158
+              -263,
+              233
             ]
           ]
         }
@@ -924,23 +936,23 @@
           "vertices": [
             [
               28,
-              -165,
-              137
+              -235,
+              207
             ],
             [
               20,
-              -106,
-              86
+              -156,
+              136
             ],
             [
               28,
-              -157,
-              129
+              -227,
+              199
             ],
             [
               30,
-              -173,
-              143
+              -248,
+              218
             ]
           ]
         }

@@ -63,9 +63,9 @@ from ui.core.ui_settings_persistence import UISettingsPersistence
 # Titles & General
 STR_WIN_TITLE_BASE = "Wargame Engine"
 STR_WIN_TITLE_FMT = "{base} - {project} / {map}"
-STR_TOC_TITLE = "MISSION CONTROL"
+STR_TOC_TITLE = "Deploy Mode Tools"
 STR_LOG_TITLE = "MISSION LOG"
-STR_TIMELINE_TITLE = "Mission Control"
+STR_TIMELINE_TITLE = "MISSION CONTROL"
 
 # Status Bar Messages
 MSG_SYSTEM_READY = "System Ready"
@@ -868,6 +868,10 @@ class MainWindow(QMainWindow):
             if not self.action_new_project(reset_map=False):
                 return
 
+        # 0. Commit Database edits first
+        if hasattr(self, 'master_data_widget') and self.master_data_widget.is_dirty:
+            self.master_data_widget.save_all_changes()
+
         # 1. Save Map (Terrain)
         terrain_path = os.path.join(self.current_project_path, "Terrain.json")
         res_map = map_svc.save_map(terrain_path)
@@ -1120,10 +1124,14 @@ class MainWindow(QMainWindow):
         self.toc_dock.setVisible(checked)
 
     def toggle_timeline_panel(self, checked):
-        if hasattr(self, 'timeline_dock'):
-            self.timeline_dock.setVisible(checked)
+        if hasattr(self, 'timeline_panel'):
+            self.timeline_panel.setVisible(checked)
         if hasattr(self, 'terminal_dock'):
             self.terminal_dock.setVisible(checked)
+            if checked:
+                self.terminal_dock.raise_()
+                if hasattr(self, 'toc_dock'):
+                    self.toc_dock.setVisible(False)
 
     def set_tool(self, tool_id):
         """
@@ -1639,26 +1647,28 @@ class MainWindow(QMainWindow):
         from ui.views.timeline_panel import TimelinePanel
         from ui.components.event_log_widget import EventLogWidget
         
-        # 1. Mission Control Dock (Right)
-        self.timeline_dock = QDockWidget(STR_TIMELINE_TITLE, self)
-        self.timeline_dock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
+        # 1. Mission Control Panel (Bottom Central, directly above workflow bar)
         self.timeline_panel = TimelinePanel(self, self.state)
-        self.timeline_dock.setWidget(self.timeline_panel)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.timeline_dock)
-        self.timeline_dock.hide() # Hidden by default
+        # We need a frame with a background for contrast
+        self.timeline_panel.setObjectName("TimelinePanel")
+        self.timeline_panel.setStyleSheet(f"QFrame#TimelinePanel {{ background-color: {Theme.BG_SURFACE}; border-top: 1px solid {Theme.BORDER_STRONG}; }}")
+        self.central_layout.insertWidget(1, self.timeline_panel)
+        self.timeline_panel.hide() # Hidden by default
         
-        # 2. Tactical Log Console (Bottom)
+        # 2. Tactical Log Console (Right - Above Timeline)
         self.terminal_dock = QDockWidget(STR_LOG_TITLE, self)
-        self.terminal_dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
+        self.terminal_dock.setAllowedAreas(Qt.RightDockWidgetArea)
         self.event_log_widget = EventLogWidget()
         self.event_log_widget.popout_requested.connect(self.popout_log)
         self.terminal_dock.setWidget(self.event_log_widget)
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.terminal_dock)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.terminal_dock)
         self.terminal_dock.hide() # Hidden by default
         
-        # Tabify Mission Control with TOC for a clean layout
+        # Dock layout arrangement
         if hasattr(self, 'toc_dock'):
-             self.tabifyDockWidget(self.toc_dock, self.timeline_dock)
+             # We want TOC dock to tabify with terminal_dock since they share the right space
+             self.tabifyDockWidget(self.toc_dock, self.terminal_dock)
+             self.terminal_dock.raise_()
              self.toc_dock.raise_()
 
     def popout_log(self):
@@ -1955,12 +1965,15 @@ class MainWindow(QMainWindow):
 
     def get_simulation_model_path(self, model_name="default_model"):
         """Returns the absolute path for a simulation model within the current project/map."""
+        from engine.core.naming_utils import NamingUtils
+        safe_model_name = NamingUtils.sanitize_filename(model_name)
+        
         if not self.current_project_path:
-            return "data/models/commander_q_table.json" # Fallback
+            return f"data/models/{safe_model_name}.json" # Fallback
             
         sim_dir = os.path.join(self.current_project_path, "Simulations")
         os.makedirs(sim_dir, exist_ok=True)
-        return os.path.join(sim_dir, f"{model_name}.json")
+        return os.path.join(sim_dir, f"{safe_model_name}.json")
 
     def _load_default_project(self):
         """Ensures a project exists only if none is currently loaded."""
@@ -1976,8 +1989,10 @@ class MainWindow(QMainWindow):
             # Create standard folder structure
             try:
                 os.makedirs(os.path.join(map_path, "Scenarios"), exist_ok=True)
+                from engine.ai.config_loader import ConfigLoader
+                mw_w = ConfigLoader.get("simulation_config", "engine.map_max_size", 30)
                 terrain_data = {
-                    "dimensions": {"width": 30, "height": 20},
+                    "dimensions": {"width": mw_w, "height": mw_w},
                     "grid": {"default": "plain"},
                     "layers": {}
                 }
