@@ -22,6 +22,7 @@ class SimulationManager(QObject):
         self.action_model = main_window.action_model
         
         self.final_episode_events = []
+        self.current_episode = 0  # Track current episode number for the event log
         
         # Connect signals
         self.sim_controller.step_completed.connect(self.on_sim_step_completed)
@@ -165,11 +166,13 @@ class SimulationManager(QObject):
             
             # Update Episode Indicator
             if hasattr(self.mw.event_log_widget, 'set_current_episode'):
-                self.mw.event_log_widget.set_current_episode(self.current_episode)
+                ep = getattr(self.sim_controller, 'current_episode', self.current_episode)
+                self.mw.event_log_widget.set_current_episode(ep)
 
         self.mw.hex_widget.update()
 
     def on_sim_episode_completed(self, episode_number):
+        self.current_episode = episode_number
         self.mw.log_info(f"--- Episode {episode_number-1} Completed ---")
         if hasattr(self.mw, 'timeline_panel'):
             self.mw.timeline_panel.update_progress(episode_number)

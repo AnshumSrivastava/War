@@ -183,31 +183,25 @@ class MasterDataService:
     def save_scenario(self, filename: str, data: Dict[str, Any], project_path: Optional[str] = None) -> bool:
         """Saves a complete scenario to a specific project folder.
         
-        IMPORTANT: db.set() always receives a RELATIVE key (e.g. 'Projects/Foo/Maps/Bar/Scenarios/Name').
-        If project_path is an absolute path we convert it to a CWD-relative path first, then
-        strip the content root prefix so the key stays inside the DB's root_dir.
+        DB keys are ALWAYS relative to root_dir (e.g. 'Projects/Foo/Maps/Bar/Scenarios/Name').
+        project_path may be absolute or CWD-relative — we normalize it to be
+        relative to db.root_dir so the key never contains the content prefix.
         """
         doc_name = NamingUtils.sanitize_filename(os.path.splitext(filename)[0])
         if project_path:
-            # Normalize to relative path from CWD
-            rel_project = project_path
-            if os.path.isabs(project_path):
-                try:
-                    rel_project = os.path.relpath(project_path)
-                except ValueError:
-                    rel_project = project_path  # Different drives on Windows — fallback
-            
-            # Strip the DB root_dir prefix if present (e.g. 'content/')
-            db_root = getattr(self.db, 'root_dir', 'content')
-            db_root = db_root.rstrip('/')
-            if rel_project.startswith(db_root + '/'):
-                rel_project = rel_project[len(db_root) + 1:]
-            elif rel_project.startswith(db_root + os.sep):
-                rel_project = rel_project[len(db_root) + 1:]
+            # Compute key relative to DB root (both as absolute paths)
+            db_root_abs = os.path.abspath(getattr(self.db, 'root_dir', 'content'))
+            project_abs = os.path.abspath(project_path)
+            try:
+                rel_project = os.path.relpath(project_abs, db_root_abs)
+            except ValueError:
+                # Windows: different drives — fall back to just the scenario name
+                rel_project = os.path.basename(project_abs)
             
             key = f"{rel_project}/Scenarios/{doc_name}"
             return self.db.set(key, data)
         return self.db.set(f"scenarios/{doc_name}", data)
+
 
     # --- PROJECTS ---
     
